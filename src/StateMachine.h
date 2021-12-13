@@ -4,30 +4,22 @@
 #include "Vector.h"
 #include "Pointer.h"
 
-class State;
-
-class Transition {
-public:
-	Transition(Ptr<State> to_state): to_state(to_state) {};
-	virtual ~Transition() {};
-	virtual bool eval() { return false; };
-	virtual const char *name() { return "Invalid Transition"; };
-
-	Ptr<State> to_state;
-};
+typedef bool (*Transition)();
 
 class State {
 public:
 	State() {};
 	virtual ~State() {};
 
-	void add(Ptr<Transition>);
+	void add(Transition, const char *, Ptr<State>);
 
-	virtual void enter() {};
+	virtual void enter() = 0;
 	virtual void exit() {};
-	virtual const char *name() const { return "Invalid State"; };
+	virtual const char *name() const = 0;
 
-	Vector<Ptr<Transition>> transitions;
+	Vector<Transition> transitions;
+	Vector<const char *> tnames;
+	Vector<Ptr<State>> to_states;
 };
 
 class StateMachine {

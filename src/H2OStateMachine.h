@@ -6,49 +6,49 @@
 class Initial: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "Initial"; };
 };
 
 /* Pump off */
 class Off: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "Off"; };
 };
 
 /* Pump off after being on */
 class HisteresisOff: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "Off (h)"; };
 };
 
 /* Pump off due to override-off switch */
 class ManualOff: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "Off (m)"; };
 };
 
 /* Pump on */
 class On: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "On"; };
 };
 
 /* Pump just turned on */
 class HisteresisOn: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "On (h)"; };
 };
 
 /* Pump on due to override-on switch */
 class ManualOn: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "On (m)"; };
 };
 
 /* Water flow not detected, turned pump off.
@@ -59,7 +59,7 @@ public:
 class FlowFailure: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "Err flow"; };
 };
 
 /* Level change not detected in spite of water flow
@@ -70,7 +70,7 @@ public:
 class LevelFailure: public State {
 public:
 	virtual void enter();
-	virtual void exit();
+	virtual const char* name() const { return "Err lvl"; };
 };
 
 class H2OStateMachine: public StateMachine {

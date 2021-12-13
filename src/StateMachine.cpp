@@ -1,8 +1,11 @@
 #include "StateMachine.h"
+#include <stdio.h>
 
-void State::add(Ptr<Transition> trans)
+void State::add(Transition trans, const char *tname, Ptr<State> to_state)
 {
 	transitions.push_back(trans);
+	tnames.push_back(tname);
+	to_states.push_back(to_state);
 }
 
 StateMachine::StateMachine()
@@ -27,10 +30,12 @@ bool StateMachine::eval()
 	if (! started) return false;
 
 	for (size_t i = 0; i < current->transitions.count(); ++i) {
-		Ptr<Transition> trans = current->transitions[i];
-		if (trans->eval()) {
+		Transition trans = current->transitions[i];
+		if (trans()) {
+			auto next = current->to_states[i];
+			printf("trans %s, st %s -> %s\n", current->tnames[i], current->name(), next->name());
 			current->exit();
-			current = trans->to_state;
+			current = next;
 			current->enter();
 			return true;
 		}
