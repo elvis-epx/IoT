@@ -1,0 +1,8 @@
+*.gcda
+*.gcdo
+*.gcno
+test
+*.o
+*.dSYM/
+*.swp
+
