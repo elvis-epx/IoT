@@ -1,4 +1,5 @@
 #include "Pump.h"
+#include "Plant.h"
 
 Pump::Pump()
 {
@@ -9,6 +10,7 @@ Pump::Pump()
 void Pump::on()
 {
 	if (! is_on) {
+		display.debug("pump on");
 		since = now();
 		is_on = true;
 	}
@@ -17,6 +19,7 @@ void Pump::on()
 void Pump::off()
 {
 	if (is_on) {
+		display.debug("pump off");
 		since = now();
 		is_on = false;
 	}

@@ -3,10 +3,12 @@
 
 #include "Vector.h"
 #include "Pointer.h"
+#include "Timestamp.h"
 
 typedef bool (*Transition)();
 
 class State {
+friend class StateMachine;
 public:
 	State() {};
 	virtual ~State() {};
@@ -29,10 +31,14 @@ public:
 	void add(Ptr<State>);
 	void start();
 	bool eval();
+	const char *cur_state_name() const;
 
+private:
 	bool started;
 	Ptr<State> current;
 	Vector<Ptr<State>> states;
+	Timestamp last_transition;
+	Timestamp last_eval;
 };
 
 #endif

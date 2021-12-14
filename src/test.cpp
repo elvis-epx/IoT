@@ -8,6 +8,8 @@ Pump pump;
 FlowMeter flowmeter(FLOWMETER_PULSE_RATE);
 static const double level_sensors[] = LEVEL_SENSORS;
 LevelMeter levelmeter(level_sensors, TANK_CAPACITY);
+Display display;
+H2OStateMachine sm;
 
 static void sigusr1(int)
 {
@@ -17,12 +19,11 @@ static void sigusr1(int)
 int main()
 {
 	signal(SIGUSR1, sigusr1);
-
-	H2OStateMachine sm;
 	sm.start();
 
-	for (int i = 0; i < 100; ++i) {
+	while (true) {
 		sleep(1);
 		sm.eval();
+		display.eval();
 	}
 }
