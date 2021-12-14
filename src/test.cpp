@@ -23,10 +23,11 @@ int main()
 	sm.start();
 
 	while (true) {
-		sm.eval();
-		display.eval();
 		gpio.eval();
 		flowmeter.eval();
+		levelmeter.eval();
+		sm.eval();
+		display.eval();
 		usleep(10000);
 	}
 }

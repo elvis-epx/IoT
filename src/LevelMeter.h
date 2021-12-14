@@ -12,10 +12,13 @@ public:
 	// multiple sensors at the same level are supported for robustness
 	LevelMeter(const double levels[], double capacity);
 
-	double level_pct(); // in %
-	double level_liters(); // in liters
-	double next_level_liters(); // in liters
-	int law(); // see next constants
+	void eval();
+
+	double level_pct() const; // in %
+	double level_liters() const; // in liters
+	double next_level_liters() const; // in liters
+	int law() const; // see next constants
+	int bitmap() const;
 
 	static const int Law_Normal = 0;
 	static const int Law_DisagreementAtTop = 1;
@@ -23,13 +26,14 @@ public:
 	static const int Law_SensorFailed = 3;
 
 private:
-	void interpret_sensors();
 
+	Timestamp last_eval;
 	const double *levels;
 	double current_level;
 	double capacity; // estimated tank capacity in liters
+
 	int current_law;
-	uint32_t failed_sensor_map;
+	uint32_t last_bitmap;
 };
 
 #endif
