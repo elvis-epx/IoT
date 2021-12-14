@@ -16,6 +16,7 @@ public:
 	double volume() const; // in liters, since reset
 	double rate() const; // in liters per minute, moving average
 
+private:
 	double k;
 	Timestamp since;
 	uint32_t pulses;

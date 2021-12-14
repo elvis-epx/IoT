@@ -1,3 +1,4 @@
+#include "Plant.h"
 #include "LevelMeter.h"
 
 LevelMeter::LevelMeter(const double levels[], double capacity):
@@ -7,8 +8,10 @@ LevelMeter::LevelMeter(const double levels[], double capacity):
 	current_law = Law_Normal;
 }
 
-void LevelMeter::interpret_sensors(uint32_t bitmap)
+void LevelMeter::interpret_sensors()
 {
+	uint32_t bitmap = gpio.read_level_sensors();
+
 	// if all sensors are on, the level must be 100%
 	current_level = 100;
 
@@ -81,23 +84,31 @@ void LevelMeter::interpret_sensors(uint32_t bitmap)
 	} while (levels[i++] != 0);
 }
 
-int LevelMeter::law() const
+int LevelMeter::law()
 {
+	interpret_sensors();
+
 	return current_law;
 }
 
-double LevelMeter::level_pct() const
+double LevelMeter::level_pct()
 {
+	interpret_sensors();
+
 	return current_level;
 }
 
-double LevelMeter::level_liters() const
+double LevelMeter::level_liters() 
 {
+	interpret_sensors();
+
 	return current_level * capacity / 100;
 }
 
-double LevelMeter::next_level_liters() const
+double LevelMeter::next_level_liters()
 {
+	interpret_sensors();
+
 	for (int i = 0; levels[i] > 0; ++i) {
 		if (failed_sensor_map & (0x01 << i)) {
 			continue;

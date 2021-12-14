@@ -12,6 +12,7 @@ public:
 	bool is_running() const;
 	Timestamp running_time() const;
 
+private:
 	bool is_on;
 	Timestamp since;
 };

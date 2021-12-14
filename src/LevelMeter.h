@@ -12,17 +12,18 @@ public:
 	// multiple sensors at the same level are supported for robustness
 	LevelMeter(const double levels[], double capacity);
 
-	void interpret_sensors(uint32_t bitmap);
-
-	double level_pct() const; // in %
-	double level_liters() const; // in liters
-	double next_level_liters() const; // in liters
-	int law() const; // see next constants
+	double level_pct(); // in %
+	double level_liters(); // in liters
+	double next_level_liters(); // in liters
+	int law(); // see next constants
 
 	static const int Law_Normal = 0;
 	static const int Law_DisagreementAtTop = 1;
 	static const int Law_Disagreement = 2;
 	static const int Law_SensorFailed = 3;
+
+private:
+	void interpret_sensors();
 
 	const double *levels;
 	double current_level;

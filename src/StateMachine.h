@@ -17,6 +17,7 @@ public:
 	virtual void exit() {};
 	virtual const char *name() const = 0;
 
+private:
 	Vector<Transition> transitions;
 	Vector<const char *> tnames;
 	Vector<Ptr<State>> to_states;
