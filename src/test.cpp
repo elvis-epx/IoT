@@ -2,6 +2,7 @@
 #include "Plant.h"
 #include <unistd.h>
 #include <signal.h>
+#include <stdio.h>
 
 GPIO gpio;
 Pump pump;
@@ -22,8 +23,10 @@ int main()
 	sm.start();
 
 	while (true) {
-		sleep(1);
 		sm.eval();
 		display.eval();
+		gpio.eval();
+		flowmeter.eval();
+		usleep(10000);
 	}
 }

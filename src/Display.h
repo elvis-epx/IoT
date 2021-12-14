@@ -9,6 +9,8 @@ public:
 	Display();
 	void eval();
 	void debug(const char *);
+	void debug(const char *, int);
+	void debug(const char *, double);
 
 private:
 	void show(const char *, const char *);

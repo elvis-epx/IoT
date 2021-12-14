@@ -7,7 +7,7 @@ class GPIO
 {
 public:
 	GPIO();
-	void deliver_pulse();
+	void eval();
 	void pulse();
 	uint32_t read_level_sensors();
 

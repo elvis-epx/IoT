@@ -1,4 +1,5 @@
 #include "FlowMeter.h"
+#include "Plant.h"
 
 FlowMeter::FlowMeter(double k): k(k)
 {
@@ -7,23 +8,28 @@ FlowMeter::FlowMeter(double k): k(k)
 
 void FlowMeter::reset()
 {
-	since = last_pulse = now();
-	pulses = 0;
-	pulse_length_avg = 86400000.0; // in milisseconds
+	since = last_pulse = partial_since = now();
+	pulses = partial_pulses = 0;
+	last_rate = 0;
 }
 
 void FlowMeter::pulse()
 {
 	++pulses;
-	Timestamp now_ = now();
-	double last_pulse_length = now_ - last_pulse;
-	last_pulse = now_;
+	++partial_pulses;
+	last_pulse = now();
+}
 
-	// cannot handle pulses shorter than 1ms
-	if (last_pulse_length <= 1.0) {
-		last_pulse_length = 1.0;
+void FlowMeter::eval()
+{
+	Timestamp Now = now();
+	if ((Now - partial_since) > 10 * SECONDS) {
+		double volume = pulse_volume() * partial_pulses;
+		double minutes = (Now - partial_since) / (60.0 * SECONDS);
+		last_rate = volume / minutes;
+		partial_since = Now;
+		partial_pulses = 0;
 	}
-	pulse_length_avg = (0.995 * pulse_length_avg) + (0.005 * last_pulse_length);
 }
 
 Timestamp FlowMeter::last_movement() const
@@ -44,8 +50,5 @@ double FlowMeter::volume() const
 
 double FlowMeter::rate() const
 {
-	// convert pulse length in ms to pulses/min
-	double pulses_per_min = 60000.0 / pulse_length_avg;
-	// multiply by estimated volume of each pulse
-	return pulse_volume() * pulses_per_min;
+	return last_rate;
 }

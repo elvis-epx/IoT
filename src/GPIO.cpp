@@ -31,7 +31,7 @@ void GPIO::pulse()
 	++pulses;
 }
 
-void GPIO::deliver_pulse()
+void GPIO::eval()
 {
 	if (pulses > 0) {
 		--pulses;

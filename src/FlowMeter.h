@@ -10,6 +10,7 @@ public:
 	FlowMeter(double k);
 	void reset();
 	void pulse();
+	void eval();
 
 	Timestamp last_movement() const; // time since last pulse received
 	double pulse_volume() const; // volume of 1 pulse, in liters
@@ -21,7 +22,10 @@ private:
 	Timestamp since;
 	uint32_t pulses;
 	Timestamp last_pulse;
-	double pulse_length_avg;
+
+	double last_rate;
+	Timestamp partial_since;
+	uint32_t partial_pulses;
 };
 
 #endif
