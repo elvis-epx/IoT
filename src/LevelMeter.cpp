@@ -19,7 +19,7 @@ void LevelMeter::eval()
 
 	last_bitmap = gpio.read_level_sensors();
 
-	display.debug("sensor bitmap", (int) last_bitmap);
+	// display.debug("sensor bitmap", (int) last_bitmap);
 
 	current_level = 0;
 
@@ -45,7 +45,7 @@ void LevelMeter::eval()
 			if (last_off > -1) {
 				// there was an OFF sensor below
 				current_law = Law_SensorFailed;
-				display.debug("sensor failure", last_off);
+				// display.debug("sensor failure", last_off);
 			}
 		} else {
 			// sensor is OFF
@@ -58,8 +58,8 @@ void LevelMeter::eval()
 
 	} while (levels[i++] != 0);
 
-	display.debug("level", current_level);
-	display.debug("law", current_law);
+	// display.debug("level", current_level);
+	// display.debug("law", current_law);
 
 	if (current_law <= Law_DisagreementAtTop) {
 		// Disagreement of sensors at water level may clear
@@ -88,13 +88,13 @@ void LevelMeter::eval()
 		if (sensor_group_or != sensor_group_and) {
 			if (levels[j] == current_level) {
 				// disagreement at current water level
-				display.debug("sensor disagreement at top", j);
+				// display.debug("sensor disagreement at top", j);
 				if (current_law < Law_DisagreementAtTop) {
 					current_law = Law_DisagreementAtTop;
 				}
 			} else {
 				// disagreement below water level
-				display.debug("sensor disagreement", j);
+				// display.debug("sensor disagreement", j);
 				current_law = Law_Disagreement;
 			}
 		}

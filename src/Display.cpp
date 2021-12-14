@@ -17,7 +17,7 @@ void Display::eval()
 	
 	last_update = now();
 	++phase;
-	if (phase > 3) {
+	if (phase > 4) {
 		phase = 1;
 	}
 
@@ -32,6 +32,12 @@ void Display::eval()
 		sprintf(msg2, "Flow: %.1fL/s", flowmeter.rate());
 	} else if (phase == 3) {
 		sprintf(msg2, "Pumped: %.1fL", flowmeter.volume());
+	} else if (phase == 4) {
+		if (levelmeter.law() > 0) {
+			sprintf(msg2, "Err lvl %d %d", levelmeter.law(), levelmeter.bitmap());
+		} else {
+			sprintf(msg2, "No errors");
+		}
 	}
 
 	show(msg1, msg2);
@@ -39,7 +45,7 @@ void Display::eval()
 
 void Display::show(const char *msg1, const char *msg2)
 {
-	printf("%s\n%s\n", msg1, msg2);
+	printf("================\n%s\n%s\n", msg1, msg2);
 }
 
 void Display::debug(const char *msg)
