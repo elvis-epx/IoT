@@ -57,6 +57,7 @@ void LevelMeter::eval()
 	if (new_level != current_level) {
 		current_level = new_level;
 		last_change = now();
+		flowmeter.reset_volume();
 	}
 }
 

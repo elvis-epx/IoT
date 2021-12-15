@@ -12,27 +12,31 @@ FlowMeter::FlowMeter(double k, const int* rate_intervals):
 	rate_last_reset = Ptr<Timestamp>((Timestamp*) calloc(rate_count, sizeof(Timestamp)));
 	rate_pulses = Ptr<uint32_t>((uint32_t*) calloc(rate_count, sizeof(uint32_t)));
 
-	reset();
+	reset_all();
 }
 
-void FlowMeter::reset()
+void FlowMeter::reset_all()
 {
 	Timestamp Now = now();
-
-	last_reset = last_pulse = Now;
-	pulses = 0;
-
+	last_pulse = Now;
 	for (int i = 0; i < rate_count; ++i) {
 		last_rates[i] = -1;
 		rate_last_reset[i] = Now;
 		rate_pulses[i] = 0;
 	}
+	reset_volume();
+}
+
+void FlowMeter::reset_volume()
+{
+	last_vol_reset = now();
+	vol_pulses = 0;
 }
 
 void FlowMeter::pulse()
 {
 	last_pulse = now();
-	++pulses;
+	++vol_pulses;
 	for (int i = 0; i < rate_count; ++i) {
 		++rate_pulses[i];
 	}
@@ -66,7 +70,7 @@ double FlowMeter::pulse_volume() const
 
 double FlowMeter::volume() const
 {
-	return pulses * pulse_volume();
+	return vol_pulses * pulse_volume();
 }
 
 double FlowMeter::rate(int interval) const

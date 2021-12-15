@@ -177,6 +177,10 @@ static bool pump_timeout()
 
 static bool detect_level_fail()
 {
+	double dvolume = levelmeter.next_level_liters() - levelmeter.level_liters();
+	levelmeter.last_movement();
+	double pumped = flowmeter.volume(); // FIXME should be volume since last change
+	
 	// level does not change as expected
 	FIXME
 }
@@ -232,7 +236,6 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 	level_fail->add(manual_off_sw_1, "manual_off_sw_1", off);
 	level_fail->add(manual_on_sw_1,  "manual_on_sw_1",  off);
 	level_fail->add(timeout_12h,     "timeout_12h",     off);
-	// FIXME report sensor failure? Where?
 	add(level_fail);
 
 	lowflow_short->add(manual_off_sw_1, "manual_off_sw_1", off);

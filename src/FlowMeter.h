@@ -13,22 +13,24 @@ public:
 	// to measure rate. In miliseconds.
 
 	FlowMeter(double k, const int *rate_intervals);
-	void reset();
+	void reset_all();
+	void reset_volume();
 	void pulse();
 	void eval();
 
 	Timestamp last_movement() const; // time since last pulse received
 	double pulse_volume() const; // volume of 1 pulse, in liters
-	double volume() const; // in liters, since reset
+	double volume() const; // in liters, since last reset
 
 	// in liters per minute for the given time interval
 	double rate(int interval) const;
 
 private:
 	double k;
-	Timestamp last_reset;
-	uint32_t pulses;
 	Timestamp last_pulse;
+
+	Timestamp last_vol_reset;
+	uint32_t vol_pulses;
 
 	const int *rate_intervals;
 	size_t rate_count;
