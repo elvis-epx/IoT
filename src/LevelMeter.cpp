@@ -4,6 +4,10 @@
 LevelMeter::LevelMeter(const double levels[], double capacity):
 	levels(levels), capacity(capacity)
 {
+}
+
+void LevelMeter::init()
+{
 	current_level = 100;
 	last_eval = 0;
 	last_change = 0;
@@ -90,7 +94,7 @@ double LevelMeter::next_level_liters() const
 	return capacity;
 }
 
-int LevelMeter::bitmap() const
+uint32_t LevelMeter::bitmap() const
 {
 	return last_bitmap;
 }

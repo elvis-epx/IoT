@@ -12,6 +12,7 @@ class Display
 {
 public:
 	Display();
+	void init();
 	void eval();
 	void debug(const char *);
 	void debug(const char *, const char *);

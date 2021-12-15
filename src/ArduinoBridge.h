@@ -8,7 +8,7 @@
 #ifndef __ARDUINO_BRIDGE
 #define __ARDUINO_BRIDGE
 
-#include <cstdint>
+#include "stdint.h"
 
 uint32_t _arduino_millis();
 

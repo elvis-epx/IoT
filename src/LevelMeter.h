@@ -10,6 +10,7 @@ public:
 	// must be in ascending order
 	// must terminate with 100, 0
 	LevelMeter(const double levels[], double capacity);
+	void init();
 
 	void eval();
 
@@ -17,7 +18,7 @@ public:
 	double level_liters() const; // in liters
 	double next_level_liters() const; // in liters
 	bool failure_detected() const;
-	int bitmap() const;
+	uint32_t bitmap() const;
 	Timestamp last_movement() const;
 
 private:

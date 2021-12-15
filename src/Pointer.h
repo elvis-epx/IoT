@@ -8,7 +8,7 @@
 #ifndef __PTR_H
 #define __PTR_H
 
-#include <cstddef>
+#include "stddef.h"
 
 template <class T> class PtrRef;
 

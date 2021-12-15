@@ -4,7 +4,7 @@
 #include "Plant.h"
 
 static const double level_sensors[] = LEVEL_SENSORS;
-static const int flow_rates[] = FLOWRATES;
+static const uint32_t flow_rates[] = FLOWRATES;
 
 GPIO gpio;
 Pump pump;
@@ -15,6 +15,11 @@ H2OStateMachine sm;
 
 int main()
 {
+	display.init();
+	gpio.init();
+	flowmeter.init();
+	levelmeter.init();
+	pump.init();
 	sm.start();
 
 	while (true) {

@@ -12,10 +12,11 @@ public:
 	// rate_intervals: 0-terminated list of time intervals
 	// to measure rate. In miliseconds.
 
-	FlowMeter(double k, const int *rate_intervals);
+	FlowMeter(double k, const uint32_t *rate_intervals);
+	void init();
 	void reset_all();
 	void reset_volume();
-	void pulse(int);
+	void pulse(uint32_t);
 	void eval();
 
 	Timestamp last_movement() const; // time since last pulse received
@@ -23,7 +24,7 @@ public:
 	double volume() const; // in liters, since last reset
 
 	// in liters per minute for the given time interval
-	double rate(int interval) const;
+	double rate(uint32_t interval) const;
 
 private:
 	double k;
@@ -32,7 +33,7 @@ private:
 	Timestamp last_vol_reset;
 	uint32_t vol_pulses;
 
-	const int *rate_intervals;
+	const uint32_t *rate_intervals;
 	size_t rate_count;
 	Ptr<double> last_rates;
 	Ptr<Timestamp> rate_last_reset;

@@ -1,10 +1,14 @@
-#include <cstdlib>
+#include "stdlib.h"
 
 #include "FlowMeter.h"
 #include "Plant.h"
 
-FlowMeter::FlowMeter(double k, const int* rate_intervals):
+FlowMeter::FlowMeter(double k, const uint32_t* rate_intervals):
 		k(k), rate_intervals(rate_intervals)
+{
+}
+
+void FlowMeter::init()
 {
 	rate_count = 0;
 	while (rate_intervals[rate_count++] > 0);
@@ -33,7 +37,7 @@ void FlowMeter::reset_volume()
 	vol_pulses = 0;
 }
 
-void FlowMeter::pulse(int quantity)
+void FlowMeter::pulse(uint32_t quantity)
 {
 	last_pulse = now();
 	vol_pulses += quantity;
@@ -73,7 +77,7 @@ double FlowMeter::volume() const
 	return vol_pulses * pulse_volume();
 }
 
-double FlowMeter::rate(int interval) const
+double FlowMeter::rate(uint32_t interval) const
 {
 	for (int i = 0; i < rate_count; ++i) {
 		if (rate_intervals[i] >= interval) {

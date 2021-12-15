@@ -7,6 +7,7 @@ class Pump
 {
 public:
 	Pump();
+	void init();
 	void on();
 	void off();
 	bool is_running() const;

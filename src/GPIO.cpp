@@ -4,14 +4,42 @@
 #ifdef UNDER_TEST
 #include <iostream>
 #include <fstream>
+#else
+#include <Arduino.h>
 #endif
 
 GPIO::GPIO()
 {
+}
+
+void GPIO::init()
+{
 	pulses = 0;
 	output_bitmap = 0;
+
+#ifndef UNDER_TEST
+	// level meter
+	pinMode(2, INPUT_PULLUP);
+	pinMode(3, INPUT_PULLUP);
+	pinMode(4, INPUT_PULLUP);
+	pinMode(5, INPUT_PULLUP);
+	pinMode(6, INPUT_PULLUP);
+	// manual override switches
+	pinMode(7, INPUT_PULLUP);
+	pinMode(8, INPUT_PULLUP);
+	// flow meter
+	pinMode(9, INPUT_PULLUP);
+	// pump
+	pinMode(11, OUTPUT);
+	// activity showoff
+	pinMode(13, OUTPUT);
+#endif
 	write_output(output_bitmap, ~0);
 }
+
+// FIXME use activity showoff
+
+// FIXME interrupt pin
 
 uint32_t GPIO::read_switches()
 {
@@ -25,12 +53,16 @@ uint32_t GPIO::read_level_sensors()
 
 uint32_t GPIO::read()
 {
-	uint32_t bitmap;
+	uint32_t bitmap = 0;
 #ifdef UNDER_TEST
 	std::ifstream f;
 	f.open("gpio.txt");
 	f >> bitmap;
 	f.close();
+#else
+	for (int i = 2; i <= 9; ++i) {
+		bitmap |= (digitalRead(i) ? 1 : 0) << (i - 2);
+	}
 #endif
 	return bitmap;
 }
@@ -43,6 +75,9 @@ void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 	f.open("gpio2.txt");
 	f << output_bitmap;
 	f.close();
+#else
+	digitalWrite(11, output_bitmap & 0x01);
+	digitalWrite(13, output_bitmap & 0x02);
 #endif
 }
 

@@ -3,6 +3,10 @@
 
 Pump::Pump()
 {
+}
+
+void Pump::init()
+{
 	since = now();
 	is_on = false;
 }

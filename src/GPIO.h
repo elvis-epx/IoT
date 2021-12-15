@@ -1,12 +1,13 @@
 #ifndef __GPIO_H
 #define __GPIO_H
 
-#include <cinttypes>
+#include "inttypes.h"
 
 class GPIO
 {
 public:
 	GPIO();
+	void init();
 	void eval();
 	void pulse();
 	uint32_t read_level_sensors();

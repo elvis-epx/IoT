@@ -1,4 +1,4 @@
-#include <cstdio>
+#include "stdio.h"
 #ifndef UNDER_TEST
 #include <LCD_I2C.h>
 #endif
@@ -8,15 +8,21 @@
 
 Display::Display()
 {
-#ifndef UNDER_TEST
-	lcd = Ptr<LCD_I2C>(new LCD_I2C(0x3f, 16, 2));
-	lcd.begin();
-	// call with False in case there are other I2C devices
-	// that call Wire.begin() first
-	lcd.backlight();
-#endif
+}
+
+void Display::init()
+{
 	phase = 0;
 	last_update = now();
+
+#ifndef UNDER_TEST
+	lcd = Ptr<LCD_I2C>(new LCD_I2C(0x3f, 16, 2));
+	lcd->begin();
+	// call with False in case there are other I2C devices
+	// that call Wire.begin() first
+	lcd->backlight();
+#endif
+
 	show("H2O Control", "by EPx");
 }
 
@@ -37,6 +43,7 @@ void Display::eval()
 
 	sprintf(msg1, "%s", sm.cur_state_name());
 
+	// FIXME show uptime
 	// FIXME show context-sensitive messages
 	// FIXME show messages with early warnings of error conditions (low flow, etc.)
 
@@ -68,30 +75,52 @@ void Display::show(const char *msg1, const char *msg2)
 #ifdef UNDER_TEST
 	printf("================\n%s\n%s\n", msg1, msg2);
 #else
-	lcd.clear();
-	lcd.setCursor(0, 0);
-	lcd.print(msg1);
-	lcd.setCursor(0, 1);
-	lcd.print(msg2);
+	lcd->clear();
+	lcd->setCursor(0, 0);
+	lcd->print(msg1);
+	lcd->setCursor(0, 1);
+	lcd->print(msg2);
 #endif
 }
 
 void Display::debug(const char *msg)
 {
+#ifdef UNDER_TEST
 	printf("dbg %s\n", msg);
+#else
+	Serial.println(msg);
+#endif
 }
 
 void Display::debug(const char *msg, int arg)
 {
+#ifdef UNDER_TEST
 	printf("dbg %s %d\n", msg, arg);
+#else
+	Serial.println(msg);
+	Serial.print(" ");
+	Serial.println(arg);
+#endif
 }
 
 void Display::debug(const char *msg, double arg)
 {
+#ifdef UNDER_TEST
 	printf("dbg %s %f\n", msg, arg);
+#else
+	Serial.print(msg);
+	Serial.print(" ");
+	Serial.println(arg);
+#endif
 }
 
 void Display::debug(const char *msg, const char *msg2)
 {
+#ifdef UNDER_TEST
 	printf("dbg %s %s\n", msg, msg2);
+#else
+	Serial.print(msg);
+	Serial.print(" ");
+	Serial.println(msg2);
+#endif
 }

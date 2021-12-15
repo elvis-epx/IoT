@@ -6,7 +6,7 @@
 #ifndef __TIMESTAMP_H
 #define __TIMESTAMP_H
 
-#include <cstdint>
+#include "stdint.h"
 
 typedef int64_t Timestamp;
 
