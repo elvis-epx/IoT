@@ -9,9 +9,21 @@
 GPIO::GPIO()
 {
 	pulses = 0;
+	output_bitmap = 0;
+	write_output(output_bitmap, ~0);
+}
+
+uint32_t GPIO::read_switches()
+{
+	return (read() >> 5) & 0x3;
 }
 
 uint32_t GPIO::read_level_sensors()
+{
+	return read() & 0x1f;
+}
+
+uint32_t GPIO::read()
 {
 	uint32_t bitmap;
 #ifdef UNDER_TEST
@@ -21,6 +33,17 @@ uint32_t GPIO::read_level_sensors()
 	f.close();
 #endif
 	return bitmap;
+}
+
+void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
+{
+	output_bitmap = (output_bitmap & ~bitmask) | bitmap;
+#ifdef UNDER_TEST
+	std::ofstream f;
+	f.open("gpio2.txt");
+	f << output_bitmap;
+	f.close();
+#endif
 }
 
 void GPIO::pulse()

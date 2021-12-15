@@ -11,9 +11,12 @@ public:
 	void pulse();
 	uint32_t read_level_sensors();
 	uint32_t read_switches();
+	void write_output(uint32_t bitmap, uint32_t mask);
 
 private:
+	uint32_t read();
 	int pulses;
+	uint32_t output_bitmap;
 };
 
 #endif
