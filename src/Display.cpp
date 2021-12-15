@@ -37,6 +37,9 @@ void Display::eval()
 
 	sprintf(msg1, "%s", sm.cur_state_name());
 
+	// FIXME show context-sensitive messages
+	// FIXME show messages with early warnings of error conditions (low flow, etc.)
+
 	if (phase == 1) {
 		sprintf(msg2, "Level: %.0f%%", levelmeter.level_pct());
 	} else if (phase == 2) {
