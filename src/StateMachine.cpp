@@ -64,7 +64,7 @@ const char* StateMachine::cur_state_name() const
 	return current->name();
 }
 
-Timestamp StateMachine::since_last_transition() const
+Timestamp StateMachine::last_movement() const
 {
-	return now() - last_transition;
+	return last_transition;
 }

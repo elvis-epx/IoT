@@ -10,7 +10,7 @@ public:
 	void on();
 	void off();
 	bool is_running() const;
-	Timestamp running_time() const;
+	Timestamp running_since() const;
 	static Timestamp flow_delay(); // in ms 
 
 private:

@@ -18,7 +18,7 @@ public:
 	double next_level_liters() const; // in liters
 	bool failure_detected() const;
 	int bitmap() const;
-	Timestamp since() const;
+	Timestamp last_movement() const;
 
 private:
 

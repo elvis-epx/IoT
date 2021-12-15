@@ -31,9 +31,9 @@ bool Pump::is_running() const
 	return is_on;
 }
 
-Timestamp Pump::running_time() const
+Timestamp Pump::running_since() const
 {
-	return now() - since;
+	return since;
 }
 
 Timestamp Pump::flow_delay()

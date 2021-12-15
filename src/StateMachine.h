@@ -33,7 +33,7 @@ public:
 	void start();
 	bool eval();
 	const char *cur_state_name() const;
-	Timestamp since_last_transition() const;
+	Timestamp last_movement() const;
 
 private:
 	bool started;

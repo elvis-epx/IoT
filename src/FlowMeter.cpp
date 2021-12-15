@@ -34,7 +34,7 @@ void FlowMeter::eval()
 
 Timestamp FlowMeter::last_movement() const
 {
-	return now() - last_pulse;
+	return last_pulse;
 }
 
 double FlowMeter::pulse_volume() const

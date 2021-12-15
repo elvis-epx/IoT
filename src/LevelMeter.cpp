@@ -60,9 +60,9 @@ void LevelMeter::eval()
 	}
 }
 
-Timestamp LevelMeter::since() const
+Timestamp LevelMeter::last_movement() const
 {
-	return now() - last_change;
+	return last_change;
 }
 
 double LevelMeter::level_pct() const

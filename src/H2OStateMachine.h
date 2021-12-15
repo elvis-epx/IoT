@@ -52,7 +52,27 @@ public:
 class FlowFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Flow failure"; };
+	virtual const char* name() const { return "Fail: no flow"; };
+};
+
+/* Water flow detected but unexpectedly low, turned pump off.
+   Could be: drying well, flow sensor failure, blocked pipe.
+*/
+class LowFlow: public State {
+public:
+	virtual void enter();
+	virtual const char* name() const { return "Fail: low flow"; };
+};
+
+/* Pump running too much time
+   Could be: low flow (but not too low to trigger LowFlow),
+   comsumption of water bigger than pumping capacity, 
+   constants at Plant.h too wrong
+*/
+class PumpTimeout: public State {
+public:
+	virtual void enter();
+	virtual const char* name() const { return "Fail: pump T/O"; };
 };
 
 /* Level change not detected in spite of water flow
