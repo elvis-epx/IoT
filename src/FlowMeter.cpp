@@ -49,7 +49,7 @@ void FlowMeter::eval()
 	for (int i = 0; i < rate_count; ++i) {
 		if ((Now - rate_last_reset[i]) > rate_intervals[i]) {
 			double volume = pulse_volume() * rate_pulses[i];
-			double minutes = (Now - rate_intervals[i]) / (60.0 * SECONDS);
+			double minutes = (Now - rate_last_reset[i]) / (60.0 * SECONDS);
 			last_rates[i] = volume / minutes;
 			rate_last_reset[i] = Now;
 			rate_pulses[i] = 0;
