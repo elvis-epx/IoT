@@ -8,7 +8,6 @@
 typedef bool (*Transition)();
 
 class State {
-friend class StateMachine;
 public:
 	State() {};
 	virtual ~State() {};
@@ -23,6 +22,8 @@ private:
 	Vector<Transition> transitions;
 	Vector<const char *> tnames;
 	Vector<Ptr<State>> to_states;
+
+friend class StateMachine;
 };
 
 class StateMachine {
@@ -32,6 +33,7 @@ public:
 	void start();
 	bool eval();
 	const char *cur_state_name() const;
+	Timestamp since_last_transition() const;
 
 private:
 	bool started;

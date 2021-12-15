@@ -13,6 +13,7 @@ void Pump::on()
 		display.debug("pump on");
 		since = now();
 		is_on = true;
+		flowmeter.reset();
 	}
 }
 

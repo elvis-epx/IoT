@@ -1,8 +1,8 @@
-#include "H2OStateMachine.h"
-#include "Plant.h"
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
+
+#include "Plant.h"
 
 GPIO gpio;
 Pump pump;

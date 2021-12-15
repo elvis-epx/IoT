@@ -10,6 +10,7 @@ public:
 	void eval();
 	void pulse();
 	uint32_t read_level_sensors();
+	uint32_t read_switches();
 
 private:
 	int pulses;

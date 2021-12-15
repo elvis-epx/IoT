@@ -24,7 +24,7 @@ void Display::eval()
 	char msg1[20];
 	char msg2[20];
 
-	sprintf(msg1, "State: %s", sm.cur_state_name());
+	sprintf(msg1, "%s", sm.cur_state_name());
 
 	if (phase == 1) {
 		sprintf(msg2, "Level: %.0f%%", levelmeter.level_pct());

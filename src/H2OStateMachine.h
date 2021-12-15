@@ -20,14 +20,14 @@ public:
 class HisteresisOff: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Off (h)"; };
+	virtual const char* name() const { return "Off - rest"; };
 };
 
 /* Pump off due to override-off switch */
 class ManualOff: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Off (m)"; };
+	virtual const char* name() const { return "Off (manual)"; };
 };
 
 /* Pump on */
@@ -37,18 +37,11 @@ public:
 	virtual const char* name() const { return "On"; };
 };
 
-/* Pump just turned on */
-class HisteresisOn: public State {
-public:
-	virtual void enter();
-	virtual const char* name() const { return "On (h)"; };
-};
-
 /* Pump on due to override-on switch */
 class ManualOn: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "On (m)"; };
+	virtual const char* name() const { return "On (manual)"; };
 };
 
 /* Water flow not detected, turned pump off.
@@ -59,7 +52,7 @@ public:
 class FlowFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Err flow"; };
+	virtual const char* name() const { return "Flow failure"; };
 };
 
 /* Level change not detected in spite of water flow
@@ -70,7 +63,7 @@ public:
 class LevelFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Err lvl"; };
+	virtual const char* name() const { return "Level failure"; };
 };
 
 class H2OStateMachine: public StateMachine {
