@@ -15,6 +15,10 @@
 #define LEVEL_SENSORS {25.0, 50.0, 75.0, 100.0, 100.0, 0.0}
 #define ESTIMATED_PUMP_FLOWRATE (1100.0 / 60) // in L/min
 
+// pipes between pump and flow meter
+#define PIPE_DIAMETER 25 // in mm
+#define PIPE_LENGTH   75.0 // in m
+
 extern GPIO gpio;
 extern Pump pump;
 extern FlowMeter flowmeter;

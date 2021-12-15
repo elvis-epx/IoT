@@ -11,6 +11,7 @@ public:
 	void off();
 	bool is_running() const;
 	Timestamp running_time() const;
+	static Timestamp flow_delay(); // in ms 
 
 private:
 	bool is_on;
