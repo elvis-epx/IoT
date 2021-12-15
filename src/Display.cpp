@@ -1,9 +1,20 @@
+#include <cstdio>
+#ifndef UNDER_TEST
+#include <LCD_I2C.h>
+#endif
+
 #include "Display.h"
 #include "Plant.h"
-#include <cstdio>
 
 Display::Display()
 {
+#ifndef UNDER_TEST
+	lcd = Ptr<LCD_I2C>(new LCD_I2C(0x3f, 16, 2));
+	lcd.begin();
+	// call with False in case there are other I2C devices
+	// that call Wire.begin() first
+	lcd.backlight();
+#endif
 	phase = 0;
 	last_update = now();
 	show("H2O Control", "by EPx");
@@ -45,7 +56,15 @@ void Display::eval()
 
 void Display::show(const char *msg1, const char *msg2)
 {
+#ifdef UNDER_TEST
 	printf("================\n%s\n%s\n", msg1, msg2);
+#else
+	lcd.clear();
+	lcd.setCursor(0, 0);
+	lcd.print(msg1);
+	lcd.setCursor(0, 1);
+	lcd.print(msg2);
+#endif
 }
 
 void Display::debug(const char *msg)

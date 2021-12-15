@@ -2,6 +2,11 @@
 #define __DISPLAY_H
 
 #include "Timestamp.h"
+#include "Pointer.h"
+
+#ifndef UNDER_TEST
+class LCD_I2C;
+#endif
 
 class Display
 {
@@ -16,6 +21,9 @@ private:
 	void show(const char *, const char *);
 	int phase;
 	Timestamp last_update;
+#ifndef UNDER_TEST
+	Ptr<LCD_I2C> lcd;
+#endif
 };
 
 #endif
