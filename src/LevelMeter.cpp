@@ -28,12 +28,15 @@ void LevelMeter::eval()
 	// display.debug("sensor bitmap", (int) last_bitmap);
 
 	double new_level = 0;
+	failure = false;
 
-	int i = 0;
 	int last_off = -1;
 
-	do {
-		bool bit = last_bitmap & (0x01 << i);
+	for (int i = 0; levels[i] != 0; ++i) {
+		// pull-up logic
+		bool bit = !(last_bitmap & (0x01 << i));
+		// display.debug("\tsw  ", i);
+		// display.debug("\tbit ", bit ? "On" : "Off");
 
 		if (bit) {
 			// sensor is ON, level is at least here
@@ -48,8 +51,8 @@ void LevelMeter::eval()
 			// sensor is OFF
 			last_off = i;
 		}
+	}
 
-	} while (levels[i++] != 0);
 
 	// display.debug("level", current_level);
 	// display.debug("failure", failure);

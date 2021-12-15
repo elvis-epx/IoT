@@ -92,7 +92,8 @@ static bool timeout_2h()
 
 static bool manual_on_sw_1()
 {
-	return gpio.read_switches() & 0x01;
+	// pull-up logic
+	return !(gpio.read_switches() & 0x01);
 }
 
 static bool manual_on_sw_0()
@@ -102,7 +103,8 @@ static bool manual_on_sw_0()
 
 static bool manual_off_sw_1()
 {
-	return gpio.read_switches() & 0x02;
+	// pull-up logic
+	return !(gpio.read_switches() & 0x02);
 }
 
 static bool manual_off_sw_0()
@@ -218,7 +220,7 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 	manual_on->add(manual_off_sw_1, "manual_off_sw_1", off);
 	add(manual_on);
 
-	on->add(manual_on_sw_1,    "manual_off_sw_1",   off);
+	on->add(manual_off_sw_1,   "manual_off_sw_1",   off);
 	on->add(manual_on_sw_1,    "manual_on_sw_1",    manual_on);
 	on->add(high_level,        "high_level",        off_rest);
 	on->add(detect_flow_fail,  "detect_flow_fail",  flow_fail);
@@ -254,6 +256,6 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 
 	pumptimeout->add(manual_off_sw_1, "manual_off_sw_1", off);
 	pumptimeout->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	pumptimeout->add(timeout_6h,     "timeout_6h",       off);
+	pumptimeout->add(timeout_6h,      "timeout_6h",      off);
 	add(pumptimeout);
 }

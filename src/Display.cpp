@@ -40,11 +40,17 @@ void Display::eval()
 	if (phase == 1) {
 		sprintf(msg2, "Level: %.0f%%", levelmeter.level_pct());
 	} else if (phase == 2) {
-		sprintf(msg2, "Flow: %.1fL/s", flowmeter.rate(FLOWRATE_INSTANT));
+		double rate = flowmeter.rate(FLOWRATE_INSTANT);
+		if (rate >= 0) {
+			sprintf(msg2, "Flow: %.1fL/min", flowmeter.rate(FLOWRATE_INSTANT));
+		} else {
+			sprintf(msg2, "Flow: unknown");
+		}
 	} else if (phase == 3) {
 		sprintf(msg2, "Pumped: %.1fL", flowmeter.volume());
 	} else if (phase == 4) {
 		if (levelmeter.failure_detected()) {
+			// FIXME report via MQTT 
 			sprintf(msg2, "Err lvl %d", levelmeter.bitmap());
 		} else {
 			sprintf(msg2, "No errors");
@@ -80,4 +86,9 @@ void Display::debug(const char *msg, int arg)
 void Display::debug(const char *msg, double arg)
 {
 	printf("dbg %s %f\n", msg, arg);
+}
+
+void Display::debug(const char *msg, const char *msg2)
+{
+	printf("dbg %s %s\n", msg, msg2);
 }
