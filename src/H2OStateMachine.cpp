@@ -177,12 +177,16 @@ static bool pump_timeout()
 
 static bool detect_level_fail()
 {
+	// This test assumes level changes in discrete steps.
+	// If level meter was analog/continuous, a different strategy would
+	// have to be implemented
+
+	// volume between two level sensors
 	double dvolume = levelmeter.next_level_liters() - levelmeter.level_liters();
-	levelmeter.last_movement();
-	double pumped = flowmeter.volume(); // FIXME should be volume since last change
-	
-	// level does not change as expected
-	FIXME
+	// pumped volume since last level change
+	double pumped = flowmeter.volume();
+
+	return pumped > (2 * dvolume);
 }
 
 H2OStateMachine::H2OStateMachine(): StateMachine()
