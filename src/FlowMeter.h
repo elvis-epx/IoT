@@ -15,7 +15,7 @@ public:
 	FlowMeter(double k, const int *rate_intervals);
 	void reset_all();
 	void reset_volume();
-	void pulse();
+	void pulse(int);
 	void eval();
 
 	Timestamp last_movement() const; // time since last pulse received

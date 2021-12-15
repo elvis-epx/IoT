@@ -33,12 +33,12 @@ void FlowMeter::reset_volume()
 	vol_pulses = 0;
 }
 
-void FlowMeter::pulse()
+void FlowMeter::pulse(int quantity)
 {
 	last_pulse = now();
-	++vol_pulses;
+	vol_pulses += quantity;
 	for (int i = 0; i < rate_count; ++i) {
-		++rate_pulses[i];
+		rate_pulses[i] += quantity;
 	}
 }
 

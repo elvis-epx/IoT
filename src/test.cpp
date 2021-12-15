@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <signal.h>
 #include <stdio.h>
 
 #include "Plant.h"
@@ -14,14 +13,8 @@ LevelMeter levelmeter(level_sensors, TANK_CAPACITY);
 Display display;
 H2OStateMachine sm;
 
-static void sigusr1(int)
-{
-	gpio.pulse();
-}
-
 int main()
 {
-	signal(SIGUSR1, sigusr1);
 	sm.start();
 
 	while (true) {
@@ -30,6 +23,6 @@ int main()
 		levelmeter.eval();
 		sm.eval();
 		display.eval();
-		usleep(10000);
+		usleep(100000);
 	}
 }

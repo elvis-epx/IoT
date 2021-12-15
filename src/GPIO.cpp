@@ -56,8 +56,17 @@ void GPIO::pulse()
 
 void GPIO::eval()
 {
+#ifdef UNDER_TEST
+	int qty = 0;
+	std::ifstream f;
+	f.open("pulses.txt");
+	f >> qty;
+	f.close();
+	std::remove("pulses.txt");
+	pulses += qty;
+#endif
 	if (pulses > 0) {
-		--pulses;
-		flowmeter.pulse();
+		flowmeter.pulse(pulses);
+		pulses = 0;
 	}
 }

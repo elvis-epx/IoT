@@ -4,9 +4,9 @@ simulated as follows:
 1) File gpio.txt is read as an integer number. Bits 0-5 are
    level sensors, bits 6 and 7 are the manual switches.
 
-2) Flow meter pulses are simulated by signalling the process
-   using SIGUSR1, which is easier to do rhythmically by a
-   flow meter simulator.
+2) Flow meter pulses are simulated by writing a number 
+   in pulses.txt. The file is removed as the test program
+   fetches the value.
 
 3) Pump output bit is simulated by writing to gpio2.txt.
 

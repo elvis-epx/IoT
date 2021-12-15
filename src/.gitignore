@@ -6,3 +6,5 @@ test
 *.dSYM/
 *.swp
 gpio.txt
+gpio2.txt
+pulses.txt
