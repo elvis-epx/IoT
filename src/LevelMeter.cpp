@@ -5,8 +5,14 @@ LevelMeter::LevelMeter(const double levels[], double capacity):
 	levels(levels), capacity(capacity)
 {
 	current_level = 100;
-	current_law = Law_Normal;
 	last_eval = 0;
+	last_change = 0;
+	failure = false;
+}
+
+bool LevelMeter::failure_detected() const
+{
+	return failure;
 }
 
 void LevelMeter::eval()
@@ -21,93 +27,42 @@ void LevelMeter::eval()
 
 	// display.debug("sensor bitmap", (int) last_bitmap);
 
-	current_level = 0;
+	double new_level = 0;
 
 	int i = 0;
-	int j = i;
-	bool sensor_group = false;
 	int last_off = -1;
 
 	do {
 		bool bit = last_bitmap & (0x01 << i);
 
-		if (levels[i] == levels[j]) {
-			// still in the same group (sensors at the same level)
-			sensor_group = sensor_group || bit;
-			continue;
-		}
-
-		// group closed
-		if (sensor_group) {
-			// sensor is ON, level is at least in this level
-			current_level = levels[j];
+		if (bit) {
+			// sensor is ON, level is at least here
+			new_level = levels[i];
 
 			if (last_off > -1) {
 				// there was an OFF sensor below
-				current_law = Law_SensorFailed;
+				failure = true;
 				// display.debug("sensor failure", last_off);
 			}
 		} else {
 			// sensor is OFF
-			last_off = j;
+			last_off = i;
 		}
-
-		// move onto new sensor group
-		j = i;
-		sensor_group = bit;
 
 	} while (levels[i++] != 0);
 
 	// display.debug("level", current_level);
-	// display.debug("law", current_law);
+	// display.debug("failure", failure);
 
-	if (current_law <= Law_DisagreementAtTop) {
-		// Disagreement of sensors at water level may clear
-		current_law = Law_Normal;
-	} else {
-		// Errors already found are severe enough
-		return;
+	if (new_level != current_level) {
+		current_level = new_level;
+		last_change = now();
 	}
-
-	// Detect disagreement between sensors
-
-	i = 0;
-	j = i;
-	bool sensor_group_or = false;
-	bool sensor_group_and = true;
-
-	do {
-		bool bit = last_bitmap & (0x01 << i);
-
-		if (levels[i] == levels[j]) {
-			sensor_group_or = sensor_group_or || bit;
-			sensor_group_and = sensor_group_and && bit;
-			continue;
-		}
-
-		if (sensor_group_or != sensor_group_and) {
-			if (levels[j] == current_level) {
-				// disagreement at current water level
-				// display.debug("sensor disagreement at top", j);
-				if (current_law < Law_DisagreementAtTop) {
-					current_law = Law_DisagreementAtTop;
-				}
-			} else {
-				// disagreement below water level
-				// display.debug("sensor disagreement", j);
-				current_law = Law_Disagreement;
-			}
-		}
-
-		j = i;
-		sensor_group_or = sensor_group_and = bit;
-
-	} while (levels[i++] != 0);
 }
 
-int LevelMeter::law() const
+Timestamp LevelMeter::since() const
 {
-	return current_law;
+	return now() - last_change;
 }
 
 double LevelMeter::level_pct() const

@@ -9,10 +9,11 @@
 #include "H2OStateMachine.h"
 
 #define TANK_CAPACITY 1000.0 // liters
-#define LOWLEVEL_THRESHOLD 80.0 // %
+// ought to be just below the second sensor, top to bottom
+#define LOWLEVEL_THRESHOLD 79.0 // %
+#define LEVEL_SENSORS {20.0, 40.0, 60.0, 80.0, 100.0, 0.0}
 
 #define FLOWMETER_PULSE_RATE 4.8 // in pulses/s when flow is 1L/min
-#define LEVEL_SENSORS {25.0, 50.0, 75.0, 100.0, 100.0, 0.0}
 #define ESTIMATED_PUMP_FLOWRATE (1100.0 / 60) // in L/min
 
 // pipes between pump and flow meter

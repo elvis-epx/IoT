@@ -15,7 +15,7 @@ public:
 	Timestamp last_movement() const; // time since last pulse received
 	double pulse_volume() const; // volume of 1 pulse, in liters
 	double volume() const; // in liters, since reset
-	double rate() const; // in liters per minute, moving average
+	double rate() const; // in liters per minute, last 10s
 
 private:
 	double k;
