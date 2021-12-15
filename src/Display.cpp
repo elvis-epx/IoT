@@ -40,12 +40,12 @@ void Display::eval()
 	if (phase == 1) {
 		sprintf(msg2, "Level: %.0f%%", levelmeter.level_pct());
 	} else if (phase == 2) {
-		sprintf(msg2, "Flow: %.1fL/s", flowmeter.rate());
+		sprintf(msg2, "Flow: %.1fL/s", flowmeter.rate(FLOWRATE_INSTANT));
 	} else if (phase == 3) {
 		sprintf(msg2, "Pumped: %.1fL", flowmeter.volume());
 	} else if (phase == 4) {
-		if (levelmeter.law() > 0) {
-			sprintf(msg2, "Err lvl %d %d", levelmeter.law(), levelmeter.bitmap());
+		if (levelmeter.failure_detected()) {
+			sprintf(msg2, "Err lvl %d", levelmeter.bitmap());
 		} else {
 			sprintf(msg2, "No errors");
 		}

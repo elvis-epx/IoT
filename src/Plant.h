@@ -20,6 +20,13 @@
 #define PIPE_DIAMETER 25 // in mm
 #define PIPE_LENGTH   75.0 // in m
 
+// time spans to measure average flow rate
+#define FLOWRATE_INSTANT (10 * SECONDS)
+#define FLOWRATE_SHORT   (2 * MINUTES)
+#define FLOWRATE_LONG    (30 * MINUTES)
+
+#define FLOWRATES {FLOWRATE_INSTANT, FLOWRATE_SHORT, FLOWRATE_LONG}
+
 extern GPIO gpio;
 extern Pump pump;
 extern FlowMeter flowmeter;

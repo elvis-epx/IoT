@@ -55,13 +55,24 @@ public:
 	virtual const char* name() const { return "Fail: no flow"; };
 };
 
-/* Water flow detected but unexpectedly low, turned pump off.
+/* Water flow detected but unexpectedly low, over last 1-2 minutes,
+   turned pump off.
    Could be: drying well, flow sensor failure, blocked pipe.
 */
-class LowFlow: public State {
+class LowFlowShort: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail: low flow"; };
+	virtual const char* name() const { return "Fail: low flow S"; };
+};
+
+/* Water flow detected but unexpectedly low, over last 30 minutes,
+   turned pump off.
+   Could be: drying well, flow sensor failure, blocked pipe.
+*/
+class LowFlowLong: public State {
+public:
+	virtual void enter();
+	virtual const char* name() const { return "Fail: low flow L"; };
 };
 
 /* Pump running too much time

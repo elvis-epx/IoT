@@ -49,6 +49,15 @@ public:
 		}
 	}
 
+	inline T& operator[](size_t n) {
+		return payload->pointer[n];
+	}
+
+	const T& operator[](size_t n) const
+	{
+		return payload->pointer[n];
+	}
+
 	inline T* operator->() const
 	{
 		return payload->pointer;

@@ -1,34 +1,55 @@
+#include <cstdlib>
+
 #include "FlowMeter.h"
 #include "Plant.h"
 
-FlowMeter::FlowMeter(double k): k(k)
+FlowMeter::FlowMeter(double k, const int* rate_intervals):
+		k(k), rate_intervals(rate_intervals)
 {
+	rate_count = 0;
+	while (rate_intervals[rate_count++] > 0);
+	last_rates = Ptr<double>((double*) calloc(rate_count, sizeof(double)));
+	rate_last_reset = Ptr<Timestamp>((Timestamp*) calloc(rate_count, sizeof(Timestamp)));
+	rate_pulses = Ptr<uint32_t>((uint32_t*) calloc(rate_count, sizeof(uint32_t)));
+
 	reset();
 }
 
 void FlowMeter::reset()
 {
-	since = last_pulse = partial_since = now();
-	pulses = partial_pulses = 0;
-	last_rate = 0;
+	Timestamp Now = now();
+
+	last_reset = last_pulse = Now;
+	pulses = 0;
+
+	for (int i = 0; i < rate_count; ++i) {
+		last_rates[i] = -1;
+		rate_last_reset[i] = Now;
+		rate_pulses[i] = 0;
+	}
 }
 
 void FlowMeter::pulse()
 {
-	++pulses;
-	++partial_pulses;
 	last_pulse = now();
+	++pulses;
+	for (int i = 0; i < rate_count; ++i) {
+		++rate_pulses[i];
+	}
 }
 
 void FlowMeter::eval()
 {
 	Timestamp Now = now();
-	if ((Now - partial_since) > 10 * SECONDS) {
-		double volume = pulse_volume() * partial_pulses;
-		double minutes = (Now - partial_since) / (60.0 * SECONDS);
-		last_rate = volume / minutes;
-		partial_since = Now;
-		partial_pulses = 0;
+
+	for (int i = 0; i < rate_count; ++i) {
+		if ((Now - rate_last_reset[i]) > rate_intervals[i]) {
+			double volume = pulse_volume() * rate_pulses[i];
+			double minutes = (Now - rate_intervals[i]) / (60.0 * SECONDS);
+			last_rates[i] = volume / minutes;
+			rate_last_reset[i] = Now;
+			rate_pulses[i] = 0;
+		}
 	}
 }
 
@@ -48,7 +69,12 @@ double FlowMeter::volume() const
 	return pulses * pulse_volume();
 }
 
-double FlowMeter::rate() const
+double FlowMeter::rate(int interval) const
 {
-	return last_rate;
+	for (int i = 0; i < rate_count; ++i) {
+		if (rate_intervals[i] >= interval) {
+			return last_rates[i];
+		}
+	}
+	return 0;
 }

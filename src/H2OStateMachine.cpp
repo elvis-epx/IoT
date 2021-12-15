@@ -35,7 +35,12 @@ void FlowFailure::enter()
 	pump.off();
 }
 
-void LowFlow::enter()
+void LowFlowShort::enter()
+{
+	pump.off();
+}
+
+void LowFlowLong::enter()
 {
 	pump.off();
 }
@@ -80,6 +85,11 @@ static bool timeout_6h()
 	return (now() - sm.last_movement()) > (6 * 60 * MINUTES);
 }
 
+static bool timeout_2h()
+{
+	return (now() - sm.last_movement()) > (2 * 60 * MINUTES);
+}
+
 static bool manual_on_sw_1()
 {
 	return gpio.read_switches() & 0x01;
@@ -115,41 +125,73 @@ static bool detect_flow_fail()
 	return true;
 }
 
-static bool detect_low_flow()
+static bool detect_low_flow_s()
 {
-	// FIXME consider volume of a recent interval only?
-	// Detect "instantaneous" and "long term" low flow? FIXME
-	double runtime = (now() - pump.running_since()) / (0.0 + MINUTES);
-	if (runtime < 5) {
+	if (flowmeter.rate(FLOWRATE_SHORT) == -1) {
+		// not measured yet
+		return false;
 	}
-	double expected_volume = runtime * ESTIMATED_PUMP_FLOWRATE;
 
+	Timestamp runtime = now() - pump.running_since();
 	if (runtime < (2 * pump.flow_delay())) {
 		// might be filling pipe between pump and flow meter
 		return false;
 	}
 
-	return true;
+	if (flowmeter.rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
+		// less than 25% expected flow
+		return true;
+	}
+
+	return false;
+}
+
+static bool detect_low_flow_l()
+{
+	if (flowmeter.rate(FLOWRATE_LONG) == -1) {
+		// not measured yet
+		return false;
+	}
+
+	Timestamp runtime = now() - pump.running_since();
+	if (runtime < (2 * pump.flow_delay())) {
+		// might be filling pipe between pump and flow meter
+		return false;
+	}
+
+	if (flowmeter.rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
+		// less than 25% expected flow
+		return true;
+	}
+
+	return false;
+}
+
+static bool pump_timeout()
+{
+	Timestamp runtime = now() - pump.running_since();
+	Timestamp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
+
+	return runtime > (fillup_time * 2);
 }
 
 static bool detect_level_fail()
 {
 	// level does not change as expected
+	FIXME
 }
 
 H2OStateMachine::H2OStateMachine(): StateMachine()
 {
 	auto initial = Ptr<State>(new Initial());
-
 	auto off = Ptr<State>(new Off());
 	auto off_rest = Ptr<State>(new HisteresisOff());
 	auto manual_off = Ptr<State>(new ManualOff());
-
 	auto on = Ptr<State>(new On());
 	auto manual_on = Ptr<State>(new ManualOn());
-
 	auto flow_fail = Ptr<State>(new FlowFailure());
-	auto lowflow = Ptr<State>(new LowFlow());
+	auto lowflow_short = Ptr<State>(new LowFlowShort());
+	auto lowflow_long = Ptr<State>(new LowFlowLong());
 	auto pumptimeout = Ptr<State>(new PumpTimeout());
 	auto level_fail = Ptr<State>(new LevelFailure());
 
@@ -173,8 +215,9 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 	on->add(high_level,        "high_level",        off_rest);
 	on->add(detect_flow_fail,  "detect_flow_fail",  flow_fail);
 	on->add(detect_level_fail, "detect_level_fail", level_fail);
-	on->add(detect_low_flow,   "detect_low_flow",   lowflow);
-	on->add(detect_pump_to,    "detect_pump_to",    pumptimeout);
+	on->add(detect_low_flow_s, "detect_low_flow_s", lowflow_short);
+	on->add(detect_low_flow_l, "detect_low_flow_l", lowflow_long);
+	on->add(pump_timeout,      "pump_timeout",      pumptimeout);
 	add(on);
 
 	off_rest->add(manual_off_sw_1, "manual_off_sw_1", off);
@@ -192,13 +235,18 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 	// FIXME report sensor failure? Where?
 	add(level_fail);
 
-	lowflow->add(manual_off_sw_1, "manual_off_sw_1", off);
-	lowflow->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	lowflow->add(timeout_6h,      "timeout_6h",      off);
-	add(lowflow);
+	lowflow_short->add(manual_off_sw_1, "manual_off_sw_1", off);
+	lowflow_short->add(manual_on_sw_1,  "manual_on_sw_1",  off);
+	lowflow_short->add(timeout_2h,      "timeout_2h",      off);
+	add(lowflow_short);
+
+	lowflow_long->add(manual_off_sw_1, "manual_off_sw_1", off);
+	lowflow_long->add(manual_on_sw_1,  "manual_on_sw_1",  off);
+	lowflow_long->add(timeout_12h,     "timeout_12h",     off);
+	add(lowflow_long);
 
 	pumptimeout->add(manual_off_sw_1, "manual_off_sw_1", off);
 	pumptimeout->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	pumptimeout->add(timeout_12h,     "timeout_12h",     off);
+	pumptimeout->add(timeout_6h,     "timeout_6h",       off);
 	add(pumptimeout);
 }
