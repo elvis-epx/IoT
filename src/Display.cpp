@@ -8,31 +8,71 @@
 
 Display::Display()
 {
-	phase = 0;
-	last_update = now();
+	row2_phase = 1;
+	row3_phase = 1;
+	last_update = last_row2_update = last_row3_update = now();
 
 #ifndef UNDER_TEST
 	lcd = Ptr<LCD_I2C>(new LCD_I2C(0x3f, 16, 2));
 	lcd->begin();
-	// call with False in case there are other I2C devices
+	// call begin() with False in case there are other I2C devices
 	// that call Wire.begin() first
 	lcd->backlight();
 #endif
 
-	const char *msg[] = {"H2O Control", "", "(c) 2021 EPx", ""};
+	const char *msg[] = {"", "", "", ""};
 	show((char**) msg);
+}
+
+void millis_to_hms(int64_t t, char *target)
+{
+	if (t < 0) {
+		sprintf(target, "...");
+		return;
+	}
+	t /= 1000;
+	int32_t s = t % 60;
+	t -= s;
+	t /= 60;
+	int32_t m = t % 60;
+	t -= m;
+	t /= 60;
+	int32_t h = t % 24;
+	t -= h;
+	t /= 24;
+	int32_t d = t;
+
+	if (d > 0) {
+		sprintf(target, "Uptime %d:%02d:%02d:%02d", d, h, m, s);
+	} else if (h > 0) {
+		sprintf(target, "Uptime %d:%02d:%02d", h, m, s);
+	} else {
+		sprintf(target, "Uptime %d:%02d", m, s);
+	}
 }
 
 void Display::eval()
 {
-	if ((now() - last_update) < 2000) {
+	Timestamp Now = now();
+	if ((Now - last_update) < 1000) {
 		return;
 	}
-	
-	last_update = now();
-	++phase;
-	if (phase > 3) {
-		phase = 1;
+	last_update = Now;
+
+	if ((Now - last_row2_update) >= 5000) {
+		++row2_phase;
+		if (row2_phase > 3) {
+			row2_phase = 1;
+		}
+		last_row2_update = Now;
+	}
+
+	if ((Now - last_row3_update) >= 5000) {
+		++row3_phase;
+		if (row3_phase > 3) {
+			row3_phase = 1;
+		}
+		last_row3_update = Now;
 	}
 
 	char msg0[30];
@@ -40,47 +80,59 @@ void Display::eval()
 	char msg2[30];
 	char msg3[30];
 	char *msg[4];
-	msg[0] = msg0;
-	msg[1] = msg1;
-	msg[2] = msg2;
-	msg[3] = msg3;
+	msg[0] = msg0; msg[1] = msg1; msg[2] = msg2; msg[3] = msg3;
 
 	sprintf(msg[0], "%s", sm->cur_state_name());
 
-	// FIXME show uptime
-	// FIXME show context-sensitive messages
-	// FIXME show messages with early warnings of error conditions (low flow, etc.)
 	// FIXME report level error via MQTT 
-
 	const char *err = levelmeter->failure_detected() ? "E " : "";
-	sprintf(msg[1], "%s%.0f%% + %.1fL", err, levelmeter->level_pct(), flowmeter->volume());
+	sprintf(msg[1], "%s%.0f%% + %.0fL", err, levelmeter->level_pct(), flowmeter->volume());
 
-	if (phase == 3) {
+	if (row2_phase == 1) {
 		double rate = flowmeter->rate(FLOWRATE_LONG);
 		if (rate >= 0) {
-			sprintf(msg[2], "%.1fL/min x 30m", flowmeter->rate(FLOWRATE_INSTANT));
+			sprintf(msg[2], "%.1fL/min x 30m", rate);
 		} else {
-			phase = 2;
+			row2_phase = 2;
 		}
 	}
-	if (phase == 2) {
+	if (row2_phase == 2) {
 		double rate = flowmeter->rate(FLOWRATE_SHORT);
 		if (rate >= 0) {
-			sprintf(msg[2], "%.1fL/min x 2m", flowmeter->rate(FLOWRATE_INSTANT));
+			sprintf(msg[2], "%.1fL/min x 2m", rate);
 		} else {
-			phase = 1;
+			row2_phase = 3;
 		}
 	}
-	if (phase == 1) {
+	if (row2_phase == 3) {
 		double rate = flowmeter->rate(FLOWRATE_INSTANT);
 		if (rate >= 0) {
-			sprintf(msg[2], "%.1fL/min x 10s", flowmeter->rate(FLOWRATE_INSTANT));
+			sprintf(msg[2], "%.1fL/min x 10s", rate);
 		} else {
 			sprintf(msg[2], "...");
 		}
 	}
-	// FIXME warnings, other things in msg3
-	sprintf(msg[3], "%s", "");
+
+	if (row3_phase == 1) {
+		millis_to_hms(Now, msg[3]);
+	}
+	if (row3_phase == 2) {
+		if (pump->is_running()) {
+			double volume = flowmeter->volume();
+			double exp_volume = flowmeter->expected_volume();
+		 	if (exp_volume > 0) {
+				sprintf(msg[3], "Efficiency %.0f%%",
+					100 * volume / exp_volume);
+			} else {
+				sprintf(msg[3], "Efficiency ...");
+			}
+		} else {
+			row3_phase = 3;
+		}
+	}
+	if (row3_phase == 3) {
+		sprintf(msg[3], "%s", "H2O Control (c) EPx");
+	}
 
 	show(msg);
 }
@@ -155,3 +207,4 @@ void Display::debug(const char *msg, const char *msg2)
 	Serial.println(msg2);
 #endif
 }
+

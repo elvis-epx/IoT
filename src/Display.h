@@ -20,8 +20,11 @@ public:
 
 private:
 	void show(char **);
-	int phase;
+	int row2_phase;
+	int row3_phase;
 	Timestamp last_update;
+	Timestamp last_row2_update;
+	Timestamp last_row3_update;
 #ifndef UNDER_TEST
 	Ptr<LCD_I2C> lcd;
 #endif
