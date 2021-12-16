@@ -19,7 +19,7 @@ void FlowMeter::reset_all()
 {
 	Timestamp Now = now();
 	last_pulse = Now;
-	for (int i = 0; i < rate_count; ++i) {
+	for (size_t i = 0; i < rate_count; ++i) {
 		last_rates[i] = -1;
 		rate_last_reset[i] = Now;
 		rate_pulses[i] = 0;
@@ -37,7 +37,7 @@ void FlowMeter::pulse(uint32_t quantity)
 {
 	last_pulse = now();
 	vol_pulses += quantity;
-	for (int i = 0; i < rate_count; ++i) {
+	for (size_t i = 0; i < rate_count; ++i) {
 		rate_pulses[i] += quantity;
 	}
 }
@@ -46,7 +46,7 @@ void FlowMeter::eval()
 {
 	Timestamp Now = now();
 
-	for (int i = 0; i < rate_count; ++i) {
+	for (size_t i = 0; i < rate_count; ++i) {
 		if ((Now - rate_last_reset[i]) > rate_intervals[i]) {
 			double volume = pulse_volume() * rate_pulses[i];
 			double minutes = (Now - rate_last_reset[i]) / (60.0 * SECONDS);
@@ -75,7 +75,7 @@ double FlowMeter::volume() const
 
 double FlowMeter::rate(uint32_t interval) const
 {
-	for (int i = 0; i < rate_count; ++i) {
+	for (size_t i = 0; i < rate_count; ++i) {
 		if (rate_intervals[i] >= interval) {
 			return last_rates[i];
 		}

@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "H2OStateMachine.h"
 #include "Plant.h"
 
