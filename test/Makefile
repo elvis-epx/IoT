@@ -11,3 +11,15 @@ clean:
 
 test: test.cpp $(OBJ) *.h
 	gcc $(CFLAGS) -o test test.cpp $(OBJ) -lstdc++
+
+recov:
+	rm -f *.gcda
+
+coverage: test
+	rm -f *.info
+	./test
+	gcov test.cpp
+	lcov -c --directory . --output-file main_coverage.info
+	lcov -r main_coverage.info '*/test.cpp' -o main_coverage.info
+	genhtml main_coverage.info --output-directory out
+	xdg-open out/index.html
