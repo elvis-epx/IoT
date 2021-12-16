@@ -73,6 +73,11 @@ double FlowMeter::volume() const
 	return vol_pulses * pulse_volume();
 }
 
+double FlowMeter::expected_volume() const
+{
+	return ESTIMATED_PUMP_FLOWRATE * (now() - last_vol_reset) / (1.0 * MINUTES);
+}
+
 double FlowMeter::rate(uint32_t interval) const
 {
 	for (size_t i = 0; i < rate_count; ++i) {

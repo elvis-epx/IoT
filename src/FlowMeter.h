@@ -21,6 +21,7 @@ public:
 	Timestamp last_movement() const; // time since last pulse received
 	double pulse_volume() const; // volume of 1 pulse, in liters
 	double volume() const; // in liters, since last reset
+	double expected_volume() const; // in liters, since last reset
 
 	// in liters per minute for the given time interval
 	double rate(uint32_t interval) const;
