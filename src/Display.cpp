@@ -8,10 +8,6 @@
 
 Display::Display()
 {
-}
-
-void Display::init()
-{
 	phase = 0;
 	last_update = now();
 
@@ -38,30 +34,30 @@ void Display::eval()
 		phase = 1;
 	}
 
-	char msg1[20];
-	char msg2[20];
+	char msg1[40];
+	char msg2[40];
 
-	sprintf(msg1, "%s", sm.cur_state_name());
+	sprintf(msg1, "%s", sm->cur_state_name());
 
 	// FIXME show uptime
 	// FIXME show context-sensitive messages
 	// FIXME show messages with early warnings of error conditions (low flow, etc.)
 
 	if (phase == 1) {
-		sprintf(msg2, "Level: %.0f%%", levelmeter.level_pct());
+		sprintf(msg2, "Level: %.0f%%", levelmeter->level_pct());
 	} else if (phase == 2) {
-		double rate = flowmeter.rate(FLOWRATE_INSTANT);
+		double rate = flowmeter->rate(FLOWRATE_INSTANT);
 		if (rate >= 0) {
-			sprintf(msg2, "Flow: %.1fL/min", flowmeter.rate(FLOWRATE_INSTANT));
+			sprintf(msg2, "Flow: %.1fL/min", flowmeter->rate(FLOWRATE_INSTANT));
 		} else {
 			sprintf(msg2, "Flow: unknown");
 		}
 	} else if (phase == 3) {
-		sprintf(msg2, "Pumped: %.1fL", flowmeter.volume());
+		sprintf(msg2, "Pumped: %.1fL", flowmeter->volume());
 	} else if (phase == 4) {
-		if (levelmeter.failure_detected()) {
+		if (levelmeter->failure_detected()) {
 			// FIXME report via MQTT 
-			sprintf(msg2, "Err lvl %d", levelmeter.bitmap());
+			sprintf(msg2, "Err lvl %d", levelmeter->bitmap());
 		} else {
 			sprintf(msg2, "No errors");
 		}

@@ -13,7 +13,6 @@ public:
 	// to measure rate. In miliseconds.
 
 	FlowMeter(double k, const uint32_t *rate_intervals);
-	void init();
 	void reset_all();
 	void reset_volume();
 	void pulse(uint32_t);

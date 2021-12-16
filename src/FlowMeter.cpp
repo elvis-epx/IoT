@@ -6,10 +6,6 @@
 FlowMeter::FlowMeter(double k, const uint32_t* rate_intervals):
 		k(k), rate_intervals(rate_intervals)
 {
-}
-
-void FlowMeter::init()
-{
 	rate_count = 0;
 	while (rate_intervals[rate_count++] > 0);
 	last_rates = Ptr<double>((double*) calloc(rate_count, sizeof(double)));

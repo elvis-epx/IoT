@@ -1,6 +1,7 @@
 #ifndef __PLANT_H
 #define __PLANT_H
 
+#include "Pointer.h"
 #include "Pump.h"
 #include "FlowMeter.h"
 #include "LevelMeter.h"
@@ -27,11 +28,11 @@
 
 #define FLOWRATES {FLOWRATE_INSTANT, FLOWRATE_SHORT, FLOWRATE_LONG}
 
-extern GPIO gpio;
-extern Pump pump;
-extern FlowMeter flowmeter;
-extern LevelMeter levelmeter;
-extern Display display;
-extern H2OStateMachine sm;
+extern Ptr<GPIO> gpio;
+extern Ptr<Pump> pump;
+extern Ptr<FlowMeter> flowmeter;
+extern Ptr<LevelMeter> levelmeter;
+extern Ptr<Display> display;
+extern Ptr<H2OStateMachine> sm;
 
 #endif

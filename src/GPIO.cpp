@@ -10,10 +10,6 @@
 
 GPIO::GPIO()
 {
-}
-
-void GPIO::init()
-{
 	pulses = 0;
 	output_bitmap = 0;
 
@@ -101,7 +97,7 @@ void GPIO::eval()
 	pulses += qty;
 #endif
 	if (pulses > 0) {
-		flowmeter.pulse(pulses);
+		flowmeter->pulse(pulses);
 		pulses = 0;
 	}
 }

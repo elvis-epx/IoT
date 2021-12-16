@@ -3,10 +3,6 @@
 
 Pump::Pump()
 {
-}
-
-void Pump::init()
-{
 	since = now();
 	is_on = false;
 }
@@ -14,21 +10,21 @@ void Pump::init()
 void Pump::on()
 {
 	if (! is_on) {
-		display.debug("pump on");
+		display->debug("pump on");
 		since = now();
 		is_on = true;
-		flowmeter.reset_all();
-		gpio.write_output(1, 0x01);
+		flowmeter->reset_all();
+		gpio->write_output(1, 0x01);
 	}
 }
 
 void Pump::off()
 {
 	if (is_on) {
-		display.debug("pump off");
+		display->debug("pump off");
 		since = now();
 		is_on = false;
-		gpio.write_output(0, 0x01);
+		gpio->write_output(0, 0x01);
 	}
 }
 

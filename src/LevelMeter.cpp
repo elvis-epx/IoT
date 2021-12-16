@@ -4,10 +4,6 @@
 LevelMeter::LevelMeter(const double levels[], double capacity):
 	levels(levels), capacity(capacity)
 {
-}
-
-void LevelMeter::init()
-{
 	current_level = 100;
 	last_eval = 0;
 	last_change = 0;
@@ -27,7 +23,7 @@ void LevelMeter::eval()
 	}
 	last_eval = Now;
 
-	last_bitmap = gpio.read_level_sensors();
+	last_bitmap = gpio->read_level_sensors();
 
 	// display.debug("sensor bitmap", (int) last_bitmap);
 
@@ -64,7 +60,7 @@ void LevelMeter::eval()
 	if (new_level != current_level) {
 		current_level = new_level;
 		last_change = now();
-		flowmeter.reset_volume();
+		flowmeter->reset_volume();
 	}
 }
 

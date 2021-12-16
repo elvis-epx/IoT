@@ -10,7 +10,6 @@ public:
 	// must be in ascending order
 	// must terminate with 100, 0
 	LevelMeter(const double levels[], double capacity);
-	void init();
 
 	void eval();
 

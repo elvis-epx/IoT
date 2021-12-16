@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "H2OStateMachine.h"
 #include "Plant.h"
 
@@ -7,52 +8,52 @@ void Initial::enter()
 
 void On::enter()
 {
-	pump.on(); // resets flow meter if was off
+	pump->on(); // resets flow meter if was off
 }
 
 void ManualOn::enter()
 {
-	pump.on(); // resets flow meter if was off
+	pump->on(); // resets flow meter if was off
 }
 
 void Off::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void HisteresisOff::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void ManualOff::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void FlowFailure::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void LowFlowShort::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void LowFlowLong::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void PumpTimeout::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 void LevelFailure::enter()
 {
-	pump.off();
+	pump->off();
 }
 
 static bool initial_off()
@@ -62,38 +63,38 @@ static bool initial_off()
 
 static bool low_level()
 {
-	return levelmeter.level_pct() < LOWLEVEL_THRESHOLD;
+	return levelmeter->level_pct() < LOWLEVEL_THRESHOLD;
 }
 
 static bool high_level()
 {
-	return levelmeter.level_pct() >= 100;
+	return levelmeter->level_pct() >= 100;
 }
 
 static bool timeout_5min()
 {
-	return (now() - sm.last_movement()) > (5 * MINUTES);
+	return (now() - sm->last_movement()) > (5 * MINUTES);
 }
 
 static bool timeout_12h()
 {
-	return (now() - sm.last_movement()) > (12 * 60 * MINUTES);
+	return (now() - sm->last_movement()) > (12 * 60 * MINUTES);
 }
 
 static bool timeout_6h()
 {
-	return (now() - sm.last_movement()) > (6 * 60 * MINUTES);
+	return (now() - sm->last_movement()) > (6 * 60 * MINUTES);
 }
 
 static bool timeout_2h()
 {
-	return (now() - sm.last_movement()) > (2 * 60 * MINUTES);
+	return (now() - sm->last_movement()) > (2 * 60 * MINUTES);
 }
 
 static bool manual_on_sw_1()
 {
 	// pull-up logic
-	return !(gpio.read_switches() & 0x01);
+	return !(gpio->read_switches() & 0x01);
 }
 
 static bool manual_on_sw_0()
@@ -104,7 +105,7 @@ static bool manual_on_sw_0()
 static bool manual_off_sw_1()
 {
 	// pull-up logic
-	return !(gpio.read_switches() & 0x02);
+	return !(gpio->read_switches() & 0x02);
 }
 
 static bool manual_off_sw_0()
@@ -114,12 +115,12 @@ static bool manual_off_sw_0()
 
 static bool detect_flow_fail()
 {
-	if ((now() - flowmeter.last_movement()) < (30 * SECONDS)) {
+	if ((now() - flowmeter->last_movement()) < (30 * SECONDS)) {
 		return false;
 	}
 
-	Timestamp runtime = now() - pump.running_since();
-	if (runtime < (2 * pump.flow_delay())) {
+	Timestamp runtime = now() - pump->running_since();
+	if (runtime < (2 * pump->flow_delay())) {
 		// might be filling pipe between pump and flow meter
 		return false;
 	}
@@ -129,18 +130,18 @@ static bool detect_flow_fail()
 
 static bool detect_low_flow_s()
 {
-	if (flowmeter.rate(FLOWRATE_SHORT) == -1) {
+	if (flowmeter->rate(FLOWRATE_SHORT) == -1) {
 		// not measured yet
 		return false;
 	}
 
-	Timestamp runtime = now() - pump.running_since();
-	if (runtime < (2 * pump.flow_delay())) {
+	Timestamp runtime = now() - pump->running_since();
+	if (runtime < (2 * pump->flow_delay())) {
 		// might be filling pipe between pump and flow meter
 		return false;
 	}
 
-	if (flowmeter.rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
+	if (flowmeter->rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
 		// less than 25% expected flow
 		return true;
 	}
@@ -150,18 +151,18 @@ static bool detect_low_flow_s()
 
 static bool detect_low_flow_l()
 {
-	if (flowmeter.rate(FLOWRATE_LONG) == -1) {
+	if (flowmeter->rate(FLOWRATE_LONG) == -1) {
 		// not measured yet
 		return false;
 	}
 
-	Timestamp runtime = now() - pump.running_since();
-	if (runtime < (2 * pump.flow_delay())) {
+	Timestamp runtime = now() - pump->running_since();
+	if (runtime < (2 * pump->flow_delay())) {
 		// might be filling pipe between pump and flow meter
 		return false;
 	}
 
-	if (flowmeter.rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
+	if (flowmeter->rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
 		// less than 25% expected flow
 		return true;
 	}
@@ -171,7 +172,7 @@ static bool detect_low_flow_l()
 
 static bool pump_timeout()
 {
-	Timestamp runtime = now() - pump.running_since();
+	Timestamp runtime = now() - pump->running_since();
 	Timestamp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
 
 	return runtime > (fillup_time * 2);
@@ -184,9 +185,9 @@ static bool detect_level_fail()
 	// have to be implemented
 
 	// volume between two level sensors
-	double dvolume = levelmeter.next_level_liters() - levelmeter.level_liters();
+	double dvolume = levelmeter->next_level_liters() - levelmeter->level_liters();
 	// pumped volume since last level change
-	double pumped = flowmeter.volume();
+	double pumped = flowmeter->volume();
 
 	return pumped > (2 * dvolume);
 }
