@@ -19,7 +19,7 @@ public:
 	void debug(const char *, double);
 
 private:
-	void show(const char *, const char *);
+	void show(char **);
 	int phase;
 	Timestamp last_update;
 #ifndef UNDER_TEST

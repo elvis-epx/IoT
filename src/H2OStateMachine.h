@@ -20,7 +20,7 @@ public:
 class HisteresisOff: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Off - rest"; };
+	virtual const char* name() const { return "Off, rest"; };
 };
 
 /* Pump off due to override-off switch */
@@ -52,7 +52,7 @@ public:
 class FlowFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail: no flow"; };
+	virtual const char* name() const { return "Fail no flow"; };
 };
 
 /* Water flow detected but unexpectedly low, over last 1-2 minutes,
@@ -62,7 +62,7 @@ public:
 class LowFlowShort: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail: low flow S"; };
+	virtual const char* name() const { return "Fail low flow S"; };
 };
 
 /* Water flow detected but unexpectedly low, over last 30 minutes,
@@ -72,7 +72,7 @@ public:
 class LowFlowLong: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail: low flow L"; };
+	virtual const char* name() const { return "Fail low flow L"; };
 };
 
 /* Pump running too much time
@@ -83,7 +83,7 @@ public:
 class PumpTimeout: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail: pump T/O"; };
+	virtual const char* name() const { return "Fail pump timeout"; };
 };
 
 /* Level change not detected in spite of water flow
@@ -94,7 +94,7 @@ public:
 class LevelFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Level failure"; };
+	virtual const char* name() const { return "Fail level"; };
 };
 
 class H2OStateMachine: public StateMachine {

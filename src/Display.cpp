@@ -19,7 +19,8 @@ Display::Display()
 	lcd->backlight();
 #endif
 
-	show("H2O Control", "by EPx");
+	const char *msg[] = {"H2O Control", "", "(c) 2021 EPx", ""};
+	show((char**) msg);
 }
 
 void Display::eval()
@@ -30,46 +31,80 @@ void Display::eval()
 	
 	last_update = now();
 	++phase;
-	if (phase > 4) {
+	if (phase > 3) {
 		phase = 1;
 	}
 
-	char msg1[40];
-	char msg2[40];
+	char msg0[30];
+	char msg1[30];
+	char msg2[30];
+	char msg3[30];
+	char *msg[4];
+	msg[0] = msg0;
+	msg[1] = msg1;
+	msg[2] = msg2;
+	msg[3] = msg3;
 
-	sprintf(msg1, "%s", sm->cur_state_name());
+	sprintf(msg[0], "%s", sm->cur_state_name());
 
 	// FIXME show uptime
 	// FIXME show context-sensitive messages
 	// FIXME show messages with early warnings of error conditions (low flow, etc.)
+	// FIXME report level error via MQTT 
 
-	if (phase == 1) {
-		sprintf(msg2, "Level: %.0f%%", levelmeter->level_pct());
-	} else if (phase == 2) {
-		double rate = flowmeter->rate(FLOWRATE_INSTANT);
+	const char *err = levelmeter->failure_detected() ? "E " : "";
+	sprintf(msg[1], "%s%.0f%% + %.1fL", err, levelmeter->level_pct(), flowmeter->volume());
+
+	if (phase == 3) {
+		double rate = flowmeter->rate(FLOWRATE_LONG);
 		if (rate >= 0) {
-			sprintf(msg2, "Flow: %.1fL/min", flowmeter->rate(FLOWRATE_INSTANT));
+			sprintf(msg[2], "%.1fL/min x 30m", flowmeter->rate(FLOWRATE_INSTANT));
 		} else {
-			sprintf(msg2, "Flow: unknown");
-		}
-	} else if (phase == 3) {
-		sprintf(msg2, "Pumped: %.1fL", flowmeter->volume());
-	} else if (phase == 4) {
-		if (levelmeter->failure_detected()) {
-			// FIXME report via MQTT 
-			sprintf(msg2, "Err lvl %d", levelmeter->bitmap());
-		} else {
-			sprintf(msg2, "No errors");
+			phase = 2;
 		}
 	}
+	if (phase == 2) {
+		double rate = flowmeter->rate(FLOWRATE_SHORT);
+		if (rate >= 0) {
+			sprintf(msg[2], "%.1fL/min x 2m", flowmeter->rate(FLOWRATE_INSTANT));
+		} else {
+			phase = 1;
+		}
+	}
+	if (phase == 1) {
+		double rate = flowmeter->rate(FLOWRATE_INSTANT);
+		if (rate >= 0) {
+			sprintf(msg[2], "%.1fL/min x 10s", flowmeter->rate(FLOWRATE_INSTANT));
+		} else {
+			sprintf(msg[2], "...");
+		}
+	}
+	// FIXME warnings, other things in msg3
+	sprintf(msg[3], "%s", "");
 
-	show(msg1, msg2);
+	show(msg);
 }
 
-void Display::show(const char *msg1, const char *msg2)
+void Display::show(char **msg)
 {
 #ifdef UNDER_TEST
-	printf("================\n%s\n%s\n", msg1, msg2);
+	printf("\033[s");
+	printf("\033[44m");
+	printf("\033[97m");
+	printf("\033[1;60H");
+	printf("  %-20s  ", "");
+	printf("\033[2;60H");
+	printf("  %-20s  ", msg[0]);
+	printf("\033[3;60H");
+	printf("  %-20s  ", msg[1]);
+	printf("\033[4;60H");
+	printf("  %-20s  ", msg[2]);
+	printf("\033[5;60H");
+	printf("  %-20s  ", msg[3]);
+	printf("\033[6;60H");
+	printf("  %-20s  ", "");
+	printf("\033[u");
+	fflush(stdout);
 #else
 	lcd->clear();
 	lcd->setCursor(0, 0);
