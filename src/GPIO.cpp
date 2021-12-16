@@ -2,10 +2,19 @@
 #include "Plant.h"
 
 #ifdef UNDER_TEST
+
 #include <iostream>
 #include <fstream>
+
 #else
+
 #include <Arduino.h>
+
+static void pulse_trampoline()
+{
+	gpio->pulse();
+}
+
 #endif
 
 GPIO::GPIO()
@@ -25,13 +34,12 @@ GPIO::GPIO()
 	pinMode(8, INPUT_PULLUP);
 	// flow meter
 	pinMode(9, INPUT_PULLUP);
+	attachInterrupt(digitalPinToInterrupt(9), pulse_trampoline, RISING);
 	// pump
 	pinMode(11, OUTPUT);
 #endif
 	write_output(output_bitmap, ~0);
 }
-
-// FIXME interrupt pin
 
 uint32_t GPIO::read_switches()
 {
