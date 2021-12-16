@@ -27,13 +27,9 @@ GPIO::GPIO()
 	pinMode(9, INPUT_PULLUP);
 	// pump
 	pinMode(11, OUTPUT);
-	// activity showoff
-	pinMode(13, OUTPUT);
 #endif
 	write_output(output_bitmap, ~0);
 }
-
-// FIXME use activity showoff
 
 // FIXME interrupt pin
 
