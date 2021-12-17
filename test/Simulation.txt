@@ -12,9 +12,10 @@ simulated as follows:
 3) Pump output bit is simulated by writing to gpio2.txt.
 
 4) For instrumentation, the internal state is written to
-   state.txt.
-   First line = state (string as defined in State::name())
-   Second line = level in %, integer, w/o %
-   Third line = level in L, float, w/o unit
-   Fourth line = flow in L/min, float, w/o unit
-   Fifth line = "E" if detected failure in level sensor
+   state.txt. Rows:
+   * state (string as defined in State::name())
+   * level in %, float, w/o %
+   * level in L, float, w/o unit
+   * flow rate in L/min, float, w/o unit
+   	(one row per averaging timespan)
+   * "E" if detected failure in level sensor

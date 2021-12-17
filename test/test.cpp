@@ -36,6 +36,20 @@ int main()
 		display->eval();
 		usleep(100000);
 
+		std::ofstream g;
+		g.open("state.txt");
+		g << sm->cur_state_name() << std::endl;
+		g << levelmeter->level_pct() << std::endl;
+		g << levelmeter->level_liters() << std::endl;
+		g << flowmeter->rate(FLOWRATE_INSTANT) << std::endl;
+		g << flowmeter->rate(FLOWRATE_SHORT) << std::endl;
+		g << flowmeter->rate(FLOWRATE_LONG) << std::endl;
+		if (levelmeter->failure_detected()) {
+			g << "E";
+		}
+		g << std::endl;
+		g.close();
+
 		std::ifstream f;
 		f.open("quit.txt");
 		running = !f.is_open();
