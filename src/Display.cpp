@@ -161,9 +161,13 @@ void Display::show(char **msg)
 #else
 	lcd->clear();
 	lcd->setCursor(0, 0);
-	lcd->print(msg1);
+	lcd->print(msg[0]);
 	lcd->setCursor(0, 1);
-	lcd->print(msg2);
+	lcd->print(msg[1]);
+	lcd->setCursor(0, 2);
+	lcd->print(msg[2]);
+	lcd->setCursor(0, 3);
+	lcd->print(msg[3]);
 #endif
 }
 

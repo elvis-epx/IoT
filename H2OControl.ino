@@ -11,12 +11,18 @@ Ptr<LevelMeter> levelmeter;
 Ptr<Display> display;
 Ptr<H2OStateMachine> sm;
 
+// in ESP32 dev kit, "pin 13" w/ built-in LED is actually pin 2
+const int heartbeat_led = 2;
+
 void setup() {
 	setCpuFrequencyMhz(80);
 	esp_bt_controller_disable();
-	Serial.begin(115200);
-
+	Serial.begin(9600);
 	Serial.println("Setup");
+	
+	pinMode(heartbeat_led, OUTPUT);
+	digitalWrite(heartbeat_led, HIGH);
+
 	gpio = Ptr<GPIO>(new GPIO());
 	Serial.println("GPIO initiated");
 	pump = Ptr<Pump>(new Pump());
@@ -35,11 +41,17 @@ void setup() {
 	Serial.println("Setup ok");
 }
 
+bool heartbeat = LOW;
+
 void loop() {
-	Serial.println(millis());
+	digitalWrite(heartbeat_led, heartbeat);
+	heartbeat = !heartbeat;
+	
 	gpio->eval();
 	flowmeter->eval();
 	levelmeter->eval();
 	sm->eval();
 	display->eval();
+	
+	delay(100);
 }
