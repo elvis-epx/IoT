@@ -37,7 +37,7 @@ int main()
 		usleep(100000);
 
 		std::ofstream g;
-		g.open("state.txt");
+		g.open("state.sim");
 		g << sm->cur_state_name() << std::endl;
 		g << levelmeter->level_pct() << std::endl;
 		g << levelmeter->level_liters() << std::endl;
@@ -51,10 +51,10 @@ int main()
 		g.close();
 
 		std::ifstream f;
-		f.open("quit.txt");
+		f.open("quit.sim");
 		running = !f.is_open();
 		f.close();
 	}
 
-	std::remove("quit.txt");
+	std::remove("quit.sim");
 }

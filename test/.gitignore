@@ -6,8 +6,6 @@ test
 *.o
 *.dSYM/
 *.swp
-gpio.txt
-gpio2.txt
-pulses.txt
+*.sim
 out/
 main_coverage.info

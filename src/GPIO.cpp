@@ -56,7 +56,7 @@ uint32_t GPIO::read()
 	uint32_t bitmap = 0;
 #ifdef UNDER_TEST
 	std::ifstream f;
-	f.open("gpio.txt");
+	f.open("gpio.sim");
 	f >> bitmap;
 	f.close();
 #else
@@ -72,7 +72,7 @@ void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 	output_bitmap = (output_bitmap & ~bitmask) | bitmap;
 #ifdef UNDER_TEST
 	std::ofstream f;
-	f.open("gpio2.txt");
+	f.open("gpio2.sim");
 	f << output_bitmap;
 	f.close();
 #else
@@ -94,10 +94,10 @@ void GPIO::eval()
 #ifdef UNDER_TEST
 	int qty = 0;
 	std::ifstream f;
-	f.open("pulses.txt");
+	f.open("pulses.sim");
 	f >> qty;
 	f.close();
-	std::remove("pulses.txt");
+	std::remove("pulses.sim");
 	while (qty-- > 0) {
 		pulse();
 	}

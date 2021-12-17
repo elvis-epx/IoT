@@ -1,21 +1,23 @@
 In UNDER_TEST mode, meant to be run in a PC, hardware is
 simulated as follows:
 
-1) File gpio.txt is read as an integer number. Bits 0-5 are
+1) File gpio.sim is read as an integer number. Bits 0-5 are
    level sensors, bits 6 and 7 are the manual switches.
 
 2) Flow meter pulses are simulated by writing a number 
-   in pulses.txt. The file is removed as the test program
+   in pulses.sim. The file is removed as the test program
    fetches the value. Write the number of pulses once a
    second, to make sure test.cpp has time to eval it.
 
-3) Pump output bit is simulated by writing to gpio2.txt.
+3) Pump output bit is simulated by writing to gpio2.sim.
 
 4) For instrumentation, the internal state is written to
-   state.txt. Rows:
+   state.sim. Rows:
    * state (string as defined in State::name())
    * level in %, float, w/o %
    * level in L, float, w/o unit
    * flow rate in L/min, float, w/o unit
    	(one row per averaging timespan)
    * "E" if detected failure in level sensor
+
+5) If file quit.sim is found, it is removed and test exits.
