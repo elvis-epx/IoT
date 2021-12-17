@@ -4,7 +4,8 @@
 #endif
 
 #include "Display.h"
-#include "Plant.h"
+#include "Elements.h"
+#include "Constants.h"
 
 Display::Display()
 {

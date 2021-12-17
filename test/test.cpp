@@ -3,7 +3,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "Plant.h"
+#include "Elements.h"
+#include "Constants.h"
 
 static const double level_sensors[] = LEVEL_SENSORS;
 static const uint32_t flow_rates[] = FLOWRATES;

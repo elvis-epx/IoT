@@ -1,13 +1,5 @@
-#ifndef __PLANT_H
-#define __PLANT_H
-
-#include "Pointer.h"
-#include "Pump.h"
-#include "FlowMeter.h"
-#include "LevelMeter.h"
-#include "GPIO.h"
-#include "Display.h"
-#include "H2OStateMachine.h"
+#ifndef __CONSTANTS_H
+#define __CONSTANTS_H
 
 #define TANK_CAPACITY 1000.0 // liters
 // ought to be just below the second sensor, top to bottom
@@ -27,12 +19,5 @@
 #define FLOWRATE_LONG    (30 * MINUTES)
 
 #define FLOWRATES {FLOWRATE_INSTANT, FLOWRATE_SHORT, FLOWRATE_LONG}
-
-extern Ptr<GPIO> gpio;
-extern Ptr<Pump> pump;
-extern Ptr<FlowMeter> flowmeter;
-extern Ptr<LevelMeter> levelmeter;
-extern Ptr<Display> display;
-extern Ptr<H2OStateMachine> sm;
 
 #endif

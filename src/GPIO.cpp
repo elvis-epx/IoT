@@ -1,5 +1,5 @@
 #include "GPIO.h"
-#include "Plant.h"
+#include "Elements.h"
 
 #ifdef UNDER_TEST
 
@@ -98,7 +98,9 @@ void GPIO::eval()
 	f >> qty;
 	f.close();
 	std::remove("pulses.txt");
-	pulses += qty;
+	while (qty-- > 0) {
+		pulse();
+	}
 #endif
 	if (pulses > 0) {
 		flowmeter->pulse(pulses);

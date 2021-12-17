@@ -1,6 +1,7 @@
 *.gcda
 *.gcdo
 *.gcno
+*.gcov
 test
 *.o
 *.dSYM/
@@ -8,3 +9,5 @@ test
 gpio.txt
 gpio2.txt
 pulses.txt
+out/
+main_coverage.info

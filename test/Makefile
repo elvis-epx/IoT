@@ -17,7 +17,6 @@ recov:
 
 coverage: test
 	rm -f *.info
-	./test
 	gcov test.cpp
 	lcov -c --directory . --output-file main_coverage.info
 	lcov -r main_coverage.info '*/test.cpp' -o main_coverage.info

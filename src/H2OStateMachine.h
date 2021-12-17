@@ -78,7 +78,7 @@ public:
 /* Pump running too much time
    Could be: low flow (but not too low to trigger LowFlow),
    comsumption of water bigger than pumping capacity, 
-   constants at Plant.h too wrong
+   constants at Constants.h too wrong
 */
 class PumpTimeout: public State {
 public:
