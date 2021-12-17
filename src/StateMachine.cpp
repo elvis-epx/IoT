@@ -11,11 +11,29 @@ void State::add(Transition trans, const char *tname, Ptr<State> to_state)
 	to_states.push_back(to_state);
 }
 
+State::~State()
+{
+}
+
+void State::clear()
+{
+	// explicit break of cyclic references to please Valgrind
+	to_states.clear();
+}
+
 StateMachine::StateMachine()
 {
 	started = false;
 	last_transition = 0;
 	last_eval = 0;
+}
+
+StateMachine::~StateMachine()
+{
+	// Break State->Transition->State cycle to please Valgrind
+	for (size_t i = 0; i < states.count(); ++i) {
+		states[i]->clear();
+	}
 }
 
 void StateMachine::add(Ptr<State> state)

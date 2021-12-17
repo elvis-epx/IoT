@@ -1,5 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 
 #include "Plant.h"
 
@@ -24,12 +26,20 @@ int main()
 
 	sm->start();
 
-	while (true) {
+	bool running = true;
+	while (running) {
 		gpio->eval();
 		flowmeter->eval();
 		levelmeter->eval();
 		sm->eval();
 		display->eval();
 		usleep(100000);
+
+		std::ifstream f;
+		f.open("quit.txt");
+		running = !f.is_open();
+		f.close();
 	}
+
+	std::remove("quit.txt");
 }

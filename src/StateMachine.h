@@ -10,7 +10,8 @@ typedef bool (*Transition)();
 class State {
 public:
 	State() {};
-	virtual ~State() {};
+	virtual ~State();
+	void clear();
 
 	void add(Transition, const char *, Ptr<State>);
 
@@ -29,6 +30,7 @@ friend class StateMachine;
 class StateMachine {
 public:
 	StateMachine();
+	virtual ~StateMachine();
 	void add(Ptr<State>);
 	void start();
 	bool eval();

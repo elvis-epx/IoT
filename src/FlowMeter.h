@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include "Timestamp.h"
-#include "Pointer.h"
+#include "Vector.h"
 
 class FlowMeter
 {
@@ -33,11 +33,10 @@ private:
 	Timestamp last_vol_reset;
 	uint32_t vol_pulses;
 
-	const uint32_t *rate_intervals;
-	size_t rate_count;
-	Ptr<double> last_rates;
-	Ptr<Timestamp> rate_last_reset;
-	Ptr<uint32_t> rate_pulses;
+	Vector<uint32_t> rate_intervals;
+	Vector<double> last_rates;
+	Vector<Timestamp> rate_last_reset;
+	Vector<uint32_t> rate_pulses;
 };
 
 #endif

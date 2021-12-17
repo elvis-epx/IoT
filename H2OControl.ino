@@ -11,7 +11,10 @@ Ptr<Display> display;
 Ptr<H2OStateMachine> sm;
 
 void setup() {
-	Serial.begin(9600);
+	setCpuFrequencyMhz(80);
+	esp_bt_controller_disable();
+	Serial.begin(115200);
+
 	Serial.println("Setup");
 	gpio = Ptr<GPIO>(new GPIO());
 	Serial.println("GPIO initiated");
