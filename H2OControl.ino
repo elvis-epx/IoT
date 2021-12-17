@@ -53,5 +53,5 @@ void loop() {
 	sm->eval();
 	display->eval();
 	
-	delay(100);
+	delay(250);
 }
