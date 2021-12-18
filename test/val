@@ -1,3 +1,1 @@
-make clean
-make -j 4
-nice valgrind --leak-check=full --show-reachable=yes --suppressions=valgrind.supp --error-exitcode=1 ./test
+valgrind --leak-check=full --show-reachable=yes --suppressions=valgrind.supp --error-exitcode=1 ./test
