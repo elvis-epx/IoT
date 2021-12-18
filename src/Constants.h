@@ -10,7 +10,7 @@
 #define ESTIMATED_PUMP_FLOWRATE (1100.0 / 60) // in L/min
 
 // pipes between pump and flow meter
-#define PIPE_DIAMETER 25 // in mm
+#define PIPE_DIAMETER 25.0 // in mm
 #define PIPE_LENGTH   75.0 // in m
 
 // time spans to measure average flow rate

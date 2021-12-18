@@ -1,0 +1,13 @@
+{
+	"capacity": 1000,
+	"level_sensors": [20, 40, 60, 80, 100],
+	"lowlevel_threshold": 79.0,
+
+	"flowmeter_pulse_rate": 4.8,
+	"estimated_flowrate_h": 1100,
+
+	"pipe_diameter": 25,
+	"pipe_length": 75,
+
+	"flowrate_timespans": [10, 120, 1800]
+}
