@@ -63,54 +63,85 @@ static bool initial_off()
 
 static bool low_level()
 {
-	return levelmeter->level_pct() < LOWLEVEL_THRESHOLD;
+	// keep this idiom so coverage tools can find out whether a
+	// transition happened
+	if (levelmeter->level_pct() < LOWLEVEL_THRESHOLD) {
+		return true;
+	}
+	return false;
 }
 
 static bool high_level()
 {
-	return levelmeter->level_pct() >= 100;
+	if (levelmeter->level_pct() >= 100) {
+		return true;
+	}
+	return false;
 }
 
 static bool timeout_5min()
 {
-	return (now() - sm->last_movement()) > (5 * MINUTES);
+	if ((now() - sm->last_movement()) > (5 * MINUTES)) {
+		return true;
+	}
+	return false;
 }
 
 static bool timeout_12h()
 {
-	return (now() - sm->last_movement()) > (12 * 60 * MINUTES);
+	if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
+		return true;
+	}
+	return false;
 }
 
 static bool timeout_6h()
 {
-	return (now() - sm->last_movement()) > (6 * 60 * MINUTES);
+	if ((now() - sm->last_movement()) > (6 * 60 * MINUTES)) {
+		return true;
+	}
+	return false;
 }
 
 static bool timeout_2h()
 {
-	return (now() - sm->last_movement()) > (2 * 60 * MINUTES);
+	if ((now() - sm->last_movement()) > (2 * 60 * MINUTES)) {
+		return true;
+	}
+	return false;
 }
 
 static bool manual_on_sw_1()
 {
-	// pull-up logic
-	return !(gpio->read_switches() & 0x01);
+	if (!(gpio->read_switches() & 0x01)) {
+		return true;
+	}
+	return false;
 }
 
 static bool manual_on_sw_0()
 {
-	return !manual_on_sw_1();
+	if (!manual_on_sw_1()) {
+		return true;
+	}
+	return false;
 }
 
 static bool manual_off_sw_1()
 {
 	// pull-up logic
-	return !(gpio->read_switches() & 0x02);
+	if (!(gpio->read_switches() & 0x02)) {
+		return true;
+	}
+	return false;
 }
 
 static bool manual_off_sw_0()
 {
-	return !manual_off_sw_1();
+	if (!manual_off_sw_1()) {
+		return true;
+	}
+	return false;
 }
 
 static bool detect_flow_fail()
@@ -175,7 +206,10 @@ static bool pump_timeout()
 	Timestamp runtime = now() - pump->running_since();
 	Timestamp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
 
-	return runtime > (fillup_time * 2);
+	if (runtime > (fillup_time * 2)) {
+		return true;
+	}
+	return false;
 }
 
 static bool detect_level_fail()
@@ -189,7 +223,10 @@ static bool detect_level_fail()
 	// pumped volume since last level change
 	double pumped = flowmeter->volume();
 
-	return pumped > (2 * dvolume);
+	if (pumped > (2 * dvolume)) {
+		return true;
+	}
+	return false;
 }
 
 H2OStateMachine::H2OStateMachine(): StateMachine()
