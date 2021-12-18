@@ -55,3 +55,15 @@ def gen_constant_h(jsondata):
 #endif
 """
 	return out
+
+def read_state():
+	l = open("state.sim").readlines()
+	d = {}
+	d["state"] = l[0].strip()
+	d["level%"] = float(l[1].strip())
+	d["levelL"] = float(l[2].strip())
+	d["rate0"] = float(l[3].strip())
+	d["rate1"] = float(l[4].strip())
+	d["rate2"] = float(l[5].strip())
+	d["level_err"] = "E" in l[6]
+	return d

@@ -1,15 +1,18 @@
 CFLAGS=-DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage -fno-elide-constructors
 OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMeter.o Timestamp.o GPIO.o Display.o
 
-all: test
+all: Constants.h test
 
 clean:
-	rm -rf *.o test *.gcda *.gcno *.info out *.dSYM *.log *.val *.gcov
+	rm -rf *.o test *.gcda *.gcno *.info out *.dSYM *.log *.val *.gcov Constants.h
 
-.cpp.o: *.h
+Constants.h: constants.json
+	./gen_constant_h.py constants.json
+
+.cpp.o: *.h Constants.h
 	gcc $(CFLAGS) -c $<
 
-test: test.cpp $(OBJ) *.h
+test: test.cpp $(OBJ) *.h Constants.h
 	gcc $(CFLAGS) -o test test.cpp $(OBJ) -lstdc++
 
 recov:
