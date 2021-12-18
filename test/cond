@@ -26,4 +26,5 @@ else:
 
 if conds[cond](state[arg], val):
 	sys.exit(0)
+print("Condition failed: %s %s %s" % (sys.argv[1], sys.argv[2], sys.argv[3]))
 sys.exit(1)

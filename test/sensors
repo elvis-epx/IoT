@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+
+import sys
+
+args = {}
+args["20"] = 1
+args["40"] = 2
+args["60"] = 4
+args["80"] = 8
+args["100"] = 16
+args["mon"] = 32
+args["moff"] = 64
+
+bitmap = 255
+for arg in sys.argv[1:]:
+	bitmap = bitmap & ~args[arg]
+
+open("gpio.sim", "w").write("%d" % bitmap)

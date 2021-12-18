@@ -4,7 +4,7 @@ OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMet
 all: Constants.h test
 
 clean:
-	rm -rf *.o test *.gcda *.gcno *.info out *.dSYM *.log *.val *.gcov Constants.h
+	rm -rf *.o test *.gcda *.gcno *.info out *.dSYM *.log *.val *.gcov Constants.h *.sim
 
 Constants.h: constants.json
 	./gen_constant_h.py constants.json
@@ -17,6 +17,9 @@ test: test.cpp $(OBJ) *.h Constants.h
 
 recov:
 	rm -f *.gcda
+
+unit.sim:
+	./unit.sh
 
 coverage: test
 	rm -f *.info

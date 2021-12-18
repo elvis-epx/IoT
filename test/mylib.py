@@ -66,4 +66,6 @@ def read_state():
 	d["rate1"] = float(l[4].strip())
 	d["rate2"] = float(l[5].strip())
 	d["level_err"] = "E" in l[6]
+	l = open("gpio2.sim").readlines()
+	d["pump"] = float(l[0])
 	return d
