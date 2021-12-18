@@ -65,7 +65,7 @@ static bool low_level()
 {
 	// keep this idiom so coverage tools can find out whether a
 	// transition happened
-	if (levelmeter->level_pct() < LOWLEVEL_THRESHOLD) {
+	if (levelmeter->level_pct() < PUMP_THRESHOLD) {
 		return true;
 	}
 	return false;

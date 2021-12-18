@@ -2,8 +2,8 @@
 #define __CONSTANTS_H
 
 #define TANK_CAPACITY 1000.0 // liters
-// ought to be just below the second sensor, top to bottom
-#define LOWLEVEL_THRESHOLD 79.0 // %
+// ought to be the second sensor, top to bottom
+#define PUMP_THRESHOLD 80.0 // %
 #define LEVEL_SENSORS {20.0, 40.0, 60.0, 80.0, 100.0, 0.0}
 
 #define FLOWMETER_PULSE_RATE 4.8 // in pulses/s when flow is 1L/min

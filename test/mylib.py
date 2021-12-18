@@ -11,9 +11,9 @@ def gen_constant_h(jsondata):
 #define TANK_CAPACITY %.1f // liters""" % constants["capacity"]
 
 	out += """
-// ought to be just below the second sensor, top to bottom
-#define LOWLEVEL_THRESHOLD %.1f // %%
-""" % constants["lowlevel_threshold"]
+// ought to be the second sensor, top to bottom
+#define PUMP_THRESHOLD %.1f // %%
+""" % constants["pump_threshold"]
 
 	out += "#define LEVEL_SENSORS {"
 	for level in constants["level_sensors"]:
