@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json
+import json, time
 
 def gen_constant_h(jsondata):
 	constants = json.loads(jsondata)
@@ -57,7 +57,16 @@ def gen_constant_h(jsondata):
 	return out
 
 def read_state():
-	l = open("state.sim").readlines()
+	l = []
+	while len(l) < 7: 
+		try:
+			l = open("state.sim").readlines()
+		except FileNotFoundError:
+			pass
+		if len(l) < 7:
+			print("Waiting for state.sim...")
+			time.sleep(1)
+
 	d = {}
 	d["state"] = l[0].strip()
 	d["level%"] = float(l[1].strip())
@@ -66,6 +75,16 @@ def read_state():
 	d["rate1"] = float(l[4].strip())
 	d["rate2"] = float(l[5].strip())
 	d["level_err"] = "E" in l[6]
-	l = open("gpio2.sim").readlines()
+
+	l = []
+	while len(l) < 1:
+		try:
+			l = open("gpio2.sim").readlines()
+		except FileNotFoundError:
+			pass
+		if len(l) < 1:
+			print("Waiting for gpio2.sim...")
+			time.sleep(1)
+
 	d["pump"] = float(l[0])
 	return d
