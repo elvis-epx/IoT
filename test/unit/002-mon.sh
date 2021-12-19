@@ -9,6 +9,18 @@ cond state eq "On"
 cond pump eq 1
 cond level_err eq 0
 
+flow 10 5
+
+sensors 20 40 mon
+sleep 3
+cond state eq "On (manual)"
+cond pump eq 1
+
+sensors 20 40 
+sleep 3
+cond state eq "On"
+cond pump eq 1
+
 sensors 20 40 mon
 sleep 3
 cond state eq "On (manual)"

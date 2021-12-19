@@ -11,6 +11,15 @@ function cond () {
 	./cond $1 $2 "$3"
 }
 
+function flow () {
+	rounds=$2
+	while [ "$rounds" -gt 0 ]; do
+		echo $1 > pulses.sim
+		sleep 1
+		rounds=$(($rounds - 1))
+	done
+}
+
 function runme () {
 	./val &
 	export err=0
