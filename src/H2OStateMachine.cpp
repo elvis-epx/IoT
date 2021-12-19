@@ -201,8 +201,8 @@ static bool detect_low_flow_l()
 		return false;
 	}
 
-	if (flowmeter->rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
-		// less than 25% expected flow
+	if (flowmeter->rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE / 3)) {
+		// less than 33% expected flow
 		return true;
 	}
 
