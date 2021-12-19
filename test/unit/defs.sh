@@ -8,13 +8,14 @@ function sensors () {
 }
 
 function cond () {
-	./cond $*
+	./cond $1 $2 "$3"
 }
 
 function runme () {
 	./val &
 	export err=0
 	export PID=$!
+	sleep 10
 }
 
 function quit () {

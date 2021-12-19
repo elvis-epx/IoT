@@ -15,10 +15,10 @@ cond = sys.argv[2]
 val = sys.argv[3]
 state = mylib.read_state()
 if arg not in state:
-	raise Exception("arg not in state")
+	raise Exception("arg not in state: %s" % arg)
 if cond not in conds:
-	raise Exception("invalid condition")
-if arg in ("state", "level_err"):
+	raise Exception("invalid condition: %s" % cond)
+if arg in ("state", ):
 	if cond not in ("eq", "ne"):
 		raise Exception("Invalid condition for string")
 else:

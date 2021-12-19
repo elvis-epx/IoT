@@ -18,7 +18,11 @@ test: test.cpp $(OBJ) *.h Constants.h
 recov:
 	rm -f *.gcda
 
-unit.sim:
+unit.sim: test
+	./unit.sh
+
+reunit:
+	rm -f unit.sim
 	./unit.sh
 
 coverage: test

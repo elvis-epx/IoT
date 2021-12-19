@@ -74,7 +74,7 @@ def read_state():
 	d["rate0"] = float(l[3].strip())
 	d["rate1"] = float(l[4].strip())
 	d["rate2"] = float(l[5].strip())
-	d["level_err"] = "E" in l[6]
+	d["level_err"] = ("E" in l[6]) and 1 or 0
 
 	l = []
 	while len(l) < 1:
@@ -88,3 +88,19 @@ def read_state():
 
 	d["pump"] = float(l[0])
 	return d
+
+def gen_sensors(items):
+	args = {}
+	args["20"] = 1
+	args["40"] = 2
+	args["60"] = 4
+	args["80"] = 8
+	args["100"] = 16
+	args["mon"] = 32
+	args["moff"] = 64
+	
+	bitmap = 255
+	for arg in items[1:]:
+		bitmap = bitmap & ~args[arg]
+	
+	open("gpio.sim", "w").write("%d" % bitmap)
