@@ -79,7 +79,7 @@ static bool high_level()
 	return false;
 }
 
-static bool timeout_5min()
+static bool pump_rest()
 {
 	if ((now() - sm->last_movement()) > (5 * MINUTES)) {
 		return true;
@@ -87,7 +87,7 @@ static bool timeout_5min()
 	return false;
 }
 
-static bool timeout_12h()
+static bool lvlf_recover()
 {
 	if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
 		return true;
@@ -95,7 +95,15 @@ static bool timeout_12h()
 	return false;
 }
 
-static bool timeout_6h()
+static bool lfl_recover()
+{
+	if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
+		return true;
+	}
+	return false;
+}
+
+static bool pto_recover()
 {
 	if ((now() - sm->last_movement()) > (6 * 60 * MINUTES)) {
 		return true;
@@ -103,7 +111,7 @@ static bool timeout_6h()
 	return false;
 }
 
-static bool timeout_2h()
+static bool lfs_recover()
 {
 	if ((now() - sm->last_movement()) > (2 * 60 * MINUTES)) {
 		return true;
@@ -270,7 +278,7 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 
 	off_rest->add(manual_off_sw_1, "manual_off_sw_1", off);
 	off_rest->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	off_rest->add(timeout_5min,    "timeout_5min",    off);
+	off_rest->add(pump_rest,       "pump_rest",       off);
 	add(off_rest);
 
 	flow_fail->add(manual_off_sw_1, "manual_off_sw_1", off);
@@ -279,21 +287,21 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
 
 	level_fail->add(manual_off_sw_1, "manual_off_sw_1", off);
 	level_fail->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	level_fail->add(timeout_12h,     "timeout_12h",     off);
+	level_fail->add(lvlf_recover,    "lvlf_recover",    off);
 	add(level_fail);
 
 	lowflow_short->add(manual_off_sw_1, "manual_off_sw_1", off);
 	lowflow_short->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	lowflow_short->add(timeout_2h,      "timeout_2h",      off);
+	lowflow_short->add(lfs_recover,     "lfs_recover",     off);
 	add(lowflow_short);
 
 	lowflow_long->add(manual_off_sw_1, "manual_off_sw_1", off);
 	lowflow_long->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	lowflow_long->add(timeout_12h,     "timeout_12h",     off);
+	lowflow_long->add(lfl_recover,     "lfl_recover",     off);
 	add(lowflow_long);
 
 	pumptimeout->add(manual_off_sw_1, "manual_off_sw_1", off);
 	pumptimeout->add(manual_on_sw_1,  "manual_on_sw_1",  off);
-	pumptimeout->add(timeout_6h,      "timeout_6h",      off);
+	pumptimeout->add(pto_recover,     "pto_recover",     off);
 	add(pumptimeout);
 }
