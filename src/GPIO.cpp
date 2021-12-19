@@ -95,9 +95,11 @@ void GPIO::eval()
 	int qty = 0;
 	std::ifstream f;
 	f.open("pulses.sim");
-	f >> qty;
+	if (f.is_open()) {
+		f >> qty;
+		std::remove("pulses.sim");
+	}
 	f.close();
-	std::remove("pulses.sim");
 	while (qty-- > 0) {
 		pulse();
 	}

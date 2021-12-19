@@ -22,6 +22,7 @@ uint32_t _arduino_millis()
 // Emulation of millis() and random()
 
 static struct timeval tm_first;
+int64_t uptime_advance = 0;
 static bool virgin = true;
 
 static void init_things()
@@ -36,7 +37,7 @@ uint32_t _arduino_millis()
 	if (virgin) init_things();
 	struct timeval tm;
 	gettimeofday(&tm, 0);
-	int64_t now_us   = tm.tv_sec       * 1000000LL + tm.tv_usec;
+	int64_t now_us   = tm.tv_sec * 1000000LL + uptime_advance * 1000000LL + tm.tv_usec;
 	int64_t start_us = tm_first.tv_sec * 1000000LL + tm_first.tv_usec;
 	// uptime in ms
 	int64_t uptime_ms = (now_us - start_us) / 1000 + 1;

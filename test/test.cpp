@@ -16,6 +16,9 @@ Ptr<LevelMeter> levelmeter;
 Ptr<Display> display;
 Ptr<H2OStateMachine> sm;
 
+// to simulate accelerated time
+extern int64_t uptime_advance;
+
 int main()
 {
 	gpio = Ptr<GPIO>(new GPIO());
@@ -53,6 +56,15 @@ int main()
 		std::ifstream f;
 		f.open("quit.sim");
 		running = !f.is_open();
+		f.close();
+
+		f.open("timeadvance.sim");
+		if (f.is_open()) {
+			int64_t offset = 0;
+			f >> offset;
+			uptime_advance += offset;
+			std::remove("timeadvance.sim");
+		}
 		f.close();
 	}
 

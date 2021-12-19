@@ -20,6 +20,11 @@ function flow () {
 	done
 }
 
+function advance () {
+	echo $1 > timeadvance.sim
+	sleep 1
+}
+
 function runme () {
 	if which valgrind >/dev/null; then
 		./val &
