@@ -21,7 +21,11 @@ function flow () {
 }
 
 function runme () {
-	./val &
+	if which valgrind >/dev/null; then
+		./val &
+	else
+		./test &
+	fi
 	export err=0
 	export PID=$!
 	sleep 10
