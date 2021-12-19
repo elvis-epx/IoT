@@ -64,10 +64,12 @@ void LevelMeter::eval()
 	}
 }
 
+/*
 Timestamp LevelMeter::last_movement() const
 {
 	return last_change;
 }
+*/
 
 double LevelMeter::level_pct() const
 {
@@ -90,7 +92,9 @@ double LevelMeter::next_level_liters() const
 	return capacity;
 }
 
+/*
 uint32_t LevelMeter::bitmap() const
 {
 	return last_bitmap;
 }
+*/
