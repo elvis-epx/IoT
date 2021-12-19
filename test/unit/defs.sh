@@ -11,6 +11,7 @@ function cond () {
 	./cond $1 $2 "$3"
 }
 
+# Simulate pulses of flow meter: $1 pulses/sec for $2 seconds
 function flow () {
 	rounds=$2
 	while [ "$rounds" -gt 0 ]; do
@@ -20,9 +21,30 @@ function flow () {
 	done
 }
 
+# Simulate time passing of $1 seconds
 function advance () {
 	echo $1 > timeadvance.sim
-	sleep 1
+	while [ -e timeadvance.sim ]; do
+		sleep 0.1
+	done
+}
+
+# Simulate pulses of flow meter and accelerate time passing
+# $1 pulses/sec for $2 seconds
+
+function fastflow () {
+	# Advance $pitch s per cycle, as fast as program under test can take it
+	pitch=10
+	pulses=$(($1 * $pitch))
+	rounds=$(($2 / $pitch))
+	while [ "$rounds" -gt 0 ]; do
+		echo $pulses > pulses.sim
+		echo $pitch > timeadvance.sim
+		while [ -e timeadvance.sim ] || [ -e pulses.sim ]; do
+			sleep 0.1
+		done
+		rounds=$(($rounds - 1))
+	done
 }
 
 function runme () {
