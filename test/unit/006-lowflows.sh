@@ -15,3 +15,10 @@ flow 1 300
 
 cond state eq "Fail low flow S"
 cond pump eq 0
+
+sensors 20 40 60 80 100
+
+advance $((2 * 3600))
+sleep 5
+cond state eq "Off"
+cond pump eq 0
