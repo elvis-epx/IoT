@@ -83,13 +83,16 @@ double LevelMeter::level_liters() const
 
 double LevelMeter::next_level_liters() const
 {
+	double next_level = 100;
+
 	for (int i = 0; levels[i] > 0; ++i) {
 		if (levels[i] > current_level) {
-			return levels[i] * capacity / 100;
+			next_level = levels[i];
+			break;
 		}
 	}
 
-	return capacity;
+	return next_level * capacity / 100;
 }
 
 /*

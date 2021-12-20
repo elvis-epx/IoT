@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <assert.h>
 
 #include "Elements.h"
 #include "Constants.h"
@@ -67,6 +68,20 @@ int main()
 		}
 		f.close();
 	}
+
+	// test invalid flow rate argument
+	assert(flowmeter->rate(12345) == -2);
+	display->debug("int", 1);
+	display->debug("double", 1.0);
+	display->debug("string", "bla");
+
+	char tmp[40];
+	Display::millis_to_hms(-1, tmp);
+	assert(strcmp(tmp, "...") == 0);
+	Display::millis_to_hms(86401 * 1000, tmp);
+	assert(strcmp(tmp, "Uptime 1:00:00:01") == 0);
+	Display::millis_to_hms(3602 * 1000, tmp);
+	assert(strcmp(tmp, "Uptime 1:00:02") == 0);
 
 	std::remove("quit.sim");
 }

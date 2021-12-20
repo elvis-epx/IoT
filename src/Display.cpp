@@ -25,7 +25,7 @@ Display::Display()
 	show((char**) msg);
 }
 
-void millis_to_hms(int64_t t, char *target)
+void Display::millis_to_hms(int64_t t, char *target)
 {
 	if (t < 0) {
 		sprintf(target, "...");

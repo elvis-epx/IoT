@@ -82,9 +82,9 @@ double FlowMeter::expected_volume() const
 double FlowMeter::rate(uint32_t interval) const
 {
 	for (size_t i = 0; i < rate_intervals.count(); ++i) {
-		if (rate_intervals[i] >= interval) {
+		if (rate_intervals[i] == interval) {
 			return last_rates[i];
 		}
 	}
-	return 0;
+	return -2;
 }
