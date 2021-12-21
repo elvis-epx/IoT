@@ -169,14 +169,14 @@ static bool detect_flow_fail()
 
 static bool detect_low_flow_s()
 {
-	Timestamp runtime = now() - pump->running_since();
-	if (runtime < (2 * pump->flow_delay())) {
-		// might be filling pipe between pump and flow meter
+	if (flowmeter->rate(FLOWRATE_SHORT) == -1) {
+		// not measured yet
 		return false;
 	}
 
-	if (flowmeter->rate(FLOWRATE_SHORT) == -1) {
-		// not measured yet
+	Timestamp runtime = now() - pump->running_since();
+	if (runtime < (2 * pump->flow_delay())) {
+		// might be filling pipe between pump and flow meter
 		return false;
 	}
 

@@ -120,13 +120,9 @@ void Display::eval()
 	if (row3_phase == 2) {
 		if (pump->is_running()) {
 			double volume = flowmeter->volume();
-			double exp_volume = flowmeter->expected_volume();
-		 	if (exp_volume > 0) {
-				sprintf(msg[3], "Efficiency %.0f%%",
+			double exp_volume = flowmeter->expected_volume() + 0.0001;
+			sprintf(msg[3], "Efficiency %.0f%%",
 					100 * volume / exp_volume);
-			} else {
-				sprintf(msg[3], "Efficiency ...");
-			}
 		} else {
 			row3_phase = 3;
 		}
