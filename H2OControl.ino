@@ -44,16 +44,18 @@ void setup() {
 }
 
 bool heartbeat = LOW;
+int64_t next_heartbeat = 0;
 
 void loop() {
-  digitalWrite(heartbeat_led, heartbeat);
-  heartbeat = !heartbeat;
+  if (now() > next_heartbeat) {
+  	digitalWrite(heartbeat_led, heartbeat);
+  	heartbeat = !heartbeat;
+  	next_heartbeat = now() + 250;
+  }
 
   gpio->eval();
   flowmeter->eval();
   levelmeter->eval();
   sm->eval();
   display->eval();
-
-  delay(250);
 }
