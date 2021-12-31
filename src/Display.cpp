@@ -15,7 +15,7 @@ Display::Display()
 
 #ifndef UNDER_TEST
 	lcd = Ptr<LCD_I2C>(new LCD_I2C(0x3f, 16, 2));
-	lcd->begin();
+	lcd->begin(false);
 	// call begin() with False in case there are other I2C devices
 	// that call Wire.begin() first
 	lcd->backlight();

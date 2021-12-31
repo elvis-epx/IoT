@@ -9,50 +9,51 @@
 #else
 
 #include <Arduino.h>
+#include <Wire.h>
+#include <MCP23017.h>
 
-static void pulse_trampoline()
+#define MCP23017_ADDR 0x20
+
+MCP23017 mcp = MCP23017(MCP23017_ADDR);
+
+static void ICACHE_RAM_ATTR pulse_trampoline()
 {
 	gpio->pulse();
 }
 
 #endif
 
-#define GPIO_DISABLED 1
+#define FLOWMETER_PIN 14
 
 GPIO::GPIO()
 {
 	pulses = 0;
 	output_bitmap = 0;
 
-#ifndef GPIO_DISABLED
 #ifndef UNDER_TEST
-	// level meter
-	pinMode(2, INPUT_PULLUP);
-	pinMode(3, INPUT_PULLUP);
-	pinMode(4, INPUT_PULLUP);
-	pinMode(5, INPUT_PULLUP);
-	pinMode(6, INPUT_PULLUP);
-	// manual override switches
-	pinMode(7, INPUT_PULLUP);
-	pinMode(8, INPUT_PULLUP);
+	Wire.begin();
+	mcp.init();
+
+	// high bits = input. Third parameter is pullup and all-1 by default
+	mcp.portMode(MCP23017Port::A, 0);
+	mcp.portMode(MCP23017Port::B, 0b11111111);
+	mcp.writeRegister(MCP23017Register::GPIO_A, 0x00); // reset
+	mcp.writeRegister(MCP23017Register::GPIO_B, 0x00); // reset
 	// flow meter
-	pinMode(9, INPUT_PULLUP);
-	// attachInterrupt(digitalPinToInterrupt(9), pulse_trampoline, RISING);
-	// pump
-	pinMode(11, OUTPUT);
-#endif
+	pinMode(FLOWMETER_PIN, INPUT_PULLUP);
+	attachInterrupt(digitalPinToInterrupt(FLOWMETER_PIN), pulse_trampoline, RISING);
 #endif
 	write_output(output_bitmap, ~0);
 }
 
 uint32_t GPIO::read_switches()
 {
-	return (read() >> 5) & 0x3;
+	return (read() >> 5) & 0b111;
 }
 
 uint32_t GPIO::read_level_sensors()
 {
-	return read() & 0x1f;
+	return read() & 0b11111;
 }
 
 uint32_t GPIO::read()
@@ -64,11 +65,7 @@ uint32_t GPIO::read()
 	f >> bitmap;
 	f.close();
 #else
-#ifndef GPIO_DISABLED
-	for (int i = 2; i <= 9; ++i) {
-		bitmap |= (digitalRead(i) ? 1 : 0) << (i - 2);
-	}
-#endif
+	bitmap = mcp.readPort(MCP23017Port::B);
 #endif
 	return bitmap;
 }
@@ -82,10 +79,7 @@ void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 	f << output_bitmap;
 	f.close();
 #else
-#ifndef GPIO_DISABLED
-	digitalWrite(11, output_bitmap & 0x01);
-	digitalWrite(13, output_bitmap & 0x02);
-#endif
+	mcp.writePort(MCP23017Port::A, output_bitmap);
 #endif
 }
 
