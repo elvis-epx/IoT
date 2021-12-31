@@ -17,11 +17,14 @@ static void pulse_trampoline()
 
 #endif
 
+#define GPIO_DISABLED 1
+
 GPIO::GPIO()
 {
 	pulses = 0;
 	output_bitmap = 0;
 
+#ifndef GPIO_DISABLED
 #ifndef UNDER_TEST
 	// level meter
 	pinMode(2, INPUT_PULLUP);
@@ -34,9 +37,10 @@ GPIO::GPIO()
 	pinMode(8, INPUT_PULLUP);
 	// flow meter
 	pinMode(9, INPUT_PULLUP);
-	attachInterrupt(digitalPinToInterrupt(9), pulse_trampoline, RISING);
+	// attachInterrupt(digitalPinToInterrupt(9), pulse_trampoline, RISING);
 	// pump
 	pinMode(11, OUTPUT);
+#endif
 #endif
 	write_output(output_bitmap, ~0);
 }
@@ -60,9 +64,11 @@ uint32_t GPIO::read()
 	f >> bitmap;
 	f.close();
 #else
+#ifndef GPIO_DISABLED
 	for (int i = 2; i <= 9; ++i) {
 		bitmap |= (digitalRead(i) ? 1 : 0) << (i - 2);
 	}
+#endif
 #endif
 	return bitmap;
 }
@@ -76,8 +82,10 @@ void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 	f << output_bitmap;
 	f.close();
 #else
+#ifndef GPIO_DISABLED
 	digitalWrite(11, output_bitmap & 0x01);
 	digitalWrite(13, output_bitmap & 0x02);
+#endif
 #endif
 }
 
