@@ -160,23 +160,23 @@ void Display::show(char **msg)
 	printf("\033[u");
 	fflush(stdout);
 #else
-	if (ok) {
-		lcd->clear();
-		lcd->setCursor(0, 0);
-		lcd->print(msg[0]);
-		lcd->setCursor(0, 1);
-		lcd->print(msg[1]);
-		lcd->setCursor(0, 2);
-		lcd->print(msg[2]);
-		lcd->setCursor(0, 3);
-		lcd->print(msg[3]);
-	} else {
-		Serial.println("====");
-		Serial.println(msg[0]);
-		Serial.println(msg[1]);
-		Serial.println(msg[2]);
+	lcd->clear();
+	lcd->setCursor(0, 0);
+	lcd->print(msg[0]);
+	lcd->setCursor(0, 1);
+	lcd->print(msg[1]);
+	lcd->setCursor(0, 2);
+	lcd->print(msg[2]);
+	lcd->setCursor(0, 3);
+	lcd->print(msg[3]);
+	if (!ok) {
+		Serial.print(msg[0]);
+		Serial.print(" || ");
+		Serial.print(msg[1]);
+		Serial.print(" || ");
+		Serial.print(msg[2]);
+		Serial.print(" || ");
 		Serial.println(msg[3]);
-		Serial.println("====");
 	}
 #endif
 }
