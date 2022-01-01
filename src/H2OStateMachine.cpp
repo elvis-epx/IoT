@@ -121,7 +121,7 @@ static bool lfs_recover()
 
 static bool manual_on_sw_1()
 {
-	if (!(gpio->read_switches() & 0x01)) {
+	if (!(gpio->read_switch(GPIO::SWITCH_ON_MANUAL))) {
 		return true;
 	}
 	return false;
@@ -138,7 +138,7 @@ static bool manual_on_sw_0()
 static bool manual_off_sw_1()
 {
 	// pull-up logic
-	if (!(gpio->read_switches() & 0x02)) {
+	if (!(gpio->read_switch(GPIO::SWITCH_OFF_MANUAL))) {
 		return true;
 	}
 	return false;

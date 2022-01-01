@@ -15,7 +15,7 @@ void Pump::on()
 		since = now();
 		is_on = true;
 		flowmeter->reset_all();
-		gpio->write_output(1, 0x01);
+		gpio->write_pump(1);
 	}
 }
 
@@ -25,7 +25,7 @@ void Pump::off()
 		display->debug("pump off");
 		since = now();
 		is_on = false;
-		gpio->write_output(0, 0x01);
+		gpio->write_pump(0);
 	}
 }
 
