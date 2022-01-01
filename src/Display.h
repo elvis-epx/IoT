@@ -28,6 +28,7 @@ private:
 	Timestamp last_row3_update;
 #ifndef UNDER_TEST
 	Ptr<LCD_I2C> lcd;
+	bool ok;
 #endif
 };
 

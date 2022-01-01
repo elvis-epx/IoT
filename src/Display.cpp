@@ -1,11 +1,14 @@
 #include "stdio.h"
 #ifndef UNDER_TEST
 #include <LCD_I2C.h>
+#include <Wire.h>
 #endif
 
 #include "Display.h"
 #include "Elements.h"
 #include "Constants.h"
+
+#define I2C_ADDR 0x3f
 
 Display::Display()
 {
@@ -14,7 +17,9 @@ Display::Display()
 	last_update = last_row2_update = last_row3_update = now();
 
 #ifndef UNDER_TEST
-	lcd = Ptr<LCD_I2C>(new LCD_I2C(0x3f, 16, 2));
+	Wire.beginTransmission(I2C_ADDR);
+	ok = ! Wire.endTransmission();
+	lcd = Ptr<LCD_I2C>(new LCD_I2C(I2C_ADDR, 16, 2));
 	lcd->begin(false);
 	// call begin() with False in case there are other I2C devices
 	// that call Wire.begin() first
@@ -155,15 +160,24 @@ void Display::show(char **msg)
 	printf("\033[u");
 	fflush(stdout);
 #else
-	lcd->clear();
-	lcd->setCursor(0, 0);
-	lcd->print(msg[0]);
-	lcd->setCursor(0, 1);
-	lcd->print(msg[1]);
-	lcd->setCursor(0, 2);
-	lcd->print(msg[2]);
-	lcd->setCursor(0, 3);
-	lcd->print(msg[3]);
+	if (ok) {
+		lcd->clear();
+		lcd->setCursor(0, 0);
+		lcd->print(msg[0]);
+		lcd->setCursor(0, 1);
+		lcd->print(msg[1]);
+		lcd->setCursor(0, 2);
+		lcd->print(msg[2]);
+		lcd->setCursor(0, 3);
+		lcd->print(msg[3]);
+	} else {
+		Serial.println("====");
+		Serial.println(msg[0]);
+		Serial.println(msg[1]);
+		Serial.println(msg[2]);
+		Serial.println(msg[3]);
+		Serial.println("====");
+	}
 #endif
 }
 
