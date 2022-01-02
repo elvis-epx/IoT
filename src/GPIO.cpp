@@ -82,7 +82,7 @@ void GPIO::write_pump(bool state)
 
 void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 {
-	output_bitmap = (output_bitmap & ~bitmask) | bitmap;
+	output_bitmap = (output_bitmap & ~bitmask) | (bitmap & bitmask);
 #ifdef UNDER_TEST
 	std::ofstream f;
 	f.open("gpio2.sim");
