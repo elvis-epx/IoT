@@ -8,9 +8,22 @@
 #include <fstream>
 
 #else
+
+// TODO add ESP32 option
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+#include "Credentials.h"
+
+WiFiClient wifi;
+PubSubClient mqttimpl(wifi);
+static const char *mqtt_id = "H2OControl";
+
 #endif
 
 #define TOP "H2OControl/"
+
+static const char *sub_onswitch = TOP "OverrideOn";
+static const char *sub_offswitch = TOP "OverrideOff";
 
 static const char* pub_topics[] = {
 			TOP "State", TOP "Level",
@@ -62,9 +75,73 @@ MQTT::MQTT()
 		pub_pending[i] = 1;
 	}
 
-	// FIXME init WiFi, PubSub
-	// FIXME configure sub to switches and callbacks
+#ifndef UNDER_TEST
+	init_wifi();
+	init_mqttimpl();
+#endif
 }
+
+#ifndef UNDER_TEST
+
+void mqttimpl_trampoline(char* topic, uint8_t* payload, unsigned int length)
+{
+	mqtt->sub_data_event(topic, (const char *) payload, length);
+}
+
+void MQTT::init_wifi()
+{
+	chk_wifi();
+}
+
+void MQTT::init_mqttimpl()
+{
+	mqttimpl.setServer(BROKER_MQTT, BROKER_PORT);
+	mqttimpl.setCallback(mqttimpl_trampoline);
+}
+
+void MQTT::chk_mqttimpl()
+{
+	Timestamp Now = now();
+	if ((Now - last_mqtt_check) < (1 * MINUTES)) {
+		return;
+	}
+	last_mqtt_check = Now;
+
+	if (!mqttimpl.connected()) {
+		display->debug("Connecting MQTT");
+		if (mqttimpl.connect(mqtt_id)) {
+			display->debug("MQTT connection up");
+			mqttimpl.subscribe(sub_onswitch);
+			mqttimpl.subscribe(sub_offswitch);
+			last_general_pub = -1; // force full republish
+		} else {
+			display->debug("MQTT connection failed");
+			display->debug("MQTT state", mqttimpl.state());
+		}
+	}
+}
+
+void MQTT::eval_mqttimpl()
+{
+	mqttimpl.loop();
+}
+
+void MQTT::chk_wifi()
+{
+	Timestamp Now = now();
+	if ((Now - last_wifi_check) < (1 * MINUTES)) {
+		return;
+	}
+	last_wifi_check = Now;
+
+	if (WiFi.status() == WL_CONNECTED) {
+		return;
+	}
+	display->debug("Connecting to WiFi...");
+	WiFi.begin(SSID, PASSWORD);
+}
+
+#endif
 
 MQTT::~MQTT()
 {
@@ -86,6 +163,31 @@ bool MQTT::override_off_state() const
 	return override_off_switch;
 }
 
+void MQTT::sub_data_event(const char *topic, const char *payload, unsigned int length)
+{
+	if (strcmp(topic, sub_onswitch) == 0) {
+		if (strncasecmp(payload, "On", length) == 0) {
+			override_on_switch = 1;
+		} else if (strncasecmp(payload, "1", length) == 0) {
+			override_on_switch = 1;
+		} else if (strncasecmp(payload, "Off", length) == 0) {
+			override_on_switch = 0;
+		} else if (strncasecmp(payload, "0", length) == 0) {
+			override_on_switch = 0;
+		}
+	} else if (strcmp(topic, sub_offswitch) == 0) {
+		if (strncasecmp(payload, "On", length) == 0) {
+			override_off_switch = 1;
+		} else if (strncasecmp(payload, "1", length) == 0) {
+			override_off_switch = 1;
+		} else if (strncasecmp(payload, "Off", length) == 0) {
+			override_off_switch = 0;
+		} else if (strncasecmp(payload, "0", length) == 0) {
+			override_off_switch = 0;
+		}
+	}
+}
+
 void MQTT::eval()
 {
 #ifdef UNDER_TEST
@@ -99,14 +201,18 @@ void MQTT::eval()
 	}
 	f.close();
 	if (x == 1) {
-		override_on_switch = true;
+		sub_data_event(sub_onswitch, "On", 2);
 	} else if (x == 2) {
-		override_on_switch = false;
+		sub_data_event(sub_onswitch, "Off", 3);
 	} else if (x == 3) {
-		override_off_switch = true;
+		sub_data_event(sub_offswitch, "On", 2);
 	} else if (x == 4) {
-		override_off_switch = false;
+		sub_data_event(sub_offswitch, "Off", 3);
 	}
+#else
+	chk_wifi();
+	chk_mqttimpl();
+	eval_mqttimpl();
 #endif
 	update_pub_data();
 	pub_data();
@@ -198,7 +304,7 @@ void MQTT::update_pub_data()
 void MQTT::pub_data()
 {
 	Timestamp Now = now();
-	if ((Now - last_general_pub) >= (30 * MINUTES)) {
+	if (((Now - last_general_pub) >= (30 * MINUTES)) || last_general_pub == -1) {
 		for (int i = 0; pub_topics[i]; ++i) {
 			pub_pending[i] = 1;
 		}
@@ -224,6 +330,6 @@ void MQTT::do_pub_data(const char *topic, const char *value) const
 	f << topic << " " << value << std::endl;
 	f.close();
 #else
-	// FIXME publish in real device
+	mqttimpl.publish(topic, value);
 #endif
 }
