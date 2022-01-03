@@ -20,10 +20,11 @@ static const char *mqtt_id = "H2OControl";
 
 #endif
 
-#define TOP "H2OControl/"
+#define TOP "stat/H2OControl/"
+#define TOP_CMND "cmnd/H2OControl/"
 
-static const char *sub_onswitch = TOP "OverrideOn";
-static const char *sub_offswitch = TOP "OverrideOff";
+static const char *sub_onswitch = TOP_CMND "OverrideOn";
+static const char *sub_offswitch = TOP_CMND "OverrideOff";
 
 static const char* pub_topics[] = {
 			TOP "State", TOP "Level",
@@ -64,7 +65,10 @@ MQTT::MQTT()
 {
 	override_on_switch = false;
 	override_off_switch = false;
-	last_pub_update = last_general_pub = 0;
+	last_pub_update = now() - (1 * MINUTES);
+	last_general_pub = now() - (60 * MINUTES);
+	last_mqtt_check = now() - (30 * SECONDS);
+	last_wifi_check = now() - (60 * SECONDS);
 
 	size_t count = 0;
 	while (pub_topics[count++]);
@@ -76,7 +80,6 @@ MQTT::MQTT()
 	}
 
 #ifndef UNDER_TEST
-	init_wifi();
 	init_mqttimpl();
 #endif
 }
@@ -113,7 +116,8 @@ void MQTT::chk_mqttimpl()
 			display->debug("MQTT connection up");
 			mqttimpl.subscribe(sub_onswitch);
 			mqttimpl.subscribe(sub_offswitch);
-			last_general_pub = -1; // force full republish
+			// force full republish
+			last_general_pub = Now - (30 * MINUTES);
 		} else {
 			display->debug("MQTT connection failed");
 			display->debug("MQTT state", mqttimpl.state());
@@ -135,6 +139,7 @@ void MQTT::chk_wifi()
 	last_wifi_check = Now;
 
 	if (WiFi.status() == WL_CONNECTED) {
+		display->debug("WiFi up, IP is ", WiFi.localIP().toString().c_str());
 		return;
 	}
 	display->debug("Connecting to WiFi...");
@@ -304,7 +309,7 @@ void MQTT::update_pub_data()
 void MQTT::pub_data()
 {
 	Timestamp Now = now();
-	if (((Now - last_general_pub) >= (30 * MINUTES)) || last_general_pub == -1) {
+	if (((Now - last_general_pub) >= (30 * MINUTES))) {
 		for (int i = 0; pub_topics[i]; ++i) {
 			pub_pending[i] = 1;
 		}

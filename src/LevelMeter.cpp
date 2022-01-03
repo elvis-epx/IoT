@@ -5,8 +5,8 @@ LevelMeter::LevelMeter(const double levels[], double capacity):
 	levels(levels), capacity(capacity)
 {
 	current_level = 100;
-	last_eval = 0;
-	last_change = 0;
+	last_eval = now();
+	last_change = now();
 	failure = false;
 }
 

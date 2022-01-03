@@ -24,8 +24,8 @@ void State::clear()
 StateMachine::StateMachine()
 {
 	started = false;
-	last_transition = 0;
-	last_eval = 0;
+	last_transition = now();
+	last_eval = now();
 }
 
 StateMachine::~StateMachine()
