@@ -90,7 +90,6 @@ void Display::eval()
 
 	sprintf(msg[0], "%s", sm->cur_state_name());
 
-	// FIXME report level error via MQTT 
 	const char *err = levelmeter->failure_detected() ? "E " : "";
 	sprintf(msg[1], "%s%.0f%% + %.0fL", err, levelmeter->level_pct(), flowmeter->volume());
 
