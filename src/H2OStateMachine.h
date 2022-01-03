@@ -20,14 +20,14 @@ public:
 class HisteresisOff: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Off, rest"; };
+	virtual const char* name() const { return "Resting"; };
 };
 
-/* Pump off due to override-off switch */
+/* Pump off due to override-off MQTT switch */
 class ManualOff: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Off (manual)"; };
+	virtual const char* name() const { return "Off MQTT"; };
 };
 
 /* Pump on */
@@ -37,11 +37,11 @@ public:
 	virtual const char* name() const { return "On"; };
 };
 
-/* Pump on due to override-on switch */
+/* Pump on due to override-on MQTT switch */
 class ManualOn: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "On (manual)"; };
+	virtual const char* name() const { return "On MQTT"; };
 };
 
 /* Water flow not detected, turned pump off.
@@ -52,7 +52,7 @@ public:
 class FlowFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail no flow"; };
+	virtual const char* name() const { return "F flow"; };
 };
 
 /* Water flow detected but unexpectedly low, over last 1-2 minutes,
@@ -62,7 +62,7 @@ public:
 class LowFlowShort: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail low flow S"; };
+	virtual const char* name() const { return "F slow 2"; };
 };
 
 /* Water flow detected but unexpectedly low, over last 30 minutes,
@@ -72,7 +72,7 @@ public:
 class LowFlowLong: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail low flow L"; };
+	virtual const char* name() const { return "F slow 30"; };
 };
 
 /* Pump running too much time
@@ -83,7 +83,7 @@ public:
 class PumpTimeout: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail pump timeout"; };
+	virtual const char* name() const { return "F timeout"; };
 };
 
 /* Level change not detected in spite of water flow
@@ -94,7 +94,7 @@ public:
 class LevelFailure: public State {
 public:
 	virtual void enter();
-	virtual const char* name() const { return "Fail level"; };
+	virtual const char* name() const { return "F level"; };
 };
 
 class H2OStateMachine: public StateMachine {

@@ -13,7 +13,7 @@ flow 10 5
 
 sensors 20 40 mon
 sleep 3
-cond state eq "On (manual)"
+cond state eq "On MQTT"
 cond pump eq 1
 
 sensors 20 40 
@@ -23,12 +23,12 @@ cond pump eq 1
 
 sensors 20 40 mon
 sleep 3
-cond state eq "On (manual)"
+cond state eq "On MQTT"
 cond pump eq 1
 
 sensors 20 40 mon moff
 sleep 3
-cond state eq "Off (manual)"
+cond state eq "Off MQTT"
 cond pump eq 0
 
 sensors 20 40
@@ -38,6 +38,6 @@ cond pump eq 1
 
 sensors 20 40 60 80 100
 sleep 3
-cond state eq "Off, rest"
+cond state eq "Resting"
 cond pump eq 0
 cond level_err eq 0

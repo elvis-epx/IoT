@@ -35,7 +35,7 @@ sensors 20 40 60
 fastflow 48 $((20 * 60))
 # ------------- 110 min mark, > 108 min, should have fialed
 
-cond state eq "Fail pump timeout"
+cond state eq "F timeout"
 cond pump eq 0
 
 sensors 20 40 60 80 100

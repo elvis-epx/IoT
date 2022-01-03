@@ -46,16 +46,6 @@ GPIO::GPIO()
 	write_output(output_bitmap, ~0);
 }
 
-bool GPIO::read_switch(uint32_t mask)
-{
-	return read_switches() & mask;
-}
-
-uint32_t GPIO::read_switches()
-{
-	return (read() >> 5) & 0b111;
-}
-
 uint32_t GPIO::read_level_sensors()
 {
 	return read() & 0b11111;

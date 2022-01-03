@@ -20,5 +20,5 @@ cond state eq "On"
 # Fail after 2x expected time
 
 sleep 120
-cond state eq "Fail no flow"
+cond state eq "F flow"
 cond pump eq 0

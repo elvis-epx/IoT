@@ -13,7 +13,7 @@ cond level_err eq 0
 # 4 minutes tolerance to fill pipe 
 flow 1 300
 
-cond state eq "Fail low flow S"
+cond state eq "F slow 2"
 cond pump eq 0
 
 sensors 20 40 60 80 100

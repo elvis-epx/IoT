@@ -10,6 +10,7 @@ Ptr<FlowMeter> flowmeter;
 Ptr<LevelMeter> levelmeter;
 Ptr<Display> display;
 Ptr<H2OStateMachine> sm;
+Ptr<MQTT> mqtt;
 
 // GPIO 2 = D4 in ESP8266 NodeMCU
 const int heartbeat_led = 2;
@@ -37,6 +38,8 @@ void setup() {
   Serial.println("Display initiated");
   sm = Ptr<H2OStateMachine>(new H2OStateMachine());
   Serial.println("State machine initiated");
+  mqtt = Ptr<MQTT>(new MQTT());
+  Serial.println("MQTT initiated");
 
   sm->start();
 

@@ -13,13 +13,13 @@ cond level_err eq 0
 # 100 pulses/s (~20L/min) x >20 min
 fastflow 100 1400
 
-cond state eq "Fail level"
+cond state eq "F level"
 cond pump eq 0
 
 advance $((3600 * 6))
 
 sensors 20 40 60 80 100
-cond state eq "Fail level"
+cond state eq "F level"
 cond pump eq 0
 
 advance $((3600 * 6))

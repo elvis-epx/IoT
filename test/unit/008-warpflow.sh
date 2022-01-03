@@ -18,5 +18,5 @@ fastflow 100 660
 sensors 20 40 60 80 100
 
 sleep 5
-cond state eq "Off, rest"
+cond state eq "Resting"
 cond pump eq 0

@@ -16,6 +16,7 @@ Ptr<FlowMeter> flowmeter;
 Ptr<LevelMeter> levelmeter;
 Ptr<Display> display;
 Ptr<H2OStateMachine> sm;
+Ptr<MQTT> mqtt;
 
 // to simulate accelerated time
 extern int64_t uptime_advance;
@@ -28,6 +29,7 @@ int main()
 	levelmeter = Ptr<LevelMeter>(new LevelMeter(level_sensors, TANK_CAPACITY));
 	display = Ptr<Display>(new Display());
 	sm = Ptr<H2OStateMachine>(new H2OStateMachine());
+	mqtt = Ptr<MQTT>(new MQTT());
 
 	sm->start();
 

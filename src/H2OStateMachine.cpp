@@ -121,7 +121,7 @@ static bool lfs_recover()
 
 static bool manual_on_sw_1()
 {
-	if (!(gpio->read_switch(GPIO::SWITCH_ON_MANUAL))) {
+	if (mqtt->override_on_state()) {
 		return true;
 	}
 	return false;
@@ -137,8 +137,7 @@ static bool manual_on_sw_0()
 
 static bool manual_off_sw_1()
 {
-	// pull-up logic
-	if (!(gpio->read_switch(GPIO::SWITCH_OFF_MANUAL))) {
+	if (mqtt->override_off_state()) {
 		return true;
 	}
 	return false;
