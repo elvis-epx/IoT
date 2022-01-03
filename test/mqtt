@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+
+import sys, mylib
+
+mylib.gen_mqtt(sys.argv[1])

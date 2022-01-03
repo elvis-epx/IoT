@@ -7,6 +7,11 @@ function sensors () {
 	./sensors $*
 }
 
+function mqtt () {
+	./mqtt $*
+	sleep 1
+}
+
 function cond () {
 	./cond $1 $2 "$3"
 }

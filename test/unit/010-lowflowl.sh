@@ -18,7 +18,7 @@ cond level_err eq 0
 # Simulate 5.6L/min (between 4.6 and 6.1)
 fastflow 27 $((31 * 60))
 
-cond state eq "F flow 30"
+cond state eq "F slow 30"
 cond pump eq 0
 
 sensors 20 40 60 80 100

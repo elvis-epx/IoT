@@ -96,11 +96,18 @@ def gen_sensors(items):
 	args["60"] = 4
 	args["80"] = 8
 	args["100"] = 16
-	args["mon"] = 32
-	args["moff"] = 64
 	
 	bitmap = 255
 	for arg in items[1:]:
 		bitmap = bitmap & ~args[arg]
 	
 	open("gpio.sim", "w").write("%d" % bitmap)
+
+def gen_mqtt(item):
+	args = {}
+	args["mon-up"] = 1
+	args["mon-down"] = 2
+	args["moff-up"] = 3
+	args["moff-down"] = 4
+	
+	open("mqtt.sim", "w").write("%d" % args[item])

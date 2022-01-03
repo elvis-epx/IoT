@@ -61,4 +61,5 @@ void loop() {
   levelmeter->eval();
   sm->eval();
   display->eval();
+  mqtt->eval();
 }

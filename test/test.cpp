@@ -40,6 +40,7 @@ int main()
 		levelmeter->eval();
 		sm->eval();
 		display->eval();
+		mqtt->eval();
 		usleep(100000);
 
 		std::ofstream g;
