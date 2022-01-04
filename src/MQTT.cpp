@@ -79,27 +79,22 @@ MQTT::MQTT()
 		pub_pending[i] = 1;
 	}
 
-#ifndef UNDER_TEST
 	init_mqttimpl();
-#endif
 }
 
 #ifndef UNDER_TEST
-
 void mqttimpl_trampoline(char* topic, uint8_t* payload, unsigned int length)
 {
 	mqtt->sub_data_event(topic, (const char *) payload, length);
 }
-
-void MQTT::init_wifi()
-{
-	chk_wifi();
-}
+#endif
 
 void MQTT::init_mqttimpl()
 {
+#ifndef UNDER_TEST
 	mqttimpl.setServer(BROKER_MQTT, BROKER_PORT);
 	mqttimpl.setCallback(mqttimpl_trampoline);
+#endif
 }
 
 void MQTT::chk_mqttimpl()
@@ -110,6 +105,7 @@ void MQTT::chk_mqttimpl()
 	}
 	last_mqtt_check = Now;
 
+#ifndef UNDER_TEST
 	if (!mqttimpl.connected()) {
 		display->debug("Connecting MQTT");
 		if (mqttimpl.connect(mqtt_id)) {
@@ -123,11 +119,14 @@ void MQTT::chk_mqttimpl()
 			display->debug("MQTT state", mqttimpl.state());
 		}
 	}
+#endif
 }
 
 void MQTT::eval_mqttimpl()
 {
+#ifndef UNDER_TEST
 	mqttimpl.loop();
+#endif
 }
 
 void MQTT::chk_wifi()
@@ -138,15 +137,15 @@ void MQTT::chk_wifi()
 	}
 	last_wifi_check = Now;
 
+#ifndef UNDER_TEST
 	if (WiFi.status() == WL_CONNECTED) {
 		display->debug("WiFi up, IP is ", WiFi.localIP().toString().c_str());
 		return;
 	}
 	display->debug("Connecting to WiFi...");
 	WiFi.begin(SSID, PASSWORD);
-}
-
 #endif
+}
 
 MQTT::~MQTT()
 {
@@ -206,19 +205,19 @@ void MQTT::eval()
 	}
 	f.close();
 	if (x == 1) {
-		sub_data_event(sub_onswitch, "On", 2);
+		sub_data_event(sub_onswitch, (random() % 2) ? "On" : "1", 2);
 	} else if (x == 2) {
-		sub_data_event(sub_onswitch, "Off", 3);
+		sub_data_event(sub_onswitch, (random() % 2) ? "Off" : "0", 3);
 	} else if (x == 3) {
-		sub_data_event(sub_offswitch, "On", 2);
+		sub_data_event(sub_offswitch, (random() % 2) ? "on" : "1", 2);
 	} else if (x == 4) {
-		sub_data_event(sub_offswitch, "Off", 3);
+		sub_data_event(sub_offswitch, (random() % 2) ? "off" : "0", 3);
 	}
-#else
+#endif
 	chk_wifi();
 	chk_mqttimpl();
 	eval_mqttimpl();
-#endif
+
 	update_pub_data();
 	pub_data();
 }
@@ -335,6 +334,6 @@ void MQTT::do_pub_data(const char *topic, const char *value) const
 	f << topic << " " << value << std::endl;
 	f.close();
 #else
-	mqttimpl.publish(topic, value);
+	mqttimpl.publish(topic, value, strlen(value), true);
 #endif
 }
