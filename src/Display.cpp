@@ -1,14 +1,21 @@
 #include "stdio.h"
 #ifndef UNDER_TEST
-#include <LCD_I2C.h>
 #include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #endif
 
 #include "Display.h"
 #include "Elements.h"
 #include "Constants.h"
 
-#define I2C_ADDR 0x3f
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define SCREEN_ADDRESS 0x3C
+
+#ifndef UNDER_TEST
+static Adafruit_SSD1306 hw(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
+#endif
 
 Display::Display()
 {
@@ -17,13 +24,14 @@ Display::Display()
 	last_update = last_row2_update = last_row3_update = now();
 
 #ifndef UNDER_TEST
-	Wire.beginTransmission(I2C_ADDR);
-	ok = ! Wire.endTransmission();
-	lcd = Ptr<LCD_I2C>(new LCD_I2C(I2C_ADDR, 16, 2));
-	lcd->begin(false);
-	// call begin() with False in case there are other I2C devices
-	// that call Wire.begin() first
-	lcd->backlight();
+	ok = hw.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+	if (ok) {
+		hw.setTextSize(1);
+		hw.setTextColor(SSD1306_WHITE);
+		hw.cp437(true);
+	}
+#else
+	ok = true;
 #endif
 
 	const char *msg[] = {"", "", "", ""};
@@ -159,24 +167,33 @@ void Display::show(char **msg)
 	printf("\033[u");
 	fflush(stdout);
 #else
-	lcd->clear();
-	lcd->setCursor(0, 0);
-	lcd->print(msg[0]);
-	lcd->setCursor(0, 1);
-	lcd->print(msg[1]);
-	lcd->setCursor(0, 2);
-	lcd->print(msg[2]);
-	lcd->setCursor(0, 3);
-	lcd->print(msg[3]);
-	if (!ok) {
-		Serial.print(msg[0]);
-		Serial.print(" || ");
-		Serial.print(msg[1]);
-		Serial.print(" || ");
-		Serial.print(msg[2]);
-		Serial.print(" || ");
-		Serial.println(msg[3]);
+	if (ok) {
+		hw.clearDisplay();
+		hw.setCursor(0, 0 + 4);
+		for (int i = 0; msg[0][i]; ++i) {
+			hw.write(msg[0][i]);
+		}
+		hw.setCursor(0, 16 + 4);
+		for (int i = 0; msg[1][i]; ++i) {
+			hw.write(msg[1][i]);
+		}
+		hw.setCursor(0, 32 + 4);
+		for (int i = 0; msg[2][i]; ++i) {
+			hw.write(msg[2][i]);
+		}
+		hw.setCursor(0, 48 + 4);
+		for (int i = 0; msg[3][i]; ++i) {
+			hw.write(msg[3][i]);
+		}
+		hw.display();
 	}
+	Serial.print(msg[0]);
+	Serial.print(" || ");
+	Serial.print(msg[1]);
+	Serial.print(" || ");
+	Serial.print(msg[2]);
+	Serial.print(" || ");
+	Serial.print(msg[3]);
 #endif
 }
 
@@ -221,4 +238,3 @@ void Display::debug(const char *msg, const char *msg2)
 	Serial.println(msg2);
 #endif
 }
-

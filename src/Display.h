@@ -4,10 +4,6 @@
 #include "Timestamp.h"
 #include "Pointer.h"
 
-#ifndef UNDER_TEST
-class LCD_I2C;
-#endif
-
 class Display
 {
 public:
@@ -26,10 +22,7 @@ private:
 	Timestamp last_update;
 	Timestamp last_row2_update;
 	Timestamp last_row3_update;
-#ifndef UNDER_TEST
-	Ptr<LCD_I2C> lcd;
 	bool ok;
-#endif
 };
 
 #endif

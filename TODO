@@ -1,1 +1,4 @@
 Move magic timeouts to #defines at least
+
+Send debug messages via MQTT as well
+	Move debug to its own class
