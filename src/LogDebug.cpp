@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #ifndef UNDER_TEST
 #include <Arduino.h>
 #endif
 
 #include "LogDebug.h"
+#include "Elements.h"
 
 void Log::d(const char *msg)
 {
@@ -12,37 +14,29 @@ void Log::d(const char *msg)
 #else
 	Serial.println(msg);
 #endif
+	mqtt->pub_logdebug(msg);
 }
 
 void Log::d(const char *msg, const char *msg2)
 {
-#ifdef UNDER_TEST
-	printf("dbg %s %s\n", msg, msg2);
-#else
-	Serial.print(msg);
-	Serial.print(" ");
-	Serial.println(msg2);
-#endif
+	char *s = (char*) malloc(strlen(msg) + 1 + strlen(msg2) + 1);
+	sprintf(s, "%s %s", msg, msg2);
+	Log::d(s);
+	free(s);
 }
 
 void Log::d(const char *msg, int arg)
 {
-#ifdef UNDER_TEST
-	printf("dbg %s %d\n", msg, arg);
-#else
-	Serial.println(msg);
-	Serial.print(" ");
-	Serial.println(arg);
-#endif
+	char *s = (char*) malloc(strlen(msg) + 15);
+	sprintf(s, "%s %d", msg, arg);
+	Log::d(s);
+	free(s);
 }
 
 void Log::d(const char *msg, double arg)
 {
-#ifdef UNDER_TEST
-	printf("dbg %s %f\n", msg, arg);
-#else
-	Serial.print(msg);
-	Serial.print(" ");
-	Serial.println(arg);
-#endif
+	char *s = (char*) malloc(strlen(msg) + 25);
+	sprintf(s, "%s %f", msg, arg);
+	Log::d(s);
+	free(s);
 }

@@ -12,6 +12,7 @@ public:
 
 	bool override_on_state() const;
 	bool override_off_state() const;
+	void pub_logdebug(const char *);
 private:
 	void sub_data_event(const char *topic, const char *payload, unsigned int length);
 	void update_pub_data();

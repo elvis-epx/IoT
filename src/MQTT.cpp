@@ -23,6 +23,7 @@ static const char *mqtt_id = "H2OControl";
 
 #define TOP "stat/H2OControl/"
 #define TOP_CMND "cmnd/H2OControl/"
+#define LOGDEBUG_TOPIC "tele/H2OControl/logdebug"
 
 static const char *sub_onswitch = TOP_CMND "OverrideOn";
 static const char *sub_offswitch = TOP_CMND "OverrideOff";
@@ -336,8 +337,15 @@ void MQTT::pub_data()
 	}
 }
 
+void MQTT::pub_logdebug(const char *msg)
+{
+	// do not call Log::d() here to avoid infinite loop
+	do_pub_data(LOGDEBUG_TOPIC, msg);
+}
+
 void MQTT::do_pub_data(const char *topic, const char *value) const
 {
+	// do not call Log::d() here to avoid infinite loop
 #ifdef UNDER_TEST
 	std::ofstream f;
 	f.open("mqttpub.sim", std::ios_base::app);
