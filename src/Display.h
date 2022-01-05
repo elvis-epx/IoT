@@ -9,10 +9,6 @@ class Display
 public:
 	Display();
 	void eval();
-	void debug(const char *);
-	void debug(const char *, const char *);
-	void debug(const char *, int);
-	void debug(const char *, double);
 	static void millis_to_hms(int64_t t, char *target);
 
 private:

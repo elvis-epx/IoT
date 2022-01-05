@@ -1,6 +1,8 @@
-#include "StateMachine.h"
 #include <stdio.h>
+
+#include "StateMachine.h"
 #include "Display.h"
+#include "LogDebug.h"
 
 extern Display display;
 
@@ -65,7 +67,7 @@ bool StateMachine::eval()
 			char msg[80];
 			sprintf(msg, "trans %s, st %s -> %s", current->tnames[i],
 					current->name(), next->name());
-			display.debug(msg);
+			Log::d(msg);
 			current->exit();
 			current = next;
 			current->enter();

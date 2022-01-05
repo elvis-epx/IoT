@@ -6,6 +6,7 @@
 
 #include "Elements.h"
 #include "Constants.h"
+#include "LogDebug.h"
 
 static const double level_sensors[] = LEVEL_SENSORS;
 static const uint32_t flow_rates[] = FLOWRATES;
@@ -74,9 +75,9 @@ int main()
 
 	// test invalid flow rate argument
 	assert(flowmeter->rate(12345) == -2);
-	display->debug("int", 1);
-	display->debug("double", 1.0);
-	display->debug("string", "bla");
+	Log::d("int", 1);
+	Log::d("double", 1.0);
+	Log::d("string", "bla");
 
 	char tmp[40];
 	Display::millis_to_hms(-1, tmp);

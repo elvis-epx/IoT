@@ -1,6 +1,7 @@
 #include "Pump.h"
 #include "Elements.h"
 #include "Constants.h"
+#include "LogDebug.h"
 
 Pump::Pump()
 {
@@ -11,7 +12,7 @@ Pump::Pump()
 void Pump::on()
 {
 	if (! is_on) {
-		display->debug("pump on");
+		Log::d("pump on");
 		since = now();
 		is_on = true;
 		flowmeter->reset_all();
@@ -22,7 +23,7 @@ void Pump::on()
 void Pump::off()
 {
 	if (is_on) {
-		display->debug("pump off");
+		Log::d("pump off");
 		since = now();
 		is_on = false;
 		gpio->write_pump(0);

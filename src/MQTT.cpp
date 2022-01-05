@@ -1,6 +1,7 @@
 #include "MQTT.h"
 #include "Elements.h"
 #include "Constants.h"
+#include "LogDebug.h"
 
 #ifdef UNDER_TEST
 
@@ -116,16 +117,16 @@ void MQTT::chk_mqttimpl()
 
 #ifndef UNDER_TEST
 	if (!mqttimpl.connected()) {
-		display->debug("Connecting MQTT");
+		Log::d("Connecting MQTT");
 		if (mqttimpl.connect(mqtt_id)) {
-			display->debug("MQTT connection up");
+			Log::d("MQTT connection up");
 			mqttimpl.subscribe(sub_onswitch);
 			mqttimpl.subscribe(sub_offswitch);
 			// force full republish
 			last_general_pub = Now - (30 * MINUTES);
 		} else {
-			display->debug("MQTT connection failed");
-			display->debug("MQTT state", mqttimpl.state());
+			Log::d("MQTT connection failed");
+			Log::d("MQTT state", mqttimpl.state());
 		}
 	}
 #endif
@@ -148,10 +149,10 @@ void MQTT::chk_wifi()
 
 #ifndef UNDER_TEST
 	if (WiFi.status() == WL_CONNECTED) {
-		display->debug("WiFi up, IP is ", WiFi.localIP().toString().c_str());
+		Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
 		return;
 	}
-	display->debug("Connecting to WiFi...");
+	Log::d("Connecting to WiFi...");
 	WiFi.begin(SSID, PASSWORD);
 #endif
 }
