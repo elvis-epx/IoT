@@ -83,9 +83,13 @@ MQTT::MQTT()
 }
 
 #ifndef UNDER_TEST
-void mqttimpl_trampoline(char* topic, uint8_t* payload, unsigned int length)
+void mqttimpl_trampoline(char* topic, uint8_t* bpayload, unsigned int length)
 {
-	mqtt->sub_data_event(topic, (const char *) payload, length);
+	char *payload = (char*) malloc(length + 1);
+	memcpy(payload, bpayload, length);
+	payload[length] = 0;
+	mqtt->sub_data_event(topic, payload, length);
+	free(payload);
 }
 #endif
 
