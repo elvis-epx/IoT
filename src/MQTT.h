@@ -32,7 +32,7 @@ private:
 	Timestamp last_pub_update;
 	Timestamp last_general_pub;
 
-friend void mqttimpl_trampoline(char* topic, uint8_t* payload, unsigned int length);
+friend void mqttimpl_trampoline2(const char* topic, const uint8_t* payload, unsigned int length);
 };
 
 #endif

@@ -82,14 +82,19 @@ MQTT::MQTT()
 	init_mqttimpl();
 }
 
-#ifndef UNDER_TEST
-void mqttimpl_trampoline(char* topic, uint8_t* bpayload, unsigned int length)
+void mqttimpl_trampoline2(const char* topic, const uint8_t* bpayload, unsigned int length)
 {
 	char *payload = (char*) malloc(length + 1);
 	memcpy(payload, bpayload, length);
 	payload[length] = 0;
 	mqtt->sub_data_event(topic, payload, length);
 	free(payload);
+}
+
+#ifndef UNDER_TEST
+void mqttimpl_trampoline(char* topic, uint8_t* bpayload, unsigned int length)
+{
+	mqttimpl_trampoline2(topic, bpayload, length);
 }
 #endif
 
@@ -209,13 +214,13 @@ void MQTT::eval()
 	}
 	f.close();
 	if (x == 1) {
-		sub_data_event(sub_onswitch, (random() % 2) ? "On" : "1", 2);
+		mqttimpl_trampoline2(sub_onswitch, (uint8_t*) ((random() % 2) ? "On" : "1"), 2);
 	} else if (x == 2) {
-		sub_data_event(sub_onswitch, (random() % 2) ? "Off" : "0", 3);
+		mqttimpl_trampoline2(sub_onswitch, (uint8_t*) ((random() % 2) ? "Off" : "0"), 3);
 	} else if (x == 3) {
-		sub_data_event(sub_offswitch, (random() % 2) ? "on" : "1", 2);
+		mqttimpl_trampoline2(sub_offswitch, (uint8_t*) ((random() % 2) ? "on" : "1"), 2);
 	} else if (x == 4) {
-		sub_data_event(sub_offswitch, (random() % 2) ? "off" : "0", 3);
+		mqttimpl_trampoline2(sub_offswitch, (uint8_t*) ((random() % 2) ? "off" : "0"), 3);
 	}
 #endif
 	chk_wifi();
