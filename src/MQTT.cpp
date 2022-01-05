@@ -334,6 +334,6 @@ void MQTT::do_pub_data(const char *topic, const char *value) const
 	f << topic << " " << value << std::endl;
 	f.close();
 #else
-	mqttimpl.publish(topic, value, strlen(value), true);
+	mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
 #endif
 }
