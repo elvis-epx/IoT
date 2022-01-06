@@ -193,6 +193,6 @@ void Display::show(char **msg)
 	Serial.print(" || ");
 	Serial.print(msg[2]);
 	Serial.print(" || ");
-	Serial.print(msg[3]);
+	Serial.println(msg[3]);
 #endif
 }
