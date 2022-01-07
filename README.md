@@ -8,12 +8,16 @@ via MQTT.
 Currently, the project is aimed to fulfill personal needs. In the future 
 it can be improved to cover more use cases.
 
+![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/breadboard.jpeg)
+
 ## Override on and off
 
 Sometimes it is necessary to turn the pump on/off manually. The idea is
 to have two plain switches at controller case, to cut off and to bypass
 the relay respectively, so the local override is guaranteed to work, even if the 
 controller is faulty.
+
+![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/circuit1.jpeg)
 
 It is also nice to be able to override the controller remotely, so there
 are two logic override switches accessible via MQTT. This allows for integration
@@ -31,6 +35,8 @@ Currently, the target use case employs a number of switch level sensors,
 installed at various levels of the tank. These sensors are cheaper and more
 reliable than analog/continuous level sensors. The topmost sensor must be
 at 100% level.
+
+![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/circuit2.jpeg)
 
 The PWM inflow sensor allows to detect proper water flow (or lack thereof).
 The combination with level sensors allows to detect other failures e.g.
