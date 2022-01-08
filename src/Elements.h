@@ -5,12 +5,12 @@
 #include "Pump.h"
 #include "FlowMeter.h"
 #include "LevelMeter.h"
-#include "GPIO.h"
+#include "MyGPIO.h"
 #include "Display.h"
 #include "H2OStateMachine.h"
 #include "MQTT.h"
 
-extern Ptr<GPIO> gpio;
+extern Ptr<MyGPIO> gpio;
 extern Ptr<Pump> pump;
 extern Ptr<FlowMeter> flowmeter;
 extern Ptr<LevelMeter> levelmeter;

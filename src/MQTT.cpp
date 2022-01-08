@@ -10,8 +10,11 @@
 
 #else
 
-// TODO add ESP32 option
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#endif
 #include <PubSubClient.h>
 #include "Credentials.h"
 

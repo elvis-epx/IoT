@@ -1,4 +1,4 @@
-#include "GPIO.h"
+#include "MyGPIO.h"
 #include "Elements.h"
 
 #ifdef UNDER_TEST
@@ -16,7 +16,7 @@
 
 MCP23017 mcp = MCP23017(MCP23017_ADDR);
 
-static void ICACHE_RAM_ATTR pulse_trampoline()
+static void IRAM_ATTR pulse_trampoline()
 {
 	gpio->pulse();
 }
@@ -25,7 +25,7 @@ static void ICACHE_RAM_ATTR pulse_trampoline()
 
 #define FLOWMETER_PIN 14
 
-GPIO::GPIO()
+MyGPIO::MyGPIO()
 {
 	pulses = 0;
 	output_bitmap = 0;
@@ -46,12 +46,12 @@ GPIO::GPIO()
 	write_output(output_bitmap, ~0);
 }
 
-uint32_t GPIO::read_level_sensors()
+uint32_t MyGPIO::read_level_sensors()
 {
 	return read() & 0b11111;
 }
 
-uint32_t GPIO::read()
+uint32_t MyGPIO::read()
 {
 	uint32_t bitmap = 0;
 #ifdef UNDER_TEST
@@ -65,12 +65,12 @@ uint32_t GPIO::read()
 	return bitmap;
 }
 
-void GPIO::write_pump(bool state)
+void MyGPIO::write_pump(bool state)
 {
 	write_output(state ? ~0 : 0, PUMP);
 }
 
-void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
+void MyGPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 {
 	output_bitmap = (output_bitmap & ~bitmask) | (bitmap & bitmask);
 #ifdef UNDER_TEST
@@ -83,7 +83,7 @@ void GPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 #endif
 }
 
-void GPIO::pulse()
+void MyGPIO::pulse()
 {
 	// Flow meter pulse
 	// do as little as possible, since it may be called
@@ -91,7 +91,7 @@ void GPIO::pulse()
 	++pulses;
 }
 
-void GPIO::eval()
+void MyGPIO::eval()
 {
 #ifdef UNDER_TEST
 	int qty = 0;

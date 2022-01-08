@@ -11,7 +11,7 @@
 static const double level_sensors[] = LEVEL_SENSORS;
 static const uint32_t flow_rates[] = FLOWRATES;
 
-Ptr<GPIO> gpio;
+Ptr<MyGPIO> gpio;
 Ptr<Pump> pump;
 Ptr<FlowMeter> flowmeter;
 Ptr<LevelMeter> levelmeter;
@@ -24,7 +24,7 @@ extern int64_t uptime_advance;
 
 int main()
 {
-	gpio = Ptr<GPIO>(new GPIO());
+	gpio = Ptr<MyGPIO>(new MyGPIO());
 	pump = Ptr<Pump>(new Pump());
 	flowmeter = Ptr<FlowMeter>(new FlowMeter(FLOWMETER_PULSE_RATE, flow_rates));
 	levelmeter = Ptr<LevelMeter>(new LevelMeter(level_sensors, TANK_CAPACITY));

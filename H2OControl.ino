@@ -1,10 +1,13 @@
+#if defined(ESP32)
+#include <esp_bt.h>
+#endif
 #include "src/Elements.h"
 #include "src/Constants.h"
 
 static const double level_sensors[] = LEVEL_SENSORS;
 static const uint32_t flow_rates[] = FLOWRATES;
 
-Ptr<GPIO> gpio;
+Ptr<MyGPIO> gpio;
 Ptr<Pump> pump;
 Ptr<FlowMeter> flowmeter;
 Ptr<LevelMeter> levelmeter;
@@ -26,7 +29,7 @@ void setup() {
   pinMode(heartbeat_led, OUTPUT);
   digitalWrite(heartbeat_led, HIGH);
 
-  gpio = Ptr<GPIO>(new GPIO());
+  gpio = Ptr<MyGPIO>(new MyGPIO());
   Serial.println("GPIO initiated");
   pump = Ptr<Pump>(new Pump());
   Serial.println("Pump initiated");
