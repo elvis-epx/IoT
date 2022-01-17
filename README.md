@@ -58,8 +58,8 @@ controller.
 
 ## Target hardware
 
-Currently, ESP8266 (NodeMCU) is the main target, and we expect to test in
-ESP32 as well. We use Arduino tools to compile and install the software.
+Currently, ESP8266 (NodeMCU) and ESP32 are the main targets, we use either
+in test modules. We use Arduino tools to compile and install the software.
 
 The project expects the following peripherals: an SSD1306-based display,
 an MCP23017 I/O multiplexer (level switches inputs + relay output), and a
@@ -72,10 +72,14 @@ so we can use interrupts to count the pulses.
 
 ## Testing
 
-Great emphasis is made on testing and achieving high code coverage. Unit
-tests can be found at test/ and run on Linux. The sensors and actuators
-are mocked by the unit test scripts. Some Arduino APIs e.g. millis() and
-random() are mocked as well.
+Great emphasis is made on testing and achieving high code coverage, since
+debugging is generally difficult on MCUs (a little easier on ESP32, but
+still).
+
+Unit tests can be found at test/ and run on Linux or macOS. In Linux,
+the tests run with Valgrind for additional assurance.
+Sensors and actuators are mocked by the unit test scripts. Some Arduino APIs
+e.g. millis() and random() are mocked as well.
 
 Testing on actual platform needs some hardware setup to simulate sensors
 and actuators. One can use a protoboard, or a separate case containing
