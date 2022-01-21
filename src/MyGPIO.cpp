@@ -25,10 +25,14 @@ static void IRAM_ATTR pulse_trampoline()
 
 #define FLOWMETER_PIN 14
 
+// note: inverted pump logic bit
+static const uint32_t PUMP_BIT = 0x01;
+
 MyGPIO::MyGPIO()
 {
 	pulses = 0;
-	output_bitmap = 0;
+	// note: inverted pump logic bit
+	output_bitmap = 0 | PUMP_BIT;
 
 #ifndef UNDER_TEST
 	Wire.begin();
@@ -36,9 +40,9 @@ MyGPIO::MyGPIO()
 
 	// high bits = input. Third parameter is pullup and all-1 by default
 	mcp.portMode(MCP23017Port::A, 0);
+	mcp.writeRegister(MCP23017Register::GPIO_A, 0 | PUMP_BIT); // reset
 	mcp.portMode(MCP23017Port::B, 0b11111111);
-	mcp.writeRegister(MCP23017Register::GPIO_A, 0x00); // reset
-	mcp.writeRegister(MCP23017Register::GPIO_B, 0x00); // reset
+	mcp.writeRegister(MCP23017Register::GPIO_B, 0); // reset
 	// flow meter
 	pinMode(FLOWMETER_PIN, INPUT_PULLUP);
 	attachInterrupt(digitalPinToInterrupt(FLOWMETER_PIN), pulse_trampoline, RISING);
@@ -67,7 +71,8 @@ uint32_t MyGPIO::read()
 
 void MyGPIO::write_pump(bool state)
 {
-	write_output(state ? ~0 : 0, PUMP);
+	// note: inverted pump logic bit
+	write_output(state ? 0 : ~0, PUMP_BIT);
 }
 
 void MyGPIO::write_output(uint32_t bitmap, uint32_t bitmask)

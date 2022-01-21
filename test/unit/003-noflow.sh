@@ -6,7 +6,7 @@ sensors 20 40 60
 runme
 sleep 10
 cond state eq "On"
-cond pump eq 1
+cond pump eq 0
 cond level_err eq 0
 cond level% eq 60
 
@@ -21,4 +21,4 @@ cond state eq "On"
 
 sleep 120
 cond state eq "F flow"
-cond pump eq 0
+cond pump eq 1

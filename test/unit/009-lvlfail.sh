@@ -6,7 +6,7 @@ sensors 20 40 60
 runme
 sleep 10
 cond state eq "On"
-cond pump eq 1
+cond pump eq 0
 cond level_err eq 0
 
 # Test detection of level unchanged in spite of good flow
@@ -14,16 +14,16 @@ cond level_err eq 0
 fastflow 100 1400
 
 cond state eq "F level"
-cond pump eq 0
+cond pump eq 1
 
 advance $((3600 * 6))
 
 sensors 20 40 60 80 100
 cond state eq "F level"
-cond pump eq 0
+cond pump eq 1
 
 advance $((3600 * 6))
 sleep 5
 
 cond state eq "Off"
-cond pump eq 0
+cond pump eq 1
