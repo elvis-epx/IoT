@@ -25,7 +25,21 @@ static void IRAM_ATTR pulse_trampoline()
 
 #define FLOWMETER_PIN 14
 
-// note: inverted pump logic bit
+// note: inverted pump logic bit. This is because the 3V3 relay we use
+// is like that - turns ON when input is grounded. So we need to raise
+// the pin to 1 to turn it OFF. We had two options:
+//
+// a) use the NC (Normally Closed) contacts of relay, which would be opened
+// as soon as the controller + I/O multiplexer are turned on (the initial
+// state of I/O multiplexer pins is 0).
+// b) use the NO (Normally Open) contacts of relay, set the relay control
+// signal to 1 as soon as possible at startup
+//
+// We prefer the solution (b) so the controller falls back to "Off" when
+// turned off. The potential disavantage is a brief Off-On-Off commutation
+// at startup, but we took care to make it fast so the relay won't switch
+// (only the LED indicator blinks briefly).
+
 static const uint32_t PUMP_BIT = 0x01;
 
 MyGPIO::MyGPIO()
