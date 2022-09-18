@@ -8,7 +8,13 @@ via MQTT.
 Currently, the project is aimed to fulfill personal needs. In the future 
 it can be improved to cover more use cases.
 
+Working on breadboard:
+
 ![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/breadboard.jpeg)
+
+First prototype, connected to a simulator of the various sensors (level switches and flow meter):
+
+![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/proto.jpeg)
 
 ## Override on and off
 
