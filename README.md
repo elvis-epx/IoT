@@ -12,7 +12,9 @@ Working on breadboard:
 
 ![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/breadboard.jpeg)
 
-First prototype, connected to a simulator of the various sensors (level switches and flow meter):
+First prototype, connected to a simulator of the various sensors. The flow meter pulse train is
+simulated by an Arduino (separate source at folder pwm/). It is fed with 5V via sensor cable,
+since the real flow sensor also needs 5V to work:
 
 ![Original image](https://raw.githubusercontent.com/elvis-epx/H2OControl/main/doc/proto.jpeg)
 
