@@ -118,6 +118,28 @@ bool StatePub::value_changed()
     return true;
 }
 
+bool Level1Pub::value_changed()
+{
+    char tmp[30];
+    sprintf(tmp, "%.0f", levelmeter->level_pct());
+    if (value()->equals(tmp)) {
+        return false;
+    }
+    value()->update(tmp);
+    return true;
+}
+
+bool Level2Pub::value_changed()
+{
+    char tmp[30];
+    sprintf(tmp, "%.0f", flowmeter->volume());
+    if (value()->equals(tmp)) {
+        return false;
+    }
+    value()->update(tmp);
+    return true;
+}
+
 void OverrideOnSub::new_value(const char *v, size_t s)
 {
 	if (strncasecmp(v, "On", s) == 0) {
