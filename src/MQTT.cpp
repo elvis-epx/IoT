@@ -32,39 +32,20 @@ static const char *sub_onswitch = TOP_CMND "OverrideOn";
 static const char *sub_offswitch = TOP_CMND "OverrideOff";
 
 static const char* pub_topics[] = {
-			TOP "State", TOP "Level",
+			TOP "State", TOP "Level1", TOP "LevelErr", TOP "Level2",
 			TOP "FlowInst", TOP "FlowShort", TOP "FlowLong",
 			TOP "Uptime", TOP "Efficiency",
 			0};
 
 static const int TOPIC_STATE = 0;
-static const int TOPIC_LEVEL = 1;
-static const int TOPIC_FLOWI = 2;
-static const int TOPIC_FLOWS = 3;
-static const int TOPIC_FLOWL = 4;
-static const int TOPIC_UPTIME = 5;
-static const int TOPIC_EFF = 6;
-
-static void millis_to_hm(int64_t t, char *target)
-{
-	if (t < 0) {
-		sprintf(target, "???");
-		return;
-	}
-	t /= 1000;
-	int32_t s = t % 60;
-	t -= s;
-	t /= 60;
-	int32_t m = t % 60;
-	t -= m;
-	t /= 60;
-	int32_t h = t % 24;
-	t -= h;
-	t /= 24;
-	int32_t d = t;
-
-	sprintf(target, "%dd %02dh %02dm", d, h, m);
-}
+static const int TOPIC_LEVEL1 = 1;
+static const int TOPIC_LEVELERR = 2;
+static const int TOPIC_LEVEL2 = 3;
+static const int TOPIC_FLOWI = 4;
+static const int TOPIC_FLOWS = 5;
+static const int TOPIC_FLOWL = 6;
+static const int TOPIC_UPTIME = 7;
+static const int TOPIC_EFF = 8;
 
 MQTT::MQTT()
 {
@@ -286,19 +267,36 @@ void MQTT::update_pub_data()
 	}
 
 	char tmp[30];
-	const char *err = levelmeter->failure_detected() ? "E " : "";
-	sprintf(tmp, "%s%.0f%% + %.0fL", err, levelmeter->level_pct(), flowmeter->volume());
 
-	if (strcmp(tmp, pub_values[TOPIC_LEVEL])) {
-		free(pub_values[TOPIC_LEVEL]);
-		pub_values[TOPIC_LEVEL] = strdup(tmp);
-		pub_pending[TOPIC_LEVEL] = 1;
+	sprintf(tmp, "%.0f", levelmeter->level_pct());
+
+	if (strcmp(tmp, pub_values[TOPIC_LEVEL1])) {
+		free(pub_values[TOPIC_LEVEL1]);
+		pub_values[TOPIC_LEVEL1] = strdup(tmp);
+		pub_pending[TOPIC_LEVEL1] = 1;
+	}
+
+	const char *err = levelmeter->failure_detected() ? "1" : "0";
+	sprintf(tmp, "%s", err);
+
+	if (strcmp(tmp, pub_values[TOPIC_LEVELERR])) {
+		free(pub_values[TOPIC_LEVELERR]);
+		pub_values[TOPIC_LEVELERR] = strdup(tmp);
+		pub_pending[TOPIC_LEVELERR] = 1;
+	}
+
+	sprintf(tmp, "%.0f", flowmeter->volume());
+
+	if (strcmp(tmp, pub_values[TOPIC_LEVEL2])) {
+		free(pub_values[TOPIC_LEVEL2]);
+		pub_values[TOPIC_LEVEL2] = strdup(tmp);
+		pub_pending[TOPIC_LEVEL2] = 1;
 	}
 
 	if (flowmeter->rate(FLOWRATE_INSTANT) < 0) {
-		sprintf(tmp, "---");
+		sprintf(tmp, "0");
 	} else {
-		sprintf(tmp, "%.1fL/min", flowmeter->rate(FLOWRATE_INSTANT));
+		sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_INSTANT));
 	}
 
 	if (strcmp(tmp, pub_values[TOPIC_FLOWI])) {
@@ -308,9 +306,9 @@ void MQTT::update_pub_data()
 	}
 
 	if (flowmeter->rate(FLOWRATE_SHORT) < 0) {
-		sprintf(tmp, "---");
+		sprintf(tmp, "0");
 	} else {
-		sprintf(tmp, "%.1fL/min", flowmeter->rate(FLOWRATE_SHORT));
+		sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_SHORT));
 	}
 
 	if (strcmp(tmp, pub_values[TOPIC_FLOWS])) {
@@ -320,9 +318,9 @@ void MQTT::update_pub_data()
 	}
 
 	if (flowmeter->rate(FLOWRATE_LONG) < 0) {
-		sprintf(tmp, "---");
+		sprintf(tmp, "0");
 	} else {
-		sprintf(tmp, "%.1fL/min", flowmeter->rate(FLOWRATE_LONG));
+		sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_LONG));
 	}
 
 	if (strcmp(tmp, pub_values[TOPIC_FLOWL])) {
@@ -331,7 +329,7 @@ void MQTT::update_pub_data()
 		pub_pending[TOPIC_FLOWL] = 1;
 	}
 
-	millis_to_hm(Now, tmp);
+    sprintf(tmp, "%lld", Now / (1 * MINUTES));
 
 	if (strcmp(tmp, pub_values[TOPIC_UPTIME])) {
 		free(pub_values[TOPIC_UPTIME]);
@@ -342,9 +340,9 @@ void MQTT::update_pub_data()
 	if (pump->is_running()) {
 		double volume = flowmeter->volume();
 		double exp_volume = flowmeter->expected_volume() + 0.0001;
-		sprintf(tmp, "%.0f%%", 100 * volume / exp_volume);
+		sprintf(tmp, "%.0f", 100 * volume / exp_volume);
 	} else {
-		sprintf(tmp, "---");
+		sprintf(tmp, "0");
 	}
 
 	if (strcmp(tmp, pub_values[TOPIC_EFF])) {
