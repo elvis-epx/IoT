@@ -83,7 +83,7 @@ void Display::eval()
 
 	if ((Now - last_row3_update) >= 5000) {
 		++row3_phase;
-		if (row3_phase > 3) {
+		if (row3_phase > 4) {
 			row3_phase = 1;
 		}
 		last_row3_update = Now;
@@ -140,7 +140,10 @@ void Display::eval()
 		}
 	}
 	if (row3_phase == 3) {
-		sprintf(msg[3], "%s", "H2O Control (c) EPx");
+		sprintf(msg[3], "WiFi %s", mqtt->wifi_status());
+	}
+	if (row3_phase == 4) {
+		sprintf(msg[3], "MQTT %s", mqtt->mqtt_status());
 	}
 
 	show(msg);

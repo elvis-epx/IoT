@@ -74,6 +74,7 @@ MQTT::MQTT()
 	last_general_pub = now() - (60 * MINUTES);
 	last_mqtt_check = now() - (30 * SECONDS);
 	last_wifi_check = now() - (60 * SECONDS);
+    wifi_connection_logged = false;
 
 	size_t count = 0;
 	while (pub_topics[count++]);
@@ -111,6 +112,21 @@ void MQTT::init_mqttimpl()
 #endif
 }
 
+const char *MQTT::mqtt_status()
+{
+    static char tmp[31];
+#ifndef UNDER_TEST
+    if (mqttimpl.connected()) {
+        sprintf(tmp, "conn");
+    } else {
+        sprintf(tmp, "disconn %d", mqttimpl.state());
+    }
+#else
+    sprintf(tmp, "connected");
+#endif
+    return tmp;
+}
+
 void MQTT::chk_mqttimpl()
 {
 	Timestamp Now = now();
@@ -143,6 +159,21 @@ void MQTT::eval_mqttimpl()
 #endif
 }
 
+const char *MQTT::wifi_status()
+{
+    static char tmp[31];
+#ifndef UNDER_TEST
+    if (WiFi.status() == WL_CONNECTED) {
+        sprintf(tmp, "%s", WiFi.localIP().toString().c_str());
+    } else {
+        sprintf(tmp, "disconn");
+    }
+#else
+    sprintf(tmp, "connected");
+#endif
+    return tmp;
+}
+
 void MQTT::chk_wifi()
 {
 	Timestamp Now = now();
@@ -153,9 +184,13 @@ void MQTT::chk_wifi()
 
 #ifndef UNDER_TEST
 	if (WiFi.status() == WL_CONNECTED) {
-		Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
+        if (!wifi_connection_logged) {
+		    Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
+            wifi_connection_logged = true;
+        }
 		return;
 	}
+    wifi_connection_logged = false;
 	Log::d("Connecting to WiFi...");
 	WiFi.begin(SSID, PASSWORD);
 #endif

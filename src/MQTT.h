@@ -13,6 +13,9 @@ public:
 	bool override_on_state() const;
 	bool override_off_state() const;
 	void pub_logdebug(const char *);
+    const char *wifi_status();
+    const char *mqtt_status();
+
 private:
 	void sub_data_event(const char *topic, const char *payload, unsigned int length);
 	void update_pub_data();
@@ -23,6 +26,7 @@ private:
 	void chk_wifi();
 	void eval_mqttimpl();
 	Timestamp last_wifi_check;
+    bool wifi_connection_logged;
 	Timestamp last_mqtt_check;
 
 	bool override_on_switch;
