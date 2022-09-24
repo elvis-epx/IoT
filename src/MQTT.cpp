@@ -140,6 +140,78 @@ bool Level2Pub::value_changed()
     return true;
 }
 
+bool LevelErrPub::value_changed()
+{
+    const char *msg = levelmeter->failure_detected() ? "1" : "0";
+    if (value()->equals(msg)) {
+        return false;
+    }
+    value()->update(msg);
+    return true;
+}
+
+bool FlowInstPub::value_changed()
+{
+    char tmp[30];
+    if (flowmeter->rate(FLOWRATE_INSTANT) < 0) {
+        sprintf(tmp, "0");
+    } else {
+        sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_INSTANT));
+    }
+    if (value()->equals(tmp)) {
+        return false;
+    }
+    value()->update(tmp);
+    return true;
+}
+
+bool FlowShortPub::value_changed()
+{
+    char tmp[30];
+    if (flowmeter->rate(FLOWRATE_SHORT) < 0) {
+        sprintf(tmp, "0");
+    } else {
+        sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_SHORT));
+    }
+    if (value()->equals(tmp)) {
+        return false;
+    }
+    value()->update(tmp);
+    return true;
+}
+
+bool FlowLongPub::value_changed()
+{
+    char tmp[30];
+    if (flowmeter->rate(FLOWRATE_LONG) < 0) {
+        sprintf(tmp, "0");
+    } else {
+        sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_LONG));
+    }
+    if (value()->equals(tmp)) {
+        return false;
+    }
+    value()->update(tmp);
+    return true;
+}
+
+bool EfficiencyPub::value_changed()
+{
+    char tmp[30];
+    if (pump->is_running()) {
+        double volume = flowmeter->volume();
+        double exp_volume = flowmeter->expected_volume() + 0.0001;
+        sprintf(tmp, "%.0f", 100 * volume / exp_volume);
+    } else {
+        sprintf(tmp, "0");
+    }
+    if (value()->equals(tmp)) {
+        return false;
+    }
+    value()->update(tmp);
+    return true;
+}
+
 void OverrideOnSub::new_value(const char *v, size_t s)
 {
 	if (strncasecmp(v, "On", s) == 0) {
