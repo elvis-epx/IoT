@@ -10,33 +10,33 @@
 void Log::d(const char *msg)
 {
 #ifdef UNDER_TEST
-	printf("dbg %s\n", msg);
+    printf("dbg %s\n", msg);
 #else
-	Serial.println(msg);
+    Serial.println(msg);
 #endif
-	mqtt->pub_logdebug(msg);
+    mqtt->pub_logdebug(msg);
 }
 
 void Log::d(const char *msg, const char *msg2)
 {
-	char *s = (char*) malloc(strlen(msg) + 1 + strlen(msg2) + 1);
-	sprintf(s, "%s %s", msg, msg2);
-	Log::d(s);
-	free(s);
+    char *s = (char*) malloc(strlen(msg) + 1 + strlen(msg2) + 1);
+    sprintf(s, "%s %s", msg, msg2);
+    Log::d(s);
+    free(s);
 }
 
 void Log::d(const char *msg, int arg)
 {
-	char *s = (char*) malloc(strlen(msg) + 15);
-	sprintf(s, "%s %d", msg, arg);
-	Log::d(s);
-	free(s);
+    char *s = (char*) malloc(strlen(msg) + 15);
+    sprintf(s, "%s %d", msg, arg);
+    Log::d(s);
+    free(s);
 }
 
 void Log::d(const char *msg, double arg)
 {
-	char *s = (char*) malloc(strlen(msg) + 25);
-	sprintf(s, "%s %f", msg, arg);
-	Log::d(s);
-	free(s);
+    char *s = (char*) malloc(strlen(msg) + 25);
+    sprintf(s, "%s %f", msg, arg);
+    Log::d(s);
+    free(s);
 }

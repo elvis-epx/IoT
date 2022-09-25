@@ -122,18 +122,18 @@ SubTopic::~SubTopic() {}
 
 MQTTBase::MQTTBase()
 {
-	last_pub_update = now() - (1 * MINUTES);
+    last_pub_update = now() - (1 * MINUTES);
     // first full republish is automatic because of MQTT init and/or
     // because data sources update pub values from Undefined to proper value
-	last_general_pub = now();
-	last_mqtt_check = now() - (30 * SECONDS);
-	last_wifi_check = now() - (60 * SECONDS);
+    last_general_pub = now();
+    last_mqtt_check = now() - (30 * SECONDS);
+    last_wifi_check = now() - (60 * SECONDS);
     wifi_connection_logged = false;
 }
 
 void MQTTBase::start()
 {
-	init_mqttimpl();
+    init_mqttimpl();
 }
 
 void MQTTBase::republish_all()
@@ -145,25 +145,25 @@ void MQTTBase::republish_all()
 
 void mqttimpl_trampoline2(const char* topic, const uint8_t* bpayload, unsigned int length)
 {
-	char *payload = (char*) malloc(length + 1);
-	memcpy(payload, bpayload, length);
-	payload[length] = 0;
-	mqtt->sub_data_event(topic, payload, length);
-	free(payload);
+    char *payload = (char*) malloc(length + 1);
+    memcpy(payload, bpayload, length);
+    payload[length] = 0;
+    mqtt->sub_data_event(topic, payload, length);
+    free(payload);
 }
 
 #ifndef UNDER_TEST
 void mqttimpl_trampoline(char* topic, uint8_t* bpayload, unsigned int length)
 {
-	mqttimpl_trampoline2(topic, bpayload, length);
+    mqttimpl_trampoline2(topic, bpayload, length);
 }
 #endif
 
 void MQTTBase::init_mqttimpl()
 {
 #ifndef UNDER_TEST
-	mqttimpl.setServer(BROKER_MQTT, BROKER_PORT);
-	mqttimpl.setCallback(mqttimpl_trampoline);
+    mqttimpl.setServer(BROKER_MQTT, BROKER_PORT);
+    mqttimpl.setCallback(mqttimpl_trampoline);
 #endif
 }
 
@@ -184,34 +184,34 @@ const char *MQTTBase::mqtt_status()
 
 void MQTTBase::chk_mqttimpl()
 {
-	Timestamp Now = now();
-	if ((Now - last_mqtt_check) < (1 * MINUTES)) {
-		return;
-	}
-	last_mqtt_check = Now;
+    Timestamp Now = now();
+    if ((Now - last_mqtt_check) < (1 * MINUTES)) {
+        return;
+    }
+    last_mqtt_check = Now;
 
 #ifndef UNDER_TEST
-	if (!mqttimpl.connected()) {
-		Log::d("Connecting MQTT");
-		if (mqttimpl.connect(mqtt_id())) {
-			Log::d("MQTT connection up");
+    if (!mqttimpl.connected()) {
+        Log::d("Connecting MQTT");
+        if (mqttimpl.connect(mqtt_id())) {
+            Log::d("MQTT connection up");
             for (size_t i = 0; i < sub_topics.count(); ++i) {
-			    mqttimpl.subscribe(sub_topics[i]->topic().c_str());
+                mqttimpl.subscribe(sub_topics[i]->topic().c_str());
             }
-			// force full republish
-			last_general_pub = 0;
-		} else {
-			Log::d("MQTT connection failed");
-			Log::d("MQTT state", mqttimpl.state());
-		}
-	}
+            // force full republish
+            last_general_pub = 0;
+        } else {
+            Log::d("MQTT connection failed");
+            Log::d("MQTT state", mqttimpl.state());
+        }
+    }
 #endif
 }
 
 void MQTTBase::eval_mqttimpl()
 {
 #ifndef UNDER_TEST
-	mqttimpl.loop();
+    mqttimpl.loop();
 #endif
 }
 
@@ -232,23 +232,23 @@ const char *MQTTBase::wifi_status()
 
 void MQTTBase::chk_wifi()
 {
-	Timestamp Now = now();
-	if ((Now - last_wifi_check) < (1 * MINUTES)) {
-		return;
-	}
-	last_wifi_check = Now;
+    Timestamp Now = now();
+    if ((Now - last_wifi_check) < (1 * MINUTES)) {
+        return;
+    }
+    last_wifi_check = Now;
 
 #ifndef UNDER_TEST
-	if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED) {
         if (!wifi_connection_logged) {
-		    Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
+            Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
             wifi_connection_logged = true;
         }
-		return;
-	}
+        return;
+    }
     wifi_connection_logged = false;
-	Log::d("Connecting to WiFi...");
-	WiFi.begin(SSID, PASSWORD);
+    Log::d("Connecting to WiFi...");
+    WiFi.begin(SSID, PASSWORD);
 #endif
 }
 
@@ -266,26 +266,26 @@ void MQTTBase::sub_data_event(const char *topic, const char *payload, unsigned i
         sub->new_value(payload, length);
         return;
     }
-	Log::d("MQTT sub_data_event: unknown topic", topic);
+    Log::d("MQTT sub_data_event: unknown topic", topic);
 }
 
 void MQTTBase::eval()
 {
-	chk_wifi();
-	chk_mqttimpl();
-	eval_mqttimpl();
+    chk_wifi();
+    chk_mqttimpl();
+    eval_mqttimpl();
 
-	update_pub_data();
-	pub_data();
+    update_pub_data();
+    pub_data();
 }
 
 void MQTTBase::update_pub_data()
 {
-	Timestamp Now = now();
-	if ((Now - last_pub_update) < 1000) {
-		return;
-	}
-	last_pub_update = Now;
+    Timestamp Now = now();
+    if ((Now - last_pub_update) < 1000) {
+        return;
+    }
+    last_pub_update = Now;
 
     for (size_t i = 0; i < pub_topics.count(); ++i) {
         Ptr<PubTopic> pub = pub_topics[i];
@@ -297,41 +297,41 @@ void MQTTBase::update_pub_data()
 
 void MQTTBase::pub_data()
 {
-	Timestamp Now = now();
-	if (((Now - last_general_pub) >= (30 * MINUTES))) {
+    Timestamp Now = now();
+    if (((Now - last_general_pub) >= (30 * MINUTES))) {
         republish_all();
-		last_general_pub = Now;
-	}
+        last_general_pub = Now;
+    }
 
     if (pub_pending.count() <= 0) {
         return;
     }
         
-	// Do a single MQTT publish per cycle
+    // Do a single MQTT publish per cycle
     Ptr<PubTopic> pub = pub_by_topic(pub_pending[0]);
     pub_pending.remov(0);
     if (pub) {
-	    do_pub_data(pub->topic().c_str(), pub->value()->c_str());
+        do_pub_data(pub->topic().c_str(), pub->value()->c_str());
     }
 }
 
 void MQTTBase::do_pub_data(const char *topic, const char *value) const
 {
-	// do not call Log::d() here to avoid infinite loop via pub_logdebug()
+    // do not call Log::d() here to avoid infinite loop via pub_logdebug()
 #ifdef UNDER_TEST
-	std::ofstream f;
-	f.open("mqttpub.sim", std::ios_base::app);
-	f << topic << " " << value << std::endl;
-	f.close();
+    std::ofstream f;
+    f.open("mqttpub.sim", std::ios_base::app);
+    f << topic << " " << value << std::endl;
+    f.close();
 #else
-	mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
+    mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
 #endif
 }
 
 void MQTTBase::pub_logdebug(const char *msg)
 {
-	// do not call Log::d() here to avoid infinite loop
-	do_pub_data(logdebug_topic(), msg);
+    // do not call Log::d() here to avoid infinite loop
+    do_pub_data(logdebug_topic(), msg);
 }
 
 Ptr<PubTopic> MQTTBase::pub_by_topic(const TopicName& name)

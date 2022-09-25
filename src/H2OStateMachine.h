@@ -5,43 +5,43 @@
 
 class Initial: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "Initial"; };
+    virtual void enter();
+    virtual const char* name() const { return "Initial"; };
 };
 
 /* Pump off */
 class Off: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "Off"; };
+    virtual void enter();
+    virtual const char* name() const { return "Off"; };
 };
 
 /* Pump off after being on */
 class HisteresisOff: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "Resting"; };
+    virtual void enter();
+    virtual const char* name() const { return "Resting"; };
 };
 
 /* Pump off due to override-off MQTT switch */
 class ManualOff: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "Off MQTT"; };
+    virtual void enter();
+    virtual const char* name() const { return "Off MQTT"; };
 };
 
 /* Pump on */
 class On: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "On"; };
+    virtual void enter();
+    virtual const char* name() const { return "On"; };
 };
 
 /* Pump on due to override-on MQTT switch */
 class ManualOn: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "On MQTT"; };
+    virtual void enter();
+    virtual const char* name() const { return "On MQTT"; };
 };
 
 /* Water flow not detected, turned pump off.
@@ -51,8 +51,8 @@ public:
 */
 class FlowFailure: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "F flow"; };
+    virtual void enter();
+    virtual const char* name() const { return "F flow"; };
 };
 
 /* Water flow detected but unexpectedly low, over last 1-2 minutes,
@@ -61,8 +61,8 @@ public:
 */
 class LowFlowShort: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "F slow 2"; };
+    virtual void enter();
+    virtual const char* name() const { return "F slow 2"; };
 };
 
 /* Water flow detected but unexpectedly low, over last 30 minutes,
@@ -71,8 +71,8 @@ public:
 */
 class LowFlowLong: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "F slow 30"; };
+    virtual void enter();
+    virtual const char* name() const { return "F slow 30"; };
 };
 
 /* Pump running too much time
@@ -82,8 +82,8 @@ public:
 */
 class PumpTimeout: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "F timeout"; };
+    virtual void enter();
+    virtual const char* name() const { return "F timeout"; };
 };
 
 /* Level change not detected in spite of water flow
@@ -93,13 +93,13 @@ public:
 */
 class LevelFailure: public State {
 public:
-	virtual void enter();
-	virtual const char* name() const { return "F level"; };
+    virtual void enter();
+    virtual const char* name() const { return "F level"; };
 };
 
 class H2OStateMachine: public StateMachine {
 public:
-	H2OStateMachine();
+    H2OStateMachine();
 };
 
 #endif

@@ -6,17 +6,17 @@
 class MyGPIO
 {
 public:
-	MyGPIO();
-	void eval();
-	void pulse();
-	uint32_t read_level_sensors();
-	void write_pump(bool state);
+    MyGPIO();
+    void eval();
+    void pulse();
+    uint32_t read_level_sensors();
+    void write_pump(bool state);
 private:
-	void write_output(uint32_t bitmap, uint32_t mask);
-	uint32_t read();
+    void write_output(uint32_t bitmap, uint32_t mask);
+    uint32_t read();
 
-	int pulses;
-	uint32_t output_bitmap;
+    int pulses;
+    uint32_t output_bitmap;
 };
 
 #endif

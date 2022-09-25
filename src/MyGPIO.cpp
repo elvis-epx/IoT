@@ -18,7 +18,7 @@ MCP23017 mcp = MCP23017(MCP23017_ADDR);
 
 static void IRAM_ATTR pulse_trampoline()
 {
-	gpio->pulse();
+    gpio->pulse();
 }
 
 #endif
@@ -44,89 +44,89 @@ static const uint32_t PUMP_BIT = 0x01;
 
 MyGPIO::MyGPIO()
 {
-	pulses = 0;
-	// note: inverted pump logic bit
-	output_bitmap = 0 | PUMP_BIT;
+    pulses = 0;
+    // note: inverted pump logic bit
+    output_bitmap = 0 | PUMP_BIT;
 
 #ifndef UNDER_TEST
-	Wire.begin();
-	mcp.init();
+    Wire.begin();
+    mcp.init();
 
-	// high bits = input. Third parameter is pullup and all-1 by default
-	mcp.portMode(MCP23017Port::A, 0);
-	mcp.writeRegister(MCP23017Register::GPIO_A, 0 | PUMP_BIT); // reset
-	mcp.portMode(MCP23017Port::B, 0b11111111);
-	mcp.writeRegister(MCP23017Register::GPIO_B, 0); // reset
-	// flow meter
-	pinMode(FLOWMETER_PIN, INPUT_PULLUP);
-	attachInterrupt(digitalPinToInterrupt(FLOWMETER_PIN), pulse_trampoline, RISING);
+    // high bits = input. Third parameter is pullup and all-1 by default
+    mcp.portMode(MCP23017Port::A, 0);
+    mcp.writeRegister(MCP23017Register::GPIO_A, 0 | PUMP_BIT); // reset
+    mcp.portMode(MCP23017Port::B, 0b11111111);
+    mcp.writeRegister(MCP23017Register::GPIO_B, 0); // reset
+    // flow meter
+    pinMode(FLOWMETER_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(FLOWMETER_PIN), pulse_trampoline, RISING);
 #endif
-	write_output(output_bitmap, ~0);
+    write_output(output_bitmap, ~0);
 }
 
 uint32_t MyGPIO::read_level_sensors()
 {
-	return read() & 0b11111;
+    return read() & 0b11111;
 }
 
 uint32_t MyGPIO::read()
 {
-	uint32_t bitmap = 0;
+    uint32_t bitmap = 0;
 #ifdef UNDER_TEST
-	std::ifstream f;
-	f.open("gpio.sim");
-	f >> bitmap;
-	f.close();
+    std::ifstream f;
+    f.open("gpio.sim");
+    f >> bitmap;
+    f.close();
 #else
-	bitmap = mcp.readPort(MCP23017Port::B);
+    bitmap = mcp.readPort(MCP23017Port::B);
 #endif
-	return bitmap;
+    return bitmap;
 }
 
 void MyGPIO::write_pump(bool state)
 {
-	// note: inverted pump logic bit
-	write_output(state ? 0 : ~0, PUMP_BIT);
+    // note: inverted pump logic bit
+    write_output(state ? 0 : ~0, PUMP_BIT);
 }
 
 void MyGPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 {
-	output_bitmap = (output_bitmap & ~bitmask) | (bitmap & bitmask);
+    output_bitmap = (output_bitmap & ~bitmask) | (bitmap & bitmask);
 #ifdef UNDER_TEST
-	std::ofstream f;
-	f.open("gpio2.sim");
-	f << output_bitmap;
-	f.close();
+    std::ofstream f;
+    f.open("gpio2.sim");
+    f << output_bitmap;
+    f.close();
 #else
-	mcp.writePort(MCP23017Port::A, output_bitmap);
+    mcp.writePort(MCP23017Port::A, output_bitmap);
 #endif
 }
 
 void MyGPIO::pulse()
 {
-	// Flow meter pulse
-	// do as little as possible, since it may be called
-	// by an interrupt handler
-	++pulses;
+    // Flow meter pulse
+    // do as little as possible, since it may be called
+    // by an interrupt handler
+    ++pulses;
 }
 
 void MyGPIO::eval()
 {
 #ifdef UNDER_TEST
-	int qty = 0;
-	std::ifstream f;
-	f.open("pulses.sim");
-	if (f.is_open()) {
-		f >> qty;
-		std::remove("pulses.sim");
-	}
-	f.close();
-	while (qty-- > 0) {
-		pulse();
-	}
+    int qty = 0;
+    std::ifstream f;
+    f.open("pulses.sim");
+    if (f.is_open()) {
+        f >> qty;
+        std::remove("pulses.sim");
+    }
+    f.close();
+    while (qty-- > 0) {
+        pulse();
+    }
 #endif
-	if (pulses > 0) {
-		flowmeter->pulse(pulses);
-		pulses = 0;
-	}
+    if (pulses > 0) {
+        flowmeter->pulse(pulses);
+        pulses = 0;
+    }
 }

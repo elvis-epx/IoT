@@ -11,11 +11,11 @@ static uint32_t last_millis = 0;
 
 Timestamp now()
 {
-	uint32_t m = _arduino_millis();
-	if ((m < last_millis) && (last_millis - m) > 0x10000000) {
-		// wrapped around
-		epoch += 1;
-	}
-	last_millis = m;
-	return (((int64_t) epoch) << 32) + m;
+    uint32_t m = _arduino_millis();
+    if ((m < last_millis) && (last_millis - m) > 0x10000000) {
+        // wrapped around
+        epoch += 1;
+    }
+    last_millis = m;
+    return (((int64_t) epoch) << 32) + m;
 }

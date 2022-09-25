@@ -55,9 +55,9 @@ int64_t next_heartbeat = 0;
 
 void loop() {
   if (now() > next_heartbeat) {
-  	digitalWrite(heartbeat_led, heartbeat);
-  	heartbeat = !heartbeat;
-  	next_heartbeat = now() + 250;
+      digitalWrite(heartbeat_led, heartbeat);
+      heartbeat = !heartbeat;
+      next_heartbeat = now() + 250;
   }
 
   gpio->eval();
