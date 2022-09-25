@@ -4,7 +4,7 @@
 
 sensors 20 40 60
 runme
-sleep 10
+sleep 5
 cond state eq "On"
 cond pump eq 0
 cond level_err eq 0

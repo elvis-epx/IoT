@@ -60,7 +60,7 @@ function runme () {
     fi
     export err=0
     export PID=$!
-    sleep 10
+    sleep 5
 }
 
 function quit () {
