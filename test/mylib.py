@@ -109,5 +109,8 @@ def gen_mqtt(item):
 	args["mon-down"] = 2
 	args["moff-up"] = 3
 	args["moff-down"] = 4
+	args["inval-sub"] = 5
+	args["inval-mon"] = 6
+	args["inval-moff"] = 7
 	
 	open("mqtt.sim", "w").write("%d" % args[item])

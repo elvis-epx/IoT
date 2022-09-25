@@ -71,9 +71,9 @@ public:
     virtual const char *logdebug_topic() const = 0;
     const char *wifi_status();
     const char *mqtt_status();
+    Ptr<PubTopic> pub_by_topic(const TopicName&);
 
 private:
-    Ptr<PubTopic> pub_by_topic(const TopicName&);
     void republish_all();
 	void sub_data_event(const char *topic, const char *payload, unsigned int length);
 	void update_pub_data();

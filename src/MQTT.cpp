@@ -303,15 +303,37 @@ void MQTT::eval()
        std::remove("mqtt.sim");
    }
    f.close();
-   if (x == 1) {
-       mqttimpl_trampoline2(SUB_OVERRIDEON, (uint8_t*) ((random() % 2) ? "On" : "1"), 2);
-   } else if (x == 2) {
-       mqttimpl_trampoline2(SUB_OVERRIDEON, (uint8_t*) ((random() % 2) ? "Off" : "0"), 3);
-   } else if (x == 3) {
-       mqttimpl_trampoline2(SUB_OVERRIDEOFF, (uint8_t*) ((random() % 2) ? "on" : "1"), 2);
-   } else if (x == 4) {
-       mqttimpl_trampoline2(SUB_OVERRIDEOFF, (uint8_t*) ((random() % 2) ? "off" : "0"), 3);
+   if (x <= 0) {
+       return;
    }
+
+   const char *sub_topic = "Invalid@#!";
+   const char *msg = "Invalid@#!";
+   static const char *msg_on_variants[] = {"On", "on", "1"};
+   static const char *msg_off_variants[] = {"Off", "off", "0"};
+   if (x == 1) {
+       sub_topic = SUB_OVERRIDEON;
+       msg = msg_on_variants[random() % 3];
+   } else if (x == 2) {
+       sub_topic = SUB_OVERRIDEON;
+       msg = msg_off_variants[random() % 3];
+   } else if (x == 3) {
+       sub_topic = SUB_OVERRIDEOFF;
+       msg = msg_on_variants[random() % 3];
+   } else if (x == 4) {
+       sub_topic = SUB_OVERRIDEOFF;
+       msg = msg_off_variants[random() % 3];
+   } else if (x == 5) {
+       sub_topic = "NoSuchSubTopic";
+       msg = msg_on_variants[random() % 3];
+   } else if (x == 6) {
+       sub_topic = SUB_OVERRIDEON;
+       msg = "Invalid@#!";
+   } else if (x == 7) {
+       sub_topic = SUB_OVERRIDEOFF;
+       msg = "Invalid@#!";
+   }
+   mqttimpl_trampoline2(sub_topic, (uint8_t*) msg, strlen(msg) + 1);
 #endif
 }
 

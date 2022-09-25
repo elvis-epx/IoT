@@ -79,6 +79,8 @@ int main()
 	Log::d("int", 1);
 	Log::d("double", 1.0);
 	Log::d("string", "bla");
+    assert(strcmp(mqtt->mqtt_id(), "H2OControl") == 0);
+    assert(!mqtt->pub_by_topic(TopicName("NoSuchTopic")));
 
 	char tmp[40];
 	Display::millis_to_hms(-1, tmp);
