@@ -33,6 +33,7 @@ int main()
 	mqtt = Ptr<MQTT>(new MQTT());
 
 	sm->start();
+	mqtt->start();
 
 	bool running = true;
 	while (running) {

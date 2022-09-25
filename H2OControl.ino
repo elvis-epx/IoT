@@ -45,6 +45,7 @@ void setup() {
   Serial.println("MQTT initiated");
 
   sm->start();
+  mqtt->start();
 
   Serial.println("Setup ok");
 }
