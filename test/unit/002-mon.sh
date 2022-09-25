@@ -48,3 +48,16 @@ sleep 3
 cond state eq "Resting"
 cond pump eq 1
 cond level_err eq 0
+
+mqtt mon-up
+sleep 2
+cond state eq "On MQTT"
+mqtt mon-down
+sleep 2
+cond state eq "Off"
+mqtt moff-up
+sleep 2
+cond state eq "Off MQTT"
+mqtt mon-down
+sleep 2
+cond state eq "Off"
