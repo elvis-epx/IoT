@@ -214,26 +214,26 @@ bool EfficiencyPub::value_changed()
 
 void OverrideOnSub::new_value(const char *v, size_t s)
 {
-    if (strncasecmp(v, "On", s) == 0) {
+    if (strcasecmp(v, "On") == 0) {
         mqtt->annotate_override_on_state(true);
-    } else if (strncasecmp(v, "1", s) == 0) {
+    } else if (strcasecmp(v, "1") == 0) {
         mqtt->annotate_override_on_state(true);
-    } else if (strncasecmp(v, "Off", s) == 0) {
+    } else if (strcasecmp(v, "Off") == 0) {
         mqtt->annotate_override_on_state(false);
-    } else if (strncasecmp(v, "0", s) == 0) {
+    } else if (strcasecmp(v, "0") == 0) {
         mqtt->annotate_override_on_state(false);
     }
 }
 
 void OverrideOffSub::new_value(const char *v, size_t s)
 {
-    if (strncasecmp(v, "On", s) == 0) {
+    if (strcasecmp(v, "On") == 0) {
         mqtt->annotate_override_off_state(true);
-    } else if (strncasecmp(v, "1", s) == 0) {
+    } else if (strcasecmp(v, "1") == 0) {
         mqtt->annotate_override_off_state(true);
-    } else if (strncasecmp(v, "Off", s) == 0) {
+    } else if (strcasecmp(v, "Off") == 0) {
         mqtt->annotate_override_off_state(false);
-    } else if (strncasecmp(v, "0", s) == 0) {
+    } else if (strcasecmp(v, "0") == 0) {
         mqtt->annotate_override_off_state(false);
     }
 }
@@ -328,12 +328,12 @@ void MQTT::eval()
        msg = msg_on_variants[random() % 3];
    } else if (x == 6) {
        sub_topic = SUB_OVERRIDEON;
-       msg = "Invalid@#!";
+       msg = "O";
    } else if (x == 7) {
        sub_topic = SUB_OVERRIDEOFF;
-       msg = "Invalid@#!";
+       msg = "";
    }
-   mqttimpl_trampoline2(sub_topic, (uint8_t*) msg, strlen(msg) + 1);
+   mqttimpl_trampoline2(sub_topic, (uint8_t*) msg, strlen(msg));
 #endif
 }
 
