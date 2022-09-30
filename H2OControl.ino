@@ -1,8 +1,10 @@
 #if defined(ESP32)
 #include <esp_bt.h>
+#include <Preferences.h>
 #endif
 #include "src/Elements.h"
 #include "src/Constants.h"
+#include "src/Console.h"
 
 static const double level_sensors[] = LEVEL_SENSORS;
 static const uint32_t flow_rates[] = FLOWRATES;
@@ -14,6 +16,7 @@ Ptr<LevelMeter> levelmeter;
 Ptr<Display> display;
 Ptr<H2OStateMachine> sm;
 Ptr<MQTT> mqtt;
+Preferences prefs;
 
 // GPIO 2 = D4 in ESP8266 NodeMCU
 const int heartbeat_led = 2;
@@ -23,31 +26,31 @@ void setup() {
   setCpuFrequencyMhz(80);
   esp_bt_controller_disable();
 #endif
-  Serial.begin(115200);
-  Serial.println("Setup");
+  console_setup();
 
   pinMode(heartbeat_led, OUTPUT);
   digitalWrite(heartbeat_led, HIGH);
 
   gpio = Ptr<MyGPIO>(new MyGPIO());
-  Serial.println("GPIO initiated");
+  console_println("GPIO initiated");
   pump = Ptr<Pump>(new Pump());
-  Serial.println("Pump initiated");
+  console_println("Pump initiated");
   flowmeter = Ptr<FlowMeter>(new FlowMeter(FLOWMETER_PULSE_RATE, flow_rates));
-  Serial.println("Flow meter initiated");
+  console_println("Flow meter initiated");
   levelmeter = Ptr<LevelMeter>(new LevelMeter(level_sensors, TANK_CAPACITY));
-  Serial.println("Level meter initiated");
+  console_println("Level meter initiated");
   display = Ptr<Display>(new Display());
-  Serial.println("Display initiated");
+  console_println("Display initiated");
   sm = Ptr<H2OStateMachine>(new H2OStateMachine());
-  Serial.println("State machine initiated");
+  console_println("State machine initiated");
   mqtt = Ptr<MQTT>(new MQTT());
-  Serial.println("MQTT initiated");
+  console_println("MQTT initiated");
 
   sm->start();
   mqtt->start();
 
-  Serial.println("Setup ok");
+  console_println("Setup ok");
+  console_println("Type !help for available commands.");
 }
 
 bool heartbeat = LOW;
@@ -66,4 +69,5 @@ void loop() {
   sm->eval();
   display->eval();
   mqtt->eval();
+  console_eval();
 }

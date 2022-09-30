@@ -58,7 +58,7 @@ cond level_err eq 0
 
 echo "Block 8"
 mqtt mon-up
-sleep 2
+sleep 4
 cond state eq "On MQTT"
 mqtt mon-down
 sleep 2

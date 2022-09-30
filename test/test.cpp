@@ -7,6 +7,7 @@
 #include "Elements.h"
 #include "Constants.h"
 #include "LogDebug.h"
+#include "Console.h"
 
 static const double level_sensors[] = LEVEL_SENSORS;
 static const uint32_t flow_rates[] = FLOWRATES;
@@ -24,6 +25,7 @@ extern int64_t uptime_advance;
 
 int main()
 {
+    console_setup();
     gpio = Ptr<MyGPIO>(new MyGPIO());
     pump = Ptr<Pump>(new Pump());
     flowmeter = Ptr<FlowMeter>(new FlowMeter(FLOWMETER_PULSE_RATE, flow_rates));
@@ -43,7 +45,8 @@ int main()
         sm->eval();
         display->eval();
         mqtt->eval();
-        usleep(100000);
+        console_eval();
+        usleep(10000);
 
         std::ofstream g;
         g.open("state.sim");

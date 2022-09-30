@@ -8,6 +8,10 @@ uint32_t _arduino_millis()
     return millis();
 }
 
+void arduino_restart() {
+    ESP.restart();
+}
+
 #else
 
 #include <sys/time.h>
@@ -42,6 +46,10 @@ uint32_t _arduino_millis()
     // uptime in ms
     int64_t uptime_ms = (now_us - start_us) / 1000 + 1;
     return (uint32_t) (uptime_ms & 0xffffffffULL);
+}
+
+void arduino_restart() {
+    exit(0);
 }
 
 #endif

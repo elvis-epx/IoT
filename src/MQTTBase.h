@@ -71,6 +71,8 @@ public:
     virtual const char *logdebug_topic() const = 0;
     const char *wifi_status();
     const char *mqtt_status();
+
+    // made public for coverage
     Ptr<PubTopic> pub_by_topic(const TopicName&);
 
 private:
@@ -83,6 +85,13 @@ private:
     void chk_mqttimpl();
     void chk_wifi();
     void eval_mqttimpl();
+
+    bool wifi_enabled;
+    bool mqtt_enabled;
+    char *wifi_ssid;
+    char *wifi_password;
+    char *mqtt_address;
+    int mqtt_port;
 
     Timestamp last_wifi_check;
     bool wifi_connection_logged;

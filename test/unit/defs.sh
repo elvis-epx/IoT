@@ -73,4 +73,35 @@ function quit () {
     exit $err
 }
 
+function nvram () {
+    echo "ssid" > nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "foo" >> nvram.sim
+    else
+        echo "None" >> nvram.sim
+    fi
+    echo "password" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "bar" >> nvram.sim
+    fi
+    echo "mqtt" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "1.2.3.4" >> nvram.sim
+    else
+        echo "None" >> nvram.sim
+    fi
+    echo "mqttport" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "1883" >> nvram.sim
+    fi
+}
+
+function cli () {
+    echo $* >> serial.sim
+}
+
 trap quit EXIT

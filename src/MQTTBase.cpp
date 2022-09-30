@@ -1,6 +1,7 @@
 #include "MQTTBase.h"
 #include "LogDebug.h"
 #include "Elements.h"
+#include "NVRAM.h"
 
 #ifdef UNDER_TEST
 
@@ -14,8 +15,8 @@
 #else
 #include <WiFi.h>
 #endif
+
 #include <PubSubClient.h>
-#include "Credentials.h"
 
 WiFiClient wifi;
 PubSubClient mqttimpl(wifi);
@@ -129,10 +130,33 @@ MQTTBase::MQTTBase()
     last_mqtt_check = now() - (30 * SECONDS);
     last_wifi_check = now() - (60 * SECONDS);
     wifi_connection_logged = false;
+
+    wifi_ssid = arduino_nvram_load("ssid");
+    wifi_password = arduino_nvram_load("password");
+    mqtt_address = arduino_nvram_load("mqtt");
+    char *mqtt_port_s = arduino_nvram_load("mqttport");
+    if (strcmp(mqtt_port_s, "None") == 0) {
+        mqtt_port = 1883;
+    } else {
+        mqtt_port = atoi(mqtt_port_s);
+    }
+    free(mqtt_port_s);
+    wifi_enabled = strcmp(wifi_ssid, "None") != 0;
+    mqtt_enabled = wifi_enabled && strcmp(mqtt_address, "None") != 0;
 }
 
 void MQTTBase::start()
 {
+    if (wifi_enabled) {
+        Log::d("Wi-Fi configured");
+        if (mqtt_enabled) {
+            Log::d("MQTT configured");
+        } else {
+            Log::d("MQTT not configured");
+        }
+    } else {
+        Log::d("Wi-Fi not configured");
+    }
     init_mqttimpl();
 }
 
@@ -162,8 +186,10 @@ void mqttimpl_trampoline(char* topic, uint8_t* bpayload, unsigned int length)
 void MQTTBase::init_mqttimpl()
 {
 #ifndef UNDER_TEST
-    mqttimpl.setServer(BROKER_MQTT, BROKER_PORT);
-    mqttimpl.setCallback(mqttimpl_trampoline);
+    if (mqtt_enabled) {
+        mqttimpl.setServer(mqtt_address, mqtt_port);
+        mqttimpl.setCallback(mqttimpl_trampoline);
+    }
 #endif
 }
 
@@ -171,13 +197,17 @@ const char *MQTTBase::mqtt_status()
 {
     static char tmp[31];
 #ifndef UNDER_TEST
-    if (mqttimpl.connected()) {
-        sprintf(tmp, "conn");
+    if (mqtt_enabled) {
+        if (mqttimpl.connected()) {
+            sprintf(tmp, "conn");
+        } else {
+            sprintf(tmp, "disconn %d", mqttimpl.state());
+        }
     } else {
-        sprintf(tmp, "disconn %d", mqttimpl.state());
+        sprintf(tmp, "dis");
     }
 #else
-    sprintf(tmp, "connected");
+    sprintf(tmp, "mock conn");
 #endif
     return tmp;
 }
@@ -191,18 +221,20 @@ void MQTTBase::chk_mqttimpl()
     last_mqtt_check = Now;
 
 #ifndef UNDER_TEST
-    if (!mqttimpl.connected()) {
-        Log::d("Connecting MQTT");
-        if (mqttimpl.connect(mqtt_id())) {
-            Log::d("MQTT connection up");
-            for (size_t i = 0; i < sub_topics.count(); ++i) {
-                mqttimpl.subscribe(sub_topics[i]->topic().c_str());
+    if (mqtt_enabled) {
+        if (!mqttimpl.connected()) {
+            Log::d("Connecting MQTT");
+            if (mqttimpl.connect(mqtt_id())) {
+                Log::d("MQTT connection up");
+                for (size_t i = 0; i < sub_topics.count(); ++i) {
+                    mqttimpl.subscribe(sub_topics[i]->topic().c_str());
+                }
+                // force full republish
+                last_general_pub = 0;
+            } else {
+                Log::d("MQTT connection failed");
+                Log::d("MQTT state", mqttimpl.state());
             }
-            // force full republish
-            last_general_pub = 0;
-        } else {
-            Log::d("MQTT connection failed");
-            Log::d("MQTT state", mqttimpl.state());
         }
     }
 #endif
@@ -211,7 +243,9 @@ void MQTTBase::chk_mqttimpl()
 void MQTTBase::eval_mqttimpl()
 {
 #ifndef UNDER_TEST
-    mqttimpl.loop();
+    if (mqtt_enabled) {
+        mqttimpl.loop();
+    }
 #endif
 }
 
@@ -219,10 +253,14 @@ const char *MQTTBase::wifi_status()
 {
     static char tmp[31];
 #ifndef UNDER_TEST
-    if (WiFi.status() == WL_CONNECTED) {
-        sprintf(tmp, "%s", WiFi.localIP().toString().c_str());
+    if (wifi_enabled) {
+        if (WiFi.status() == WL_CONNECTED) {
+            sprintf(tmp, "%s", WiFi.localIP().toString().c_str());
+        } else {
+            sprintf(tmp, "disconn");
+        }
     } else {
-        sprintf(tmp, "disconn");
+        sprintf(tmp, "dis");
     }
 #else
     sprintf(tmp, "connected");
@@ -239,21 +277,30 @@ void MQTTBase::chk_wifi()
     last_wifi_check = Now;
 
 #ifndef UNDER_TEST
-    if (WiFi.status() == WL_CONNECTED) {
-        if (!wifi_connection_logged) {
-            Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
-            wifi_connection_logged = true;
+    if (wifi_enabled) {
+        if (WiFi.status() == WL_CONNECTED) {
+            if (!wifi_connection_logged) {
+                Log::d("WiFi up, IP is ", WiFi.localIP().toString().c_str());
+                wifi_connection_logged = true;
+            }
+            return;
         }
-        return;
+        wifi_connection_logged = false;
+        Log::d("Connecting to WiFi...");
+        if (strcmp(wifi_password, "None") == 0) {
+            WiFi.begin(wifi_ssid);
+        } else {
+            WiFi.begin(wifi_ssid, wifi_password);
+        }
     }
-    wifi_connection_logged = false;
-    Log::d("Connecting to WiFi...");
-    WiFi.begin(SSID, PASSWORD);
 #endif
 }
 
 MQTTBase::~MQTTBase()
 {
+    free(wifi_ssid);
+    free(wifi_password);
+    free(mqtt_address);
 }
 
 void MQTTBase::sub_data_event(const char *topic, const char *payload, unsigned int length)
@@ -324,7 +371,9 @@ void MQTTBase::do_pub_data(const char *topic, const char *value) const
     f << topic << " " << value << std::endl;
     f.close();
 #else
-    mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
+    if (mqtt_enabled) {
+        mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
+    }
 #endif
 }
 

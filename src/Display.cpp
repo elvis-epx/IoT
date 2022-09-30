@@ -8,6 +8,7 @@
 #include "Display.h"
 #include "Elements.h"
 #include "Constants.h"
+#include "Console.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -190,12 +191,12 @@ void Display::show(char **msg)
         }
         hw.display();
     }
-    Serial.print(msg[0]);
-    Serial.print(" || ");
-    Serial.print(msg[1]);
-    Serial.print(" || ");
-    Serial.print(msg[2]);
-    Serial.print(" || ");
-    Serial.println(msg[3]);
+    console_print(msg[0]);
+    console_print(" || ");
+    console_print(msg[1]);
+    console_print(" || ");
+    console_print(msg[2]);
+    console_print(" || ");
+    console_println(msg[3]);
 #endif
 }

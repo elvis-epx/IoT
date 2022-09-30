@@ -6,14 +6,11 @@
 
 #include "LogDebug.h"
 #include "Elements.h"
+#include "Console.h"
 
 void Log::d(const char *msg)
 {
-#ifdef UNDER_TEST
-    printf("dbg %s\n", msg);
-#else
-    Serial.println(msg);
-#endif
+    console_println(msg);
     mqtt->pub_logdebug(msg);
 }
 

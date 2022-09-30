@@ -11,5 +11,6 @@
 #include "stdint.h"
 
 uint32_t _arduino_millis();
+void arduino_restart();
 
 #endif
