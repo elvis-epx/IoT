@@ -53,6 +53,7 @@ function fastflow () {
 }
 
 function runme () {
+    nvram
     if which valgrind >/dev/null; then
         ./val &
     else
