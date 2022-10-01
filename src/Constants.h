@@ -7,7 +7,7 @@
 #define LEVEL_SENSORS {20.0, 40.0, 60.0, 80.0, 100.0, 0.0}
 
 #define FLOWMETER_PULSE_RATE 4.8 // in pulses/s when flow is 1L/min
-#define ESTIMATED_PUMP_FLOWRATE (1100.0 / 60) // in L/min
+#define ESTIMATED_PUMP_FLOWRATE 14.5 // in L/min
 
 // pipes between pump and flow meter
 #define PIPE_DIAMETER 25.0 // in mm
