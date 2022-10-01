@@ -14,7 +14,7 @@
 
 extern Preferences prefs;
 
-static const char* chapter = "RelayControl";
+static const char* chapter = "H2OControl";
 
 void arduino_nvram_clear_all()
 {
