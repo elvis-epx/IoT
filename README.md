@@ -6,7 +6,7 @@ sensor or dry well. The controller can report status and accept commands
 via MQTT.
 
 Currently, the project is aimed to fulfill personal needs. In the future 
-it can be improved to cover more use cases.
+it may be improved to cover more use cases.
 
 Working on breadboard:
 
@@ -60,7 +60,7 @@ the pump could be added to detect a pump failure sooner. In current
 implementation, the program waits enough time to fill the pipes between
 pump and sensor.
 
-Using 5 swtich sensors plus the inflow sensor, we need a grand total of
+Using 5 switch sensors plus the inflow sensor, we need a grand total of
 8 wires, and an Ethernet cable is enough to connect the water tank to the
 controller.
 
@@ -97,3 +97,11 @@ The pwm/ folder contains a small Arduino project that simulates the PWM
 flow sensor, using a potentiometer to change the pulse frequency. 
 We use an AVR Nano so the output is 5V, like the real flow sensor, so
 we can be sure the level shifter is doing its job.
+
+## Network configuration
+
+Wi-Fi and MQTT broker are configured via serial console and saved in flash memory,
+so there is no need to hardcode these values in the build image.
+
+In serial console, send the `!help` command to see the available configurations, as well
+as other assorted commands.
