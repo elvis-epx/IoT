@@ -1,5 +1,5 @@
-CFLAGS=-DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage -fno-elide-constructors
-OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMeter.o Timestamp.o MyGPIO.o Display.o LogDebug.o MQTTBase.o MQTT.o Console.o CLI.o Preferences.o NVRAM.o Serial.o
+CFLAGS=-DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage -fno-elide-constructors -I.
+OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMeter.o Timestamp.o MyGPIO.o Display.o LogDebug.o MQTTBase.o MQTT.o Console.o CLI.o Preferences.o NVRAM.o Serial.o Elements.o Wire.o
 
 all: test
 

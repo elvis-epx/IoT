@@ -1,6 +1,7 @@
 #ifndef __ELEMENTS_H
 #define __ELEMENTS_H
 
+#include <Preferences.h>
 #include "Pointer.h"
 #include "Pump.h"
 #include "FlowMeter.h"
@@ -17,5 +18,10 @@ extern Ptr<LevelMeter> levelmeter;
 extern Ptr<Display> display;
 extern Ptr<H2OStateMachine> sm;
 extern Ptr<MQTT> mqtt;
+extern Preferences prefs;
+
+void elements_setup();
+void elements_loop();
+void i2c_begin();
 
 #endif

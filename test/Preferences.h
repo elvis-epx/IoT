@@ -1,7 +1,7 @@
 #ifndef __PREFERENCES_H
 #define __PREFERENCES_H
 
-#include <cstdint>
+#include <cstddef>
 
 struct Preferences {
 	static void begin(const char*);
