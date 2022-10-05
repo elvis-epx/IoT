@@ -1,9 +1,7 @@
 #include "stdio.h"
-#ifndef UNDER_TEST
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#endif
 
 #include "Display.h"
 #include "Elements.h"
@@ -14,9 +12,7 @@
 #define SCREEN_HEIGHT 64
 #define SCREEN_ADDRESS 0x3C
 
-#ifndef UNDER_TEST
 static Adafruit_SSD1306 hw(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
-#endif
 
 Display::Display()
 {
@@ -26,16 +22,12 @@ Display::Display()
     next_row2_update = Timeout(5 * SECONDS);
     next_row3_update = Timeout(5 * SECONDS);
 
-#ifndef UNDER_TEST
     ok = hw.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
     if (ok) {
         hw.setTextSize(1);
         hw.setTextColor(SSD1306_WHITE);
         hw.cp437(true);
     }
-#else
-    ok = true;
-#endif
 
     const char *msg[] = {"", "", "", ""};
     show((char**) msg);
@@ -150,25 +142,6 @@ void Display::eval()
 
 void Display::show(char **msg)
 {
-#ifdef UNDER_TEST
-    printf("\033[s");
-    printf("\033[44m");
-    printf("\033[97m");
-    printf("\033[1;60H");
-    printf("  %-20s  ", "");
-    printf("\033[2;60H");
-    printf("  %-20s  ", msg[0]);
-    printf("\033[3;60H");
-    printf("  %-20s  ", msg[1]);
-    printf("\033[4;60H");
-    printf("  %-20s  ", msg[2]);
-    printf("\033[5;60H");
-    printf("  %-20s  ", msg[3]);
-    printf("\033[6;60H");
-    printf("  %-20s  ", "");
-    printf("\033[u");
-    fflush(stdout);
-#else
     if (ok) {
         hw.clearDisplay();
         hw.setCursor(0, 0 + 4);
@@ -196,5 +169,4 @@ void Display::show(char **msg)
     console_print(msg[2]);
     console_print(" || ");
     console_println(msg[3]);
-#endif
 }
