@@ -9,7 +9,6 @@
 #else
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <MCP23017.h>
 
 #define MCP23017_ADDR 0x20
@@ -49,7 +48,7 @@ MyGPIO::MyGPIO()
     output_bitmap = 0 | PUMP_BIT;
 
 #ifndef UNDER_TEST
-    Wire.begin();
+    i2c_begin();
     mcp.init();
 
     // high bits = input. Third parameter is pullup and all-1 by default
