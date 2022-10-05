@@ -1,1 +1,30 @@
-gcc -DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage -fno-elide-constructors -I. -c MQTT.cpp
+#!/usr/bin/env python3
+
+import sys, mylib
+
+conds = {}
+conds["eq"] = lambda a, b: a == b
+conds["ne"] = lambda a, b: a != b
+conds["gt"] = lambda a, b: a > b
+conds["ge"] = lambda a, b: a >= b
+conds["lt"] = lambda a, b: a < b
+conds["le"] = lambda a, b: a <= b
+
+arg = sys.argv[1]
+cond = sys.argv[2]
+val = sys.argv[3]
+state = mylib.read_state()
+if arg not in state:
+    raise Exception("arg not in state: %s" % arg)
+if cond not in conds:
+    raise Exception("invalid condition: %s" % cond)
+if arg in ("state", ):
+    if cond not in ("eq", "ne"):
+        raise Exception("Invalid condition for string")
+else:
+    val = float(val)
+
+if conds[cond](state[arg], val):
+    sys.exit(0)
+print("Condition failed: %s %s %s" % (sys.argv[1], sys.argv[2], sys.argv[3]))
+sys.exit(1)
