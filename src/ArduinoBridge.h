@@ -12,5 +12,14 @@
 
 uint32_t _arduino_millis();
 void arduino_restart();
+void arduino_pinmode(int, int);
+void arduino_digitalwrite(int, bool);
+
+#ifdef UNDER_TEST
+
+#define OUTPUT 0
+#define INPUT 1
+
+#endif
 
 #endif

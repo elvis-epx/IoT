@@ -12,6 +12,14 @@ void arduino_restart() {
     ESP.restart();
 }
 
+void arduino_pinmode(int a, int b) {
+    pinMode(a, b);
+}
+
+void arduino_digitalwrite(int a, bool b) {
+    digitalWrite(a, b);
+}
+
 #else
 
 #include <sys/time.h>
@@ -22,6 +30,8 @@ void arduino_restart() {
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <iostream>
+#include <fstream>
 
 // Emulation of millis() and random()
 
@@ -49,7 +59,19 @@ uint32_t _arduino_millis()
 }
 
 void arduino_restart() {
-    exit(0);
+    // exit(0); // do not exit actually due to some Valgrind false positives
+}
+
+void arduino_pinmode(int, int) {}
+
+void arduino_digitalwrite(int pin, bool state)
+{
+    char fname[40];
+    sprintf(fname, "gpio%d.sim", pin);
+    std::ofstream f;
+    f.open(fname);
+    f << (state ? 1 : 0);
+    f.close();
 }
 
 #endif
