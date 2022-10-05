@@ -2,7 +2,7 @@
 
 . unit/defs.sh
 
-nvram_nowifi
+nvram_nomqtt
 runme
 
 cli "!help"

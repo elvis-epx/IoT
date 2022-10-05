@@ -66,5 +66,9 @@ int main()
     Display::millis_to_hms(3602 * 1000, tmp);
     assert(strcmp(tmp, "Uptime 1:00:02") == 0);
 
+    StrBuf a = "foo";
+    StrBuf b = a;
+    b.hot_str()[1] = 'p';
+    assert(!a.equals(b));
     std::remove("quit.sim");
 }
