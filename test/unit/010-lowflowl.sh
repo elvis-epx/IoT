@@ -16,8 +16,8 @@ cond level_err eq 0
 # Long-term flow fail: <33% of expected flow
 # To simulate fail, must be between one and other
 
-# Simulate 5.6L/min (between 4.6 and 6.1)
-fastflow 27 $((31 * 60))
+# Simulate 4.3L/min (between 3.6 and 4.83)
+fastflow 21 $((31 * 60))
 
 cond state eq "F slow 30"
 cond pump eq 1

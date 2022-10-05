@@ -11,17 +11,13 @@ cond pump eq 0
 cond level_err eq 0
 cond level% eq 60
 
-# 1100 / 60 = 18.33L/min expected flow
-# 25mm x 75m ~= 36L pipe capacity between pump and sensor
-# expected time to fill pipes: ~2min
-
-advance 120
+advance 160
 sleep 2
 cond state eq "On"
 
 # Fail after 2x expected time
 
-advance 120
+advance 160
 sleep 2
 cond state eq "F flow"
 cond pump eq 1

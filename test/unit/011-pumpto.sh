@@ -11,30 +11,30 @@ cond pump eq 0
 cond level_err eq 0
 
 # Test pump timeout (twice the complete fillup time at expected flow rate)
-# 1000L / 18.33L/min = 54 min
-# Pump timeout = 108min
+# 1000L / 14.5L/min = 69 min
+# Pump timeout = 138min
 
 # Simulate 10L/min to avoid stopping due to low flow
-fastflow 48 $((30 * 60))
+fastflow 48 $((40 * 60))
 # Change level to avoid "level unchanged" failure
 sensors 20
-# -------------------------- 63 min mark
+# -------------------------- 40 min mark
 
 # More 30 min / 300L
-fastflow 48 $((30 * 60))
+fastflow 48 $((40 * 60))
 # Change level 
 sensors 20 40
-# -------------------------- 60 min mark
+# -------------------------- 80 min mark
 
 # More 30 min / 300L
-fastflow 48 $((30 * 60))
+fastflow 48 $((40 * 60))
 # Change level 
 sensors 20 40 60
-# -------------------------- 90 min mark
+# -------------------------- 120 min mark
 
-# More 20 min
-fastflow 48 $((20 * 60))
-# ------------- 110 min mark, > 108 min, should have fialed
+# More 30 min
+fastflow 48 $((30 * 60))
+# ------------- 150 min mark, > 188 min, should have fialed
 
 cond state eq "F timeout"
 cond pump eq 1
