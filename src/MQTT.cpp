@@ -1,12 +1,4 @@
 #include <stdio.h>
-
-#ifdef UNDER_TEST
-
-#include <iostream>
-#include <fstream>
-
-#endif
-
 #include "MQTT.h"
 #include "Elements.h"
 #include "Constants.h"

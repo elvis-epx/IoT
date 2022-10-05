@@ -1,5 +1,5 @@
-CFLAGS=-DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage -fno-elide-constructors -I.
-OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMeter.o Timer.o MyGPIO.o Display.o LogDebug.o MQTTBase.o MQTT.o Console.o CLI.o Preferences.o NVRAM.o Serial.o Elements.o Wire.o StrBuf.o PubSubClient.o WiFi.o Adafruit_SSD1306.o
+CFLAGS=-DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage --coverage -fno-elide-constructors -I.
+OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMeter.o Timer.o MyGPIO.o Display.o LogDebug.o MQTT.o MQTTBase.o Console.o CLI.o Preferences.o NVRAM.o Serial.o Elements.o Wire.o StrBuf.o PubSubClient.o WiFi.o Adafruit_SSD1306.o MCP23017.o
 
 all: test
 
@@ -22,7 +22,7 @@ reunit:
 	rm -f unit.sim
 	./unit.sh
 
-coverage: test
+coverage:
 	rm -f *.info
 	gcov test.cpp
 	lcov -c --directory . --output-file main_coverage.info

@@ -1,14 +1,9 @@
 #include "MyGPIO.h"
 #include "Elements.h"
-
+#include "ArduinoBridge.h"
 #ifdef UNDER_TEST
-
-#include <iostream>
-#include <fstream>
-
-#else
-
-#include <Arduino.h>
+#define IRAM_ATTR
+#endif
 #include <MCP23017.h>
 
 #define MCP23017_ADDR 0x20
@@ -19,8 +14,6 @@ static void IRAM_ATTR pulse_trampoline()
 {
     gpio->pulse();
 }
-
-#endif
 
 #define FLOWMETER_PIN 14
 
@@ -47,7 +40,6 @@ MyGPIO::MyGPIO()
     // note: inverted pump logic bit
     output_bitmap = 0 | PUMP_BIT;
 
-#ifndef UNDER_TEST
     i2c_begin();
     mcp.init();
 
@@ -57,9 +49,13 @@ MyGPIO::MyGPIO()
     mcp.portMode(MCP23017Port::B, 0b11111111);
     mcp.writeRegister(MCP23017Register::GPIO_B, 0); // reset
     // flow meter
-    pinMode(FLOWMETER_PIN, INPUT_PULLUP);
+    arduino_pinmode(FLOWMETER_PIN, INPUT_PULLUP);
+#ifndef UNDER_TEST
     attachInterrupt(digitalPinToInterrupt(FLOWMETER_PIN), pulse_trampoline, RISING);
+#else
+    mcp.sim_pulse_cb = pulse_trampoline;
 #endif
+
     write_output(output_bitmap, ~0);
 }
 
@@ -71,14 +67,7 @@ uint32_t MyGPIO::read_level_sensors()
 uint32_t MyGPIO::read()
 {
     uint32_t bitmap = 0;
-#ifdef UNDER_TEST
-    std::ifstream f;
-    f.open("gpio.sim");
-    f >> bitmap;
-    f.close();
-#else
     bitmap = mcp.readPort(MCP23017Port::B);
-#endif
     return bitmap;
 }
 
@@ -91,14 +80,7 @@ void MyGPIO::write_pump(bool state)
 void MyGPIO::write_output(uint32_t bitmap, uint32_t bitmask)
 {
     output_bitmap = (output_bitmap & ~bitmask) | (bitmap & bitmask);
-#ifdef UNDER_TEST
-    std::ofstream f;
-    f.open("gpio2.sim");
-    f << output_bitmap;
-    f.close();
-#else
     mcp.writePort(MCP23017Port::A, output_bitmap);
-#endif
 }
 
 void MyGPIO::pulse()
@@ -112,17 +94,7 @@ void MyGPIO::pulse()
 void MyGPIO::eval()
 {
 #ifdef UNDER_TEST
-    int qty = 0;
-    std::ifstream f;
-    f.open("pulses.sim");
-    if (f.is_open()) {
-        f >> qty;
-        std::remove("pulses.sim");
-    }
-    f.close();
-    while (qty-- > 0) {
-        pulse();
-    }
+    mcp.sim_pulses();
 #endif
     if (pulses > 0) {
         flowmeter->pulse(pulses);

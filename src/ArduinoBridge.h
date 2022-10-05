@@ -19,6 +19,7 @@ void arduino_digitalwrite(int, bool);
 
 #define OUTPUT 0
 #define INPUT 1
+#define INPUT_PULLUP 2
 
 #endif
 

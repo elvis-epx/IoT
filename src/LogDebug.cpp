@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef UNDER_TEST
-#include <Arduino.h>
-#endif
 
 #include "LogDebug.h"
 #include "Elements.h"

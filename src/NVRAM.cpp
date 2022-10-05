@@ -5,9 +5,7 @@
 
 #include <stdlib.h>
 #include "NVRAM.h"
-#ifdef UNDER_TEST
 #include <string.h>
-#endif
 #include <Preferences.h>
 
 extern Preferences prefs;
