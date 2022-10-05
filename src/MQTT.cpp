@@ -93,7 +93,7 @@ const char *UptimePub::value_gen()
 {
     Timestmp Now = now();
     static char tmp[30];
-    sprintf(tmp, "%lld", Now / (1 * MINUTES));
+    sprintf(tmp, "%" PRId64, Now / (1 * MINUTES));
     return tmp;
 }
 

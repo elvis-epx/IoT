@@ -65,7 +65,7 @@ static void cli_parse_password_empty()
        console_println("Wi-Fi password is set to None.");
     } else {
         char tmp[40];
-        sprintf(tmp, "Password has %d characters.", password.length());
+        sprintf(tmp, "Password has %d characters.", (int) password.length());
         console_println("Wi-Fi password is set.");
         console_println(tmp);
         console_println("Set password to None for Wi-Fi network without password.");
