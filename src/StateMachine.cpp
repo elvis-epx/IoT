@@ -74,6 +74,7 @@ bool StateMachine::eval()
             current->exit();
             current = next;
             current->enter();
+            last_transition.restart();
             return true;
         }
     }
@@ -84,4 +85,9 @@ bool StateMachine::eval()
 const char* StateMachine::cur_state_name() const
 {
     return current->name();
+}
+
+Cronometer StateMachine::last_movement() const
+{
+    return last_transition;
 }

@@ -38,6 +38,7 @@ public:
     void start();
     bool eval();
     const char *cur_state_name() const;
+    Cronometer last_movement() const;
 
 private:
     int id;
@@ -45,6 +46,7 @@ private:
     Ptr<State> current;
     Vector<Ptr<State>> states;
     Timeout next_eval;
+    Cronometer last_transition;
 };
 
 #endif

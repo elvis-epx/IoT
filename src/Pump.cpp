@@ -5,7 +5,6 @@
 
 Pump::Pump()
 {
-    since = now();
     is_on = false;
 }
 
@@ -13,7 +12,7 @@ void Pump::on()
 {
     if (! is_on) {
         Log::d("pump on");
-        since = now();
+        cronometer.restart();
         is_on = true;
         flowmeter->reset_all();
         gpio->write_pump(true);
@@ -24,7 +23,7 @@ void Pump::off()
 {
     if (is_on) {
         Log::d("pump off");
-        since = now();
+        cronometer.restart();
         is_on = false;
         gpio->write_pump(false);
     }
@@ -35,9 +34,9 @@ bool Pump::is_running() const
     return is_on;
 }
 
-Timestmp Pump::running_since() const
+Cronometer Pump::running_time() const
 {
-    return since;
+    return cronometer;
 }
 
 Timestmp Pump::flow_delay()

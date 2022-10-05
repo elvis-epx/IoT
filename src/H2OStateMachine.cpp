@@ -101,7 +101,7 @@ static bool high_level(int)
 
 static bool pump_rest(int)
 {
-    if ((now() - sm->last_movement()) > (5 * MINUTES)) {
+    if (sm->last_movement().elapsed() > (5 * MINUTES)) {
         return true;
     }
     return false;
@@ -109,7 +109,7 @@ static bool pump_rest(int)
 
 static bool lvlf_recover(int)
 {
-    if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > (12 * 60 * MINUTES)) {
         return true;
     }
     return false;
@@ -117,7 +117,7 @@ static bool lvlf_recover(int)
 
 static bool lfl_recover(int)
 {
-    if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > (12 * 60 * MINUTES)) {
         return true;
     }
     return false;
@@ -125,7 +125,7 @@ static bool lfl_recover(int)
 
 static bool pto_recover(int)
 {
-    if ((now() - sm->last_movement()) > (6 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > (6 * 60 * MINUTES)) {
         return true;
     }
     return false;
@@ -133,7 +133,7 @@ static bool pto_recover(int)
 
 static bool lfs_recover(int)
 {
-    if ((now() - sm->last_movement()) > (2 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > (2 * 60 * MINUTES)) {
         return true;
     }
     return false;
@@ -173,14 +173,11 @@ static bool manual_off_sw_0(int)
 
 static bool detect_flow_fail(int)
 {
-    // FIXME
-    if ((now() - flowmeter->last_mov()) < (30 * SECONDS)) {
+    if (flowmeter->last_movement().elapsed() < (30 * SECONDS)) {
         return false;
     }
 
-    // FIXME
-    Timestmp runtime = now() - pump->running_since();
-    if (runtime < (2 * pump->flow_delay())) {
+    if (pump->running_time().elapsed() < (2 * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
@@ -195,14 +192,11 @@ static bool detect_low_flow_s(int)
         return false;
     }
 
-    // FIXME
-    Timestmp runtime = now() - pump->running_since();
-    if (runtime < (2 * pump->flow_delay())) {
+    if (pump->running_time().elapsed() < (2 * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
 
-    // FIXME
     if (flowmeter->rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
         // less than 25% expected flow
         return true;
@@ -213,8 +207,7 @@ static bool detect_low_flow_s(int)
 
 static bool detect_low_flow_l(int)
 {
-    Timestmp runtime = now() - pump->running_since();
-    if (runtime < (2 * pump->flow_delay())) {
+    if (pump->running_time().elapsed() < (2 * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
@@ -234,11 +227,9 @@ static bool detect_low_flow_l(int)
 
 static bool pump_timeout(int)
 {
-    // FIXME
-    Timestmp runtime = now() - pump->running_since();
     Timestmp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
 
-    if (runtime > (fillup_time * 2)) {
+    if (pump->running_time().elapsed() > (fillup_time * 2)) {
         return true;
     }
     return false;
@@ -263,9 +254,6 @@ static bool detect_level_fail(int)
 
 H2OStateMachine::H2OStateMachine(): StateMachine(0)
 {
-    // FIXME
-    last_transition = now();
-
     auto initial = Ptr<State>(new Initial(0));
     auto off = Ptr<State>(new Off(0));
     auto off_rest = Ptr<State>(new HisteresisOff(0));
@@ -333,16 +321,3 @@ H2OStateMachine::H2OStateMachine(): StateMachine(0)
     add(pumptimeout);
 }
 
-// FIXME remove
-Timestmp H2OStateMachine::last_movement() const
-{
-    return last_transition;
-}
-
-// FIXME remove
-void H2OStateMachine::eval()
-{
-    if (StateMachine::eval()) {
-        last_transition = now();
-    }
-}

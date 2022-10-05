@@ -10,12 +10,12 @@ public:
     void on();
     void off();
     bool is_running() const;
-    Timestmp running_since() const;
+    Cronometer running_time() const;
     static Timestmp flow_delay(); // in ms 
 
 private:
     bool is_on;
-    Timestmp since;
+    Cronometer cronometer;
 };
 
 #endif

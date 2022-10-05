@@ -32,6 +32,11 @@ Timeout::Timeout()
     state = INVALID;
 }
 
+Cronometer::Cronometer()
+{
+    restart();
+}
+
 Timeout::Timeout(Timestmp pdelta)
 {
     state = STOPPED;
@@ -49,6 +54,11 @@ void Timeout::restart()
     }
     target = now() + delta;
     state = ACTIVE;
+}
+
+void Cronometer::restart()
+{
+    started = now();
 }
 
 void Timeout::advance()
@@ -92,4 +102,9 @@ void Timeout::stop()
         return;
     }
     state = STOPPED;
+}
+
+Timestmp Cronometer::elapsed() const
+{
+    return now() - started;
 }

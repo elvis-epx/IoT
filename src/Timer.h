@@ -29,4 +29,13 @@ private:
     int state;
 };
 
+class Cronometer {
+public:
+    Cronometer();
+    void restart();
+    Timestmp elapsed() const;
+private:
+    Timestmp started;
+};
+
 #endif

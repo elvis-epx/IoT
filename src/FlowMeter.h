@@ -18,8 +18,7 @@ public:
     void pulse(uint32_t);
     void eval();
 
-    // FIXME
-    Timestmp last_mov() const; // time since last pulse received
+    Cronometer last_movement() const; // time since last pulse received
     double pulse_volume() const; // volume of 1 pulse, in liters
     double volume() const; // in liters, since last reset
     double expected_volume() const; // in liters, since last reset
@@ -29,17 +28,14 @@ public:
 
 private:
     double k;
-    // FIXME
-    Timestmp last_puls;
+    Cronometer last_pulse;
 
-    // FIXME
-    Timestmp last_vol_rst;
+    Cronometer last_vol_rst;
     uint32_t vol_pulses;
 
     Vector<uint32_t> rate_intervals;
     Vector<double> last_rates;
-    // FIXME time-counting object, or leverage timeout
-    Vector<Timestmp> rate_last_rst;
+    Vector<Cronometer> rate_last_rst;
     Vector<Timeout> rate_next_rst;
     Vector<uint32_t> rate_pulses;
 };

@@ -111,9 +111,6 @@ public:
 class H2OStateMachine: public StateMachine {
 public:
     H2OStateMachine();
-    Timestmp last_movement() const;
-    Timestmp last_transition;
-    void eval();
 private:
     
 };
