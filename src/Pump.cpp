@@ -35,12 +35,12 @@ bool Pump::is_running() const
     return is_on;
 }
 
-Timestamp Pump::running_since() const
+Timestmp Pump::running_since() const
 {
     return since;
 }
 
-Timestamp Pump::flow_delay()
+Timestmp Pump::flow_delay()
 {
     double pipe_area_mm2 = (PIPE_DIAMETER * PIPE_DIAMETER / 4.0) * 3.142;
     double pipe_area_cm2 = pipe_area_mm2 / 100;

@@ -2,66 +2,86 @@
 #include "Elements.h"
 #include "Constants.h"
 
-void Initial::enter()
-{
-}
+Initial::Initial(int i): State(i) {}
+
+void Initial::enter() {}
+
+On::On(int i): State(i) {}
 
 void On::enter()
 {
     pump->on(); // resets flow meter if was off
 }
 
+ManualOn::ManualOn(int i): State(i) {}
+
 void ManualOn::enter()
 {
     pump->on(); // resets flow meter if was off
 }
+
+Off::Off(int i): State(i) {}
 
 void Off::enter()
 {
     pump->off();
 }
 
+HisteresisOff::HisteresisOff(int i): State(i) {}
+
 void HisteresisOff::enter()
 {
     pump->off();
 }
+
+ManualOff::ManualOff(int i): State(i) {}
 
 void ManualOff::enter()
 {
     pump->off();
 }
 
+FlowFailure::FlowFailure(int i): State(i) {}
+
 void FlowFailure::enter()
 {
     pump->off();
 }
+
+LowFlowShort::LowFlowShort(int i): State(i) {}
 
 void LowFlowShort::enter()
 {
     pump->off();
 }
 
+LowFlowLong::LowFlowLong(int i): State(i) {}
+
 void LowFlowLong::enter()
 {
     pump->off();
 }
+
+PumpTimeout::PumpTimeout(int i): State(i) {}
 
 void PumpTimeout::enter()
 {
     pump->off();
 }
 
+LevelFailure::LevelFailure(int i): State(i) {}
+
 void LevelFailure::enter()
 {
     pump->off();
 }
 
-static bool initial_off()
+static bool initial_off(int)
 {
     return true;
 }
 
-static bool low_level()
+static bool low_level(int)
 {
     // keep this idiom so coverage tools can find out whether a
     // transition happened
@@ -71,7 +91,7 @@ static bool low_level()
     return false;
 }
 
-static bool high_level()
+static bool high_level(int)
 {
     if (levelmeter->level_pct() >= 100) {
         return true;
@@ -79,7 +99,7 @@ static bool high_level()
     return false;
 }
 
-static bool pump_rest()
+static bool pump_rest(int)
 {
     if ((now() - sm->last_movement()) > (5 * MINUTES)) {
         return true;
@@ -87,7 +107,7 @@ static bool pump_rest()
     return false;
 }
 
-static bool lvlf_recover()
+static bool lvlf_recover(int)
 {
     if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
         return true;
@@ -95,7 +115,7 @@ static bool lvlf_recover()
     return false;
 }
 
-static bool lfl_recover()
+static bool lfl_recover(int)
 {
     if ((now() - sm->last_movement()) > (12 * 60 * MINUTES)) {
         return true;
@@ -103,7 +123,7 @@ static bool lfl_recover()
     return false;
 }
 
-static bool pto_recover()
+static bool pto_recover(int)
 {
     if ((now() - sm->last_movement()) > (6 * 60 * MINUTES)) {
         return true;
@@ -111,7 +131,7 @@ static bool pto_recover()
     return false;
 }
 
-static bool lfs_recover()
+static bool lfs_recover(int)
 {
     if ((now() - sm->last_movement()) > (2 * 60 * MINUTES)) {
         return true;
@@ -119,7 +139,7 @@ static bool lfs_recover()
     return false;
 }
 
-static bool manual_on_sw_1()
+static bool manual_on_sw_1(int)
 {
     if (mqtt->override_on_state()) {
         return true;
@@ -127,15 +147,15 @@ static bool manual_on_sw_1()
     return false;
 }
 
-static bool manual_on_sw_0()
+static bool manual_on_sw_0(int)
 {
-    if (!manual_on_sw_1()) {
+    if (!manual_on_sw_1(0)) {
         return true;
     }
     return false;
 }
 
-static bool manual_off_sw_1()
+static bool manual_off_sw_1(int)
 {
     if (mqtt->override_off_state()) {
         return true;
@@ -143,21 +163,23 @@ static bool manual_off_sw_1()
     return false;
 }
 
-static bool manual_off_sw_0()
+static bool manual_off_sw_0(int)
 {
-    if (!manual_off_sw_1()) {
+    if (!manual_off_sw_1(0)) {
         return true;
     }
     return false;
 }
 
-static bool detect_flow_fail()
+static bool detect_flow_fail(int)
 {
-    if ((now() - flowmeter->last_movement()) < (30 * SECONDS)) {
+    // FIXME
+    if ((now() - flowmeter->last_mov()) < (30 * SECONDS)) {
         return false;
     }
 
-    Timestamp runtime = now() - pump->running_since();
+    // FIXME
+    Timestmp runtime = now() - pump->running_since();
     if (runtime < (2 * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
@@ -166,19 +188,21 @@ static bool detect_flow_fail()
     return true;
 }
 
-static bool detect_low_flow_s()
+static bool detect_low_flow_s(int)
 {
     if (flowmeter->rate(FLOWRATE_SHORT) == -1) {
         // not measured yet
         return false;
     }
 
-    Timestamp runtime = now() - pump->running_since();
+    // FIXME
+    Timestmp runtime = now() - pump->running_since();
     if (runtime < (2 * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
 
+    // FIXME
     if (flowmeter->rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
         // less than 25% expected flow
         return true;
@@ -187,9 +211,9 @@ static bool detect_low_flow_s()
     return false;
 }
 
-static bool detect_low_flow_l()
+static bool detect_low_flow_l(int)
 {
-    Timestamp runtime = now() - pump->running_since();
+    Timestmp runtime = now() - pump->running_since();
     if (runtime < (2 * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
@@ -208,10 +232,11 @@ static bool detect_low_flow_l()
     return false;
 }
 
-static bool pump_timeout()
+static bool pump_timeout(int)
 {
-    Timestamp runtime = now() - pump->running_since();
-    Timestamp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
+    // FIXME
+    Timestmp runtime = now() - pump->running_since();
+    Timestmp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
 
     if (runtime > (fillup_time * 2)) {
         return true;
@@ -219,7 +244,7 @@ static bool pump_timeout()
     return false;
 }
 
-static bool detect_level_fail()
+static bool detect_level_fail(int)
 {
     // This test assumes level changes in discrete steps.
     // If level meter was analog/continuous, a different strategy would
@@ -236,19 +261,22 @@ static bool detect_level_fail()
     return false;
 }
 
-H2OStateMachine::H2OStateMachine(): StateMachine()
+H2OStateMachine::H2OStateMachine(): StateMachine(0)
 {
-    auto initial = Ptr<State>(new Initial());
-    auto off = Ptr<State>(new Off());
-    auto off_rest = Ptr<State>(new HisteresisOff());
-    auto manual_off = Ptr<State>(new ManualOff());
-    auto on = Ptr<State>(new On());
-    auto manual_on = Ptr<State>(new ManualOn());
-    auto flow_fail = Ptr<State>(new FlowFailure());
-    auto lowflow_short = Ptr<State>(new LowFlowShort());
-    auto lowflow_long = Ptr<State>(new LowFlowLong());
-    auto pumptimeout = Ptr<State>(new PumpTimeout());
-    auto level_fail = Ptr<State>(new LevelFailure());
+    // FIXME
+    last_transition = now();
+
+    auto initial = Ptr<State>(new Initial(0));
+    auto off = Ptr<State>(new Off(0));
+    auto off_rest = Ptr<State>(new HisteresisOff(0));
+    auto manual_off = Ptr<State>(new ManualOff(0));
+    auto on = Ptr<State>(new On(0));
+    auto manual_on = Ptr<State>(new ManualOn(0));
+    auto flow_fail = Ptr<State>(new FlowFailure(0));
+    auto lowflow_short = Ptr<State>(new LowFlowShort(0));
+    auto lowflow_long = Ptr<State>(new LowFlowLong(0));
+    auto pumptimeout = Ptr<State>(new PumpTimeout(0));
+    auto level_fail = Ptr<State>(new LevelFailure(0));
 
     initial->add(initial_off, "initial_off", off);
     add(initial);
@@ -303,4 +331,18 @@ H2OStateMachine::H2OStateMachine(): StateMachine()
     pumptimeout->add(manual_on_sw_1,  "manual_on_sw_1",  off);
     pumptimeout->add(pto_recover,     "pto_recover",     off);
     add(pumptimeout);
+}
+
+// FIXME remove
+Timestmp H2OStateMachine::last_movement() const
+{
+    return last_transition;
+}
+
+// FIXME remove
+void H2OStateMachine::eval()
+{
+    if (StateMachine::eval()) {
+        last_transition = now();
+    }
 }

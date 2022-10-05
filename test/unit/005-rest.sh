@@ -3,6 +3,7 @@
 . unit/defs.sh
 
 sensors 20 40 60
+nvram
 runme
 sleep 5
 cond state eq "On"

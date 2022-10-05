@@ -1,7 +1,7 @@
 #ifndef __PUMP_H
 #define __PUMP_H
 
-#include "Timestamp.h"
+#include "Timer.h"
 
 class Pump
 {
@@ -10,12 +10,12 @@ public:
     void on();
     void off();
     bool is_running() const;
-    Timestamp running_since() const;
-    static Timestamp flow_delay(); // in ms 
+    Timestmp running_since() const;
+    static Timestmp flow_delay(); // in ms 
 
 private:
     bool is_on;
-    Timestamp since;
+    Timestmp since;
 };
 
 #endif

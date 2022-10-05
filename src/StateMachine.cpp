@@ -13,6 +13,11 @@ void State::add(Transition trans, const char *tname, Ptr<State> to_state)
     to_states.push_back(to_state);
 }
 
+State::State(int pid)
+{
+    id = pid;
+}
+
 State::~State()
 {
 }
@@ -23,11 +28,11 @@ void State::clear()
     to_states.clear();
 }
 
-StateMachine::StateMachine()
+StateMachine::StateMachine(int pid)
 {
+    id = pid;
     started = false;
-    last_transition = now();
-    last_eval = now();
+    next_eval = Timeout(500 * MILISSECONDS);
 }
 
 StateMachine::~StateMachine()
@@ -54,24 +59,21 @@ bool StateMachine::eval()
 {
     if (! started) return false;
 
-    if ((now() - last_eval) < 500) {
+    if (next_eval.pending()) {
         return false;
     }
 
-    last_eval = now();
-
     for (size_t i = 0; i < current->transitions.count(); ++i) {
         Transition trans = current->transitions[i];
-        if (trans()) {
+        if (trans(id)) {
             auto next = current->to_states[i];
             char msg[80];
-            sprintf(msg, "trans %s, st %s -> %s", current->tnames[i],
-                    current->name(), next->name());
+            sprintf(msg, "id %d trans %s, st %s -> %s", id,
+                    current->tnames[i], current->name(), next->name());
             Log::d(msg);
             current->exit();
             current = next;
             current->enter();
-            last_transition = now();
             return true;
         }
     }
@@ -82,9 +84,4 @@ bool StateMachine::eval()
 const char* StateMachine::cur_state_name() const
 {
     return current->name();
-}
-
-Timestamp StateMachine::last_movement() const
-{
-    return last_transition;
 }

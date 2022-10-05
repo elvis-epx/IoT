@@ -3,6 +3,7 @@
 . unit/defs.sh
 
 sensors 20 40
+nvram
 runme
 sleep 5
 
@@ -15,6 +16,7 @@ flow 10 5
 
 echo "Block 2"
 sensors 20 40
+advance 45
 mqtt mon-up
 sleep 2
 cond state eq "On MQTT"

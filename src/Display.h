@@ -1,7 +1,7 @@
 #ifndef __DISPLAY_H
 #define __DISPLAY_H
 
-#include "Timestamp.h"
+#include "Timer.h"
 #include "Pointer.h"
 
 class Display
@@ -15,9 +15,9 @@ private:
     void show(char **);
     int row2_phase;
     int row3_phase;
-    Timestamp last_update;
-    Timestamp last_row2_update;
-    Timestamp last_row3_update;
+    Timeout next_update;
+    Timeout next_row2_update;
+    Timeout next_row3_update;
     bool ok;
 };
 

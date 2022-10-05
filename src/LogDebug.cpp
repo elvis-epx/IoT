@@ -14,26 +14,25 @@ void Log::d(const char *msg)
     mqtt->pub_logdebug(msg);
 }
 
+static StrBuf buf;
+
 void Log::d(const char *msg, const char *msg2)
 {
-    char *s = (char*) malloc(strlen(msg) + 1 + strlen(msg2) + 1);
-    sprintf(s, "%s %s", msg, msg2);
-    Log::d(s);
-    free(s);
+    buf.reserve(strlen(msg) + 1 + strlen(msg2) + 1);
+    sprintf(buf.hot_str(), "%s %s", msg, msg2);
+    Log::d(buf.c_str());
 }
 
 void Log::d(const char *msg, int arg)
 {
-    char *s = (char*) malloc(strlen(msg) + 15);
-    sprintf(s, "%s %d", msg, arg);
-    Log::d(s);
-    free(s);
+    buf.reserve(strlen(msg) + 15);
+    sprintf(buf.hot_str(), "%s %d", msg, arg);
+    Log::d(buf.c_str());
 }
 
 void Log::d(const char *msg, double arg)
 {
-    char *s = (char*) malloc(strlen(msg) + 25);
-    sprintf(s, "%s %f", msg, arg);
-    Log::d(s);
-    free(s);
+    buf.reserve(strlen(msg) + 25);
+    sprintf(buf.hot_str(), "%s %f", msg, arg);
+    Log::d(buf.c_str());
 }

@@ -22,7 +22,9 @@ Display::Display()
 {
     row2_phase = 1;
     row3_phase = 1;
-    last_update = last_row2_update = last_row3_update = now();
+    next_update = Timeout(1 * SECONDS);
+    next_row2_update = Timeout(5 * SECONDS);
+    next_row3_update = Timeout(5 * SECONDS);
 
 #ifndef UNDER_TEST
     ok = hw.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
@@ -68,26 +70,22 @@ void Display::millis_to_hms(int64_t t, char *target)
 
 void Display::eval()
 {
-    Timestamp Now = now();
-    if ((Now - last_update) < 1000) {
+    if (next_update.pending()) {
         return;
     }
-    last_update = Now;
 
-    if ((Now - last_row2_update) >= 5000) {
+    if (!next_row2_update.pending()) {
         ++row2_phase;
         if (row2_phase > 3) {
             row2_phase = 1;
         }
-        last_row2_update = Now;
     }
 
-    if ((Now - last_row3_update) >= 5000) {
+    if (!next_row3_update.pending()) {
         ++row3_phase;
         if (row3_phase > 4) {
             row3_phase = 1;
         }
-        last_row3_update = Now;
     }
 
     char msg0[30];
@@ -128,7 +126,7 @@ void Display::eval()
     }
 
     if (row3_phase == 1) {
-        millis_to_hms(Now, msg[3]);
+        millis_to_hms(now(), msg[3]);
     }
     if (row3_phase == 2) {
         if (pump->is_running()) {

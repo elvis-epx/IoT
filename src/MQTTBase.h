@@ -1,36 +1,11 @@
 #ifndef __MQTTBASE_H
 #define __MQTTBASE_H
 
-#include "Timestamp.h"
+#include <stdio.h>
+#include "Timer.h"
 #include "Vector.h"
 #include "Pointer.h"
-
-class TopicName {
-public:
-    TopicName();
-    TopicName(const char *);
-    TopicName(const TopicName &);
-    TopicName& operator=(TopicName const &);
-    virtual ~TopicName();
-    const char *c_str() const;
-    bool equals(const TopicName&) const;
-    bool equals(const char *) const;
-private:
-    char *_data;
-};
-
-class TopicValue {
-public:
-    TopicValue();
-    TopicValue(const TopicValue &) = delete;
-    TopicValue& operator=(TopicValue const &) = delete;
-    virtual ~TopicValue();
-    const char *c_str() const;
-    void update(const char *);
-    bool equals(const char *) const;
-private:
-    char *_data;
-};
+#include "StrBuf.h"
 
 class PubTopic {
 public:
@@ -38,12 +13,13 @@ public:
     PubTopic(const PubTopic &) = delete;
     PubTopic& operator=(PubTopic const &) = delete;
     virtual ~PubTopic();
-    TopicName topic() const;
-    Ptr<TopicValue> value();
-    virtual bool value_changed() = 0;
+    StrBuf topic() const;
+    StrBuf *value();
+    virtual bool value_has_changed();
+    virtual const char *value_gen() = 0;
 protected:
-    TopicName _topic;
-    Ptr<TopicValue> _value;
+    StrBuf _topic;
+    StrBuf _value;
 };
 
 class SubTopic {
@@ -52,10 +28,10 @@ public:
     SubTopic(const SubTopic &) = delete;
     SubTopic& operator=(SubTopic const &) = delete;
     virtual ~SubTopic();
-    TopicName topic() const;
-    virtual void new_value(const char *, size_t) = 0;
+    StrBuf topic() const;
+    virtual void new_value(const StrBuf&) = 0;
 protected:
-    TopicName _topic;
+    StrBuf _topic;
 };
 
 class MQTTBase {
@@ -73,11 +49,11 @@ public:
     const char *mqtt_status();
 
     // made public for coverage
-    Ptr<PubTopic> pub_by_topic(const TopicName&);
+    Ptr<PubTopic> pub_by_topic(const StrBuf&);
 
 private:
     void republish_all();
-    void sub_data_event(const char *topic, const char *payload, unsigned int length);
+    void sub_data_event(const char *topic, const StrBuf &payload);
     void update_pub_data();
     void pub_data();
     void do_pub_data(const char *topic, const char *value) const;
@@ -88,25 +64,23 @@ private:
 
     bool wifi_enabled;
     bool mqtt_enabled;
-    char *wifi_ssid;
-    char *wifi_password;
-    char *mqtt_address;
+    StrBuf wifi_ssid;
+    StrBuf wifi_password;
+    StrBuf mqtt_address;
     int mqtt_port;
 
-    Timestamp last_wifi_check;
+    Timeout next_wifi_check;
     bool wifi_connection_logged;
-    Timestamp last_mqtt_check;
-    Vector<TopicName> pub_pending;
-    Timestamp last_pub_update;
-    Timestamp last_general_pub;
+    Timeout next_mqtt_check;
+    Vector<StrBuf> pub_pending;
+    Timeout next_pub_update;
+    Timeout next_general_pub;
 
 protected:
     Vector<Ptr<PubTopic>> pub_topics;
     Vector<Ptr<SubTopic>> sub_topics;
 
-friend void mqttimpl_trampoline2(const char* topic, const uint8_t* payload, unsigned int length);
+friend void mqttimpl_trampoline(const char* topic, const uint8_t* payload, unsigned int length);
 };
-
-void mqttimpl_trampoline2(const char* topic, const uint8_t* payload, unsigned int length);
 
 #endif

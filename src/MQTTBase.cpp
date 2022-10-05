@@ -1,15 +1,4 @@
-#include "MQTTBase.h"
-#include "LogDebug.h"
-#include "Elements.h"
-#include "NVRAM.h"
-
-#ifdef UNDER_TEST
-
-#include <iostream>
-#include <fstream>
-
-#else
-
+#include <stdlib.h>
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #else
@@ -18,131 +7,74 @@
 
 #include <PubSubClient.h>
 
+#include "MQTTBase.h"
+#include "LogDebug.h"
+#include "Elements.h"
+#include "NVRAM.h"
+
 WiFiClient wifi;
 PubSubClient mqttimpl(wifi);
-
-#endif
-
-TopicName::TopicName()
-{
-    _data = strdup("");
-}
-
-TopicValue::TopicValue()
-{
-    _data = strdup("Undefined");
-}
-
-TopicName::TopicName(const char *s)
-{
-    _data = strdup(s);
-}
-
-TopicName::~TopicName()
-{
-    free(_data);
-    _data = 0;
-}
-
-TopicName::TopicName(const TopicName &other)
-{
-    _data = strdup(other._data);
-}
-
-TopicName& TopicName::operator=(TopicName const &other)
-{
-    if (this != &other) {
-        free(_data);
-        _data = strdup(other._data);
-    }
-    return *this;
-}
-
-TopicValue::~TopicValue()
-{
-    free(_data);
-    _data = 0;
-}
-
-const char *TopicName::c_str() const
-{
-    return _data;
-}
-
-const char *TopicValue::c_str() const
-{
-    return _data;
-}
-
-bool TopicName::equals(const TopicName& other) const 
-{
-    return equals(other.c_str());
-}
-
-bool TopicName::equals(const char *s) const
-{
-    return strcmp(_data, s) == 0;
-}
-
-bool TopicValue::equals(const char *s) const
-{
-    return strcmp(_data, s) == 0;
-}
-
-void TopicValue::update(const char *s)
-{
-    free(_data);
-    _data = strdup(s);
-}
 
 // topic is set by subclass constructor
 PubTopic::PubTopic()
 {
-    _value = Ptr<TopicValue>(new TopicValue());
 }
 
 SubTopic::SubTopic() {}
 
-TopicName PubTopic::topic() const
+StrBuf PubTopic::topic() const
 {
     return _topic;
 }
 
-TopicName SubTopic::topic() const
+StrBuf SubTopic::topic() const
 {
     return _topic;
 }
 
-Ptr<TopicValue> PubTopic::value()
+StrBuf* PubTopic::value()
 {
-    return _value;
+    return &_value;
 }
+
+bool PubTopic::value_has_changed()
+{
+    const char *candidate = value_gen();
+    if (value()->equals(candidate)) {
+        return false;
+    }
+    value()->update(candidate);
+    return true;
+}
+
 
 PubTopic::~PubTopic() {}
 SubTopic::~SubTopic() {}
 
 MQTTBase::MQTTBase()
 {
-    last_pub_update = now() - (1 * MINUTES);
     // first full republish is automatic because of MQTT init and/or
     // because data sources update pub values from Undefined to proper value
-    last_general_pub = now();
-    last_mqtt_check = now() - (30 * SECONDS);
-    last_wifi_check = now() - (60 * SECONDS);
+    next_general_pub = Timeout(30 * MINUTES);
+    next_pub_update = Timeout(1 * SECONDS);
+    next_pub_update.advance();
+    next_mqtt_check = Timeout(30 * SECONDS);
+    next_wifi_check = Timeout(60 * SECONDS);
+    next_wifi_check.advance();
     wifi_connection_logged = false;
 
-    wifi_ssid = arduino_nvram_load("ssid");
-    wifi_password = arduino_nvram_load("password");
-    mqtt_address = arduino_nvram_load("mqtt");
-    char *mqtt_port_s = arduino_nvram_load("mqttport");
-    if (strcmp(mqtt_port_s, "None") == 0) {
+    arduino_nvram_load(wifi_ssid, "ssid");
+    arduino_nvram_load(wifi_password, "password");
+    arduino_nvram_load(mqtt_address, "mqtt");
+    StrBuf mqtt_port_s;
+    arduino_nvram_load(mqtt_port_s,"mqttport");
+    if (mqtt_port_s.equals("None")) {
         mqtt_port = 1883;
     } else {
-        mqtt_port = atoi(mqtt_port_s);
+        mqtt_port = atoi(mqtt_port_s.c_str());
     }
-    free(mqtt_port_s);
-    wifi_enabled = strcmp(wifi_ssid, "None") != 0;
-    mqtt_enabled = wifi_enabled && strcmp(mqtt_address, "None") != 0;
+    wifi_enabled = !wifi_ssid.equals("None");
+    mqtt_enabled = wifi_enabled && !mqtt_address.equals("None");
 }
 
 void MQTTBase::start()
@@ -167,36 +99,27 @@ void MQTTBase::republish_all()
     }
 }
 
-void mqttimpl_trampoline2(const char* topic, const uint8_t* bpayload, unsigned int length)
-{
-    char *payload = (char*) malloc(length + 1);
-    memcpy(payload, bpayload, length);
-    payload[length] = 0;
-    mqtt->sub_data_event(topic, payload, length);
-    free(payload);
-}
+static StrBuf sub_payload;
 
-#ifndef UNDER_TEST
-void mqttimpl_trampoline(char* topic, uint8_t* bpayload, unsigned int length)
+void mqttimpl_trampoline(const char* topic, const uint8_t* payload, unsigned int length)
 {
-    mqttimpl_trampoline2(topic, bpayload, length);
+    sub_payload.reserve(length);
+    memcpy(sub_payload.hot_str(), payload, length);
+    sub_payload.hot_str()[length] = 0;
+    mqtt->sub_data_event(topic, sub_payload);
 }
-#endif
 
 void MQTTBase::init_mqttimpl()
 {
-#ifndef UNDER_TEST
     if (mqtt_enabled) {
-        mqttimpl.setServer(mqtt_address, mqtt_port);
+        mqttimpl.setServer(mqtt_address.c_str(), mqtt_port);
         mqttimpl.setCallback(mqttimpl_trampoline);
     }
-#endif
 }
 
 const char *MQTTBase::mqtt_status()
 {
     static char tmp[31];
-#ifndef UNDER_TEST
     if (mqtt_enabled) {
         if (mqttimpl.connected()) {
             sprintf(tmp, "conn");
@@ -206,21 +129,15 @@ const char *MQTTBase::mqtt_status()
     } else {
         sprintf(tmp, "dis");
     }
-#else
-    sprintf(tmp, "mock conn");
-#endif
     return tmp;
 }
 
 void MQTTBase::chk_mqttimpl()
 {
-    Timestamp Now = now();
-    if ((Now - last_mqtt_check) < (1 * MINUTES)) {
+    if (next_mqtt_check.pending()) {
         return;
     }
-    last_mqtt_check = Now;
 
-#ifndef UNDER_TEST
     if (mqtt_enabled) {
         if (!mqttimpl.connected()) {
             Log::d("Connecting MQTT");
@@ -230,29 +147,25 @@ void MQTTBase::chk_mqttimpl()
                     mqttimpl.subscribe(sub_topics[i]->topic().c_str());
                 }
                 // force full republish
-                last_general_pub = 0;
+                next_general_pub.advance();
             } else {
                 Log::d("MQTT connection failed");
                 Log::d("MQTT state", mqttimpl.state());
             }
         }
     }
-#endif
 }
 
 void MQTTBase::eval_mqttimpl()
 {
-#ifndef UNDER_TEST
     if (mqtt_enabled) {
         mqttimpl.loop();
     }
-#endif
 }
 
 const char *MQTTBase::wifi_status()
 {
     static char tmp[31];
-#ifndef UNDER_TEST
     if (wifi_enabled) {
         if (WiFi.status() == WL_CONNECTED) {
             sprintf(tmp, "%s", WiFi.localIP().toString().c_str());
@@ -262,21 +175,15 @@ const char *MQTTBase::wifi_status()
     } else {
         sprintf(tmp, "dis");
     }
-#else
-    sprintf(tmp, "connected");
-#endif
     return tmp;
 }
 
 void MQTTBase::chk_wifi()
 {
-    Timestamp Now = now();
-    if ((Now - last_wifi_check) < (1 * MINUTES)) {
+    if (next_wifi_check.pending()) {
         return;
     }
-    last_wifi_check = Now;
 
-#ifndef UNDER_TEST
     if (wifi_enabled) {
         if (WiFi.status() == WL_CONNECTED) {
             if (!wifi_connection_logged) {
@@ -287,30 +194,28 @@ void MQTTBase::chk_wifi()
         }
         wifi_connection_logged = false;
         Log::d("Connecting to WiFi...");
-        if (strcmp(wifi_password, "None") == 0) {
-            WiFi.begin(wifi_ssid);
+        if (wifi_password.equals("None")) {
+            WiFi.begin(wifi_ssid.c_str());
         } else {
-            WiFi.begin(wifi_ssid, wifi_password);
+            WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
         }
     }
-#endif
 }
 
 MQTTBase::~MQTTBase()
 {
-    free(wifi_ssid);
-    free(wifi_password);
-    free(mqtt_address);
+    pub_topics.clear();
+    sub_topics.clear();
 }
 
-void MQTTBase::sub_data_event(const char *topic, const char *payload, unsigned int length)
+void MQTTBase::sub_data_event(const char *topic, const StrBuf &payload)
 {
     for (size_t i = 0; i < sub_topics.count(); ++i) {
         Ptr<SubTopic> sub = sub_topics[i];
         if (! sub->topic().equals(topic)) {
             continue;
         }
-        sub->new_value(payload, length);
+        sub->new_value(payload);
         return;
     }
     Log::d("MQTT sub_data_event: unknown topic", topic);
@@ -328,15 +233,13 @@ void MQTTBase::eval()
 
 void MQTTBase::update_pub_data()
 {
-    Timestamp Now = now();
-    if ((Now - last_pub_update) < 1000) {
+    if (!next_pub_update.pending()) {
         return;
     }
-    last_pub_update = Now;
 
     for (size_t i = 0; i < pub_topics.count(); ++i) {
         Ptr<PubTopic> pub = pub_topics[i];
-        if (pub->value_changed()) {
+        if (pub->value_has_changed()) {
             pub_pending.push_back(pub->topic());
         }
     }
@@ -344,10 +247,8 @@ void MQTTBase::update_pub_data()
 
 void MQTTBase::pub_data()
 {
-    Timestamp Now = now();
-    if (((Now - last_general_pub) >= (30 * MINUTES))) {
+    if (!next_general_pub.pending()) {
         republish_all();
-        last_general_pub = Now;
     }
 
     if (pub_pending.count() <= 0) {
@@ -365,16 +266,9 @@ void MQTTBase::pub_data()
 void MQTTBase::do_pub_data(const char *topic, const char *value) const
 {
     // do not call Log::d() here to avoid infinite loop via pub_logdebug()
-#ifdef UNDER_TEST
-    std::ofstream f;
-    f.open("mqttpub.sim", std::ios_base::app);
-    f << topic << " " << value << std::endl;
-    f.close();
-#else
     if (mqtt_enabled) {
         mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
     }
-#endif
 }
 
 void MQTTBase::pub_logdebug(const char *msg)
@@ -383,7 +277,7 @@ void MQTTBase::pub_logdebug(const char *msg)
     do_pub_data(logdebug_topic(), msg);
 }
 
-Ptr<PubTopic> MQTTBase::pub_by_topic(const TopicName& name)
+Ptr<PubTopic> MQTTBase::pub_by_topic(const StrBuf& name)
 {
     for (size_t i = 0; i < pub_topics.count(); ++i) {
         if (pub_topics[i]->topic().equals(name)) {

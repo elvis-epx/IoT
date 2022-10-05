@@ -14,6 +14,7 @@
 #include "CLI.h"
 #include "Console.h"
 #include "Elements.h"
+#include "StrBuf.h"
 
 #define cli_buf_cap 255
 static char cli_buf[cli_buf_cap + 1];
@@ -33,16 +34,16 @@ static void cli_parse_ssid(const char *candidate)
 
 static void cli_parse_ssid_empty()
 {
-    char *ssid = arduino_nvram_load("ssid");
-    if (strcmp(ssid, "None") == 0) {
+    StrBuf ssid;
+    arduino_nvram_load(ssid, "ssid");
+    if (ssid.equals("None")) {
        console_println("Wi-Fi SSID is set to None.");
     } else {
         console_print("Wi-Fi SSID is '");
-        console_print(ssid);
+        console_print(ssid.c_str());
         console_println("'");
         console_println("Set SSID to None to disable Wi-Fi.");
     }
-    free(ssid);
 }
 
 static void cli_parse_password(const char *candidate)
@@ -58,17 +59,17 @@ static void cli_parse_password(const char *candidate)
 
 static void cli_parse_password_empty()
 {
-    char *password = arduino_nvram_load("password");
-    if (strcmp(password, "None") == 0) {
+    StrBuf password;
+    arduino_nvram_load(password, "password");
+    if (password.equals("None")) {
        console_println("Wi-Fi password is set to None.");
     } else {
         char tmp[40];
-        sprintf(tmp, "Password has %d characters.", strlen(password));
+        sprintf(tmp, "Password has %d characters.", password.length());
         console_println("Wi-Fi password is set.");
         console_println(tmp);
         console_println("Set password to None for Wi-Fi network without password.");
     }
-    free(password);
 }
 
 static void cli_parse_mqtt(const char *candidate)
@@ -96,29 +97,29 @@ static void cli_parse_mqttport(const char *candidate)
 
 static void cli_parse_mqtt_empty()
 {
-    char *mqtt = arduino_nvram_load("mqtt");
-    if (strcmp(mqtt, "None") == 0) {
+    StrBuf mqtt;
+    arduino_nvram_load(mqtt, "mqtt");
+    if (mqtt.equals("None")) {
        console_println("MQTT broker is set to None.");
     } else {
         console_print("MQTT broker is '");
-        console_print(mqtt);
+        console_print(mqtt.c_str());
         console_println("'");
         console_println("Set MQTT broker to None to disable MQTT service.");
     }
-    free(mqtt);
 }
 
 static void cli_parse_mqttport_empty()
 {
-    char *mqttport = arduino_nvram_load("mqttport");
-    if (strcmp(mqttport, "None") == 0) {
+    StrBuf mqttport;
+    arduino_nvram_load(mqttport, "mqttport");
+    if (mqttport.equals("None")) {
        console_println("MQTT broker port is None.");
     } else {
         console_print("MQTT broker port is '");
-        console_print(mqttport);
+        console_print(mqttport.c_str());
         console_println("'");
     }
-    free(mqttport);
 }
 
 

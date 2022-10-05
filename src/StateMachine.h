@@ -3,13 +3,13 @@
 
 #include "Vector.h"
 #include "Pointer.h"
-#include "Timestamp.h"
+#include "Timer.h"
 
-typedef bool (*Transition)();
+typedef bool (*Transition)(int);
 
 class State {
 public:
-    State() {};
+    State(int);
     virtual ~State();
     void clear();
 
@@ -18,6 +18,9 @@ public:
     virtual void enter() = 0;
     virtual void exit() {};
     virtual const char *name() const = 0;
+
+protected:
+    int id;
 
 private:
     Vector<Transition> transitions;
@@ -29,20 +32,19 @@ friend class StateMachine;
 
 class StateMachine {
 public:
-    StateMachine();
+    StateMachine(int);
     virtual ~StateMachine();
     void add(Ptr<State>);
     void start();
     bool eval();
     const char *cur_state_name() const;
-    Timestamp last_movement() const;
 
 private:
+    int id;
     bool started;
     Ptr<State> current;
     Vector<Ptr<State>> states;
-    Timestamp last_transition;
-    Timestamp last_eval;
+    Timeout next_eval;
 };
 
 #endif

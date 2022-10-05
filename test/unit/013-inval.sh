@@ -3,9 +3,11 @@
 . unit/defs.sh
 
 sensors 20 40 60 80 100
+nvram
 runme
 cond state eq "Off"
 cond pump eq 1
+advance 45
 
 echo "Invalid MQTT messages"
 mqtt inval-mon

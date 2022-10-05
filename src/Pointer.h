@@ -83,6 +83,14 @@ public:
         return payload->pointer;
     }
 
+    inline bool operator==(const Ptr& outro) const {
+        return payload->pointer == outro.payload->pointer;
+    }
+
+    inline bool sole_owner() const {
+        return payload->refcount == 1;
+    }
+
 private:
     PtrRef<T>* payload;
 };

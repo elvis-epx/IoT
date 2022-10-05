@@ -7,10 +7,8 @@
 #include "NVRAM.h"
 #ifdef UNDER_TEST
 #include <string.h>
-#include "Preferences.h"
-#else
-#include <Preferences.h>
 #endif
+#include <Preferences.h>
 
 extern Preferences prefs;
 
@@ -18,28 +16,27 @@ static const char* chapter = "H2OControl";
 
 void arduino_nvram_clear_all()
 {
-	prefs.begin(chapter, false);
-	prefs.clear();
-	prefs.end();
+    prefs.begin(chapter, false);
+    prefs.clear();
+    prefs.end();
 }
 
 void arduino_nvram_save(const char *key, const char *value)
 {
-	prefs.begin(chapter, false);
-	prefs.putString(key, value);
-	prefs.end();
+    prefs.begin(chapter, false);
+    prefs.putString(key, value);
+    prefs.end();
 }
 
-char *arduino_nvram_load(const char *key)
+void arduino_nvram_load(StrBuf& candidate, const char *key)
 {
-	char *candidate = (char*) calloc(sizeof(char), 65);
-	prefs.begin(chapter);
-	// len includes \0
-	size_t len = prefs.getString(key, candidate, 65);
-	prefs.end();
+    candidate.reserve(65);
+    prefs.begin(chapter);
+    // len includes \0
+    size_t len = prefs.getString(key, candidate.hot_str(), 65);
+    prefs.end();
 
-	if (len <= 1) {
-		strcpy(candidate, "None");
-	}
-	return candidate;
+    if (len <= 1) {
+        candidate.update("None");
+    }
 }

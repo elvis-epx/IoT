@@ -1,7 +1,7 @@
 #ifndef __LEVELMETER_H
 #define __LEVELMETER_H
 
-#include "Timestamp.h"
+#include "Timer.h"
 
 class LevelMeter
 {
@@ -18,12 +18,10 @@ public:
     double next_level_liters() const; // in liters
     bool failure_detected() const;
     uint32_t bitmap() const;
-    Timestamp last_movement() const;
 
 private:
 
-    Timestamp last_eval;
-    Timestamp last_change;
+    Timeout next_eval;
     const double *levels;
     double current_level;
     double capacity; // estimated tank capacity in liters

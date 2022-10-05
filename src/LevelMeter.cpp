@@ -5,8 +5,7 @@ LevelMeter::LevelMeter(const double levels[], double capacity):
     levels(levels), capacity(capacity)
 {
     current_level = 100;
-    last_eval = now();
-    last_change = now();
+    next_eval = Timeout(1 * SECONDS);
     failure = false;
 }
 
@@ -17,11 +16,9 @@ bool LevelMeter::failure_detected() const
 
 void LevelMeter::eval()
 {
-    Timestamp Now = now();
-    if ((Now - last_eval) < 1000) {
+    if (next_eval.pending()) {
         return;
     }
-    last_eval = Now;
 
     last_bitmap = gpio->read_level_sensors();
 
@@ -59,17 +56,9 @@ void LevelMeter::eval()
 
     if (new_level != current_level) {
         current_level = new_level;
-        last_change = now();
         flowmeter->reset_volume();
     }
 }
-
-/*
-Timestamp LevelMeter::last_movement() const
-{
-    return last_change;
-}
-*/
 
 double LevelMeter::level_pct() const
 {

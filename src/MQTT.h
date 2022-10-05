@@ -25,97 +25,103 @@ class UptimePub: public PubTopic
 {
 public:
     UptimePub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class StatePub: public PubTopic
 {
 public:
     StatePub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class Level1Pub: public PubTopic
 {
 public:
     Level1Pub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class Level2Pub: public PubTopic
 {
 public:
     Level2Pub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class LevelErrPub: public PubTopic
 {
 public:
     LevelErrPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class FlowInstPub: public PubTopic
 {
 public:
     FlowInstPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class FlowShortPub: public PubTopic
 {
 public:
     FlowShortPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class FlowLongPub: public PubTopic
 {
 public:
     FlowLongPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class EfficiencyPub: public PubTopic
 {
 public:
     EfficiencyPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
-class OverrideOnSub: public SubTopic
+class OverrideSub: public SubTopic
+{
+public:
+    OverrideSub();
+    int parse(const StrBuf&) const;
+};
+
+class OverrideOnSub: public OverrideSub
 {
 public:
     OverrideOnSub();
-    virtual void new_value(const char *, size_t);
+    virtual void new_value(const StrBuf&);
 };
 
-class OverrideOffSub: public SubTopic
+class OverrideOffSub: public OverrideSub 
 {
 public:
     OverrideOffSub();
-    virtual void new_value(const char *, size_t);
+    virtual void new_value(const StrBuf&);
 };
 
 class OverrideOnPub: public PubTopic
 {
 public:
     OverrideOnPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class OverrideOffPub: public PubTopic
 {
 public:
     OverrideOffPub();
-    virtual bool value_changed();
+    virtual const char *value_gen() override;
 };
 
 class MQTT: public MQTTBase {
 public:
     MQTT();
-    void eval();
     bool override_on_state() const;
     bool override_off_state() const;
     void annotate_override_on_state(bool);

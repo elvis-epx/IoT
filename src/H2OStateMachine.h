@@ -5,6 +5,7 @@
 
 class Initial: public State {
 public:
+    Initial(int);
     virtual void enter();
     virtual const char* name() const { return "Initial"; };
 };
@@ -12,6 +13,7 @@ public:
 /* Pump off */
 class Off: public State {
 public:
+    Off(int);
     virtual void enter();
     virtual const char* name() const { return "Off"; };
 };
@@ -19,6 +21,7 @@ public:
 /* Pump off after being on */
 class HisteresisOff: public State {
 public:
+    HisteresisOff(int);
     virtual void enter();
     virtual const char* name() const { return "Resting"; };
 };
@@ -26,6 +29,7 @@ public:
 /* Pump off due to override-off MQTT switch */
 class ManualOff: public State {
 public:
+    ManualOff(int);
     virtual void enter();
     virtual const char* name() const { return "Off MQTT"; };
 };
@@ -33,6 +37,7 @@ public:
 /* Pump on */
 class On: public State {
 public:
+    On(int);
     virtual void enter();
     virtual const char* name() const { return "On"; };
 };
@@ -40,6 +45,7 @@ public:
 /* Pump on due to override-on MQTT switch */
 class ManualOn: public State {
 public:
+    ManualOn(int);
     virtual void enter();
     virtual const char* name() const { return "On MQTT"; };
 };
@@ -51,6 +57,7 @@ public:
 */
 class FlowFailure: public State {
 public:
+    FlowFailure(int);
     virtual void enter();
     virtual const char* name() const { return "F flow"; };
 };
@@ -61,6 +68,7 @@ public:
 */
 class LowFlowShort: public State {
 public:
+    LowFlowShort(int);
     virtual void enter();
     virtual const char* name() const { return "F slow 2"; };
 };
@@ -71,6 +79,7 @@ public:
 */
 class LowFlowLong: public State {
 public:
+    LowFlowLong(int);
     virtual void enter();
     virtual const char* name() const { return "F slow 30"; };
 };
@@ -82,6 +91,7 @@ public:
 */
 class PumpTimeout: public State {
 public:
+    PumpTimeout(int);
     virtual void enter();
     virtual const char* name() const { return "F timeout"; };
 };
@@ -93,6 +103,7 @@ public:
 */
 class LevelFailure: public State {
 public:
+    LevelFailure(int);
     virtual void enter();
     virtual const char* name() const { return "F level"; };
 };
@@ -100,6 +111,11 @@ public:
 class H2OStateMachine: public StateMachine {
 public:
     H2OStateMachine();
+    Timestmp last_movement() const;
+    Timestmp last_transition;
+    void eval();
+private:
+    
 };
 
 #endif

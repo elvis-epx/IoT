@@ -2,7 +2,7 @@
 #define __FLOWMETER_H
 
 #include <stddef.h>
-#include "Timestamp.h"
+#include "Timer.h"
 #include "Vector.h"
 
 class FlowMeter
@@ -18,7 +18,8 @@ public:
     void pulse(uint32_t);
     void eval();
 
-    Timestamp last_movement() const; // time since last pulse received
+    // FIXME
+    Timestmp last_mov() const; // time since last pulse received
     double pulse_volume() const; // volume of 1 pulse, in liters
     double volume() const; // in liters, since last reset
     double expected_volume() const; // in liters, since last reset
@@ -28,14 +29,18 @@ public:
 
 private:
     double k;
-    Timestamp last_pulse;
+    // FIXME
+    Timestmp last_puls;
 
-    Timestamp last_vol_reset;
+    // FIXME
+    Timestmp last_vol_rst;
     uint32_t vol_pulses;
 
     Vector<uint32_t> rate_intervals;
     Vector<double> last_rates;
-    Vector<Timestamp> rate_last_reset;
+    // FIXME time-counting object, or leverage timeout
+    Vector<Timestmp> rate_last_rst;
+    Vector<Timeout> rate_next_rst;
     Vector<uint32_t> rate_pulses;
 };
 

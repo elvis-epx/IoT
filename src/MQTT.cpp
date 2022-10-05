@@ -14,190 +14,149 @@
 
 UptimePub::UptimePub()
 {
-    _topic = TopicName(PUB_UPTIME);
+    _topic = PUB_UPTIME;
 }
 
 OverrideOnPub::OverrideOnPub()
 {
-    _topic = TopicName(PUB_OVERRIDEON);
+    _topic = PUB_OVERRIDEON;
 }
 
 OverrideOffPub::OverrideOffPub()
 {
-    _topic = TopicName(PUB_OVERRIDEOFF);
+    _topic = PUB_OVERRIDEOFF;
 }
 
 Level1Pub::Level1Pub()
 {
-    _topic = TopicName(PUB_LEVEL1);
+    _topic = PUB_LEVEL1;
 }
 
 Level2Pub::Level2Pub()
 {
-    _topic = TopicName(PUB_LEVEL2);
+    _topic = PUB_LEVEL2;
 }
 
 LevelErrPub::LevelErrPub()
 {
-    _topic = TopicName(PUB_LEVELERR);
+    _topic = PUB_LEVELERR;
 }
 
 FlowInstPub::FlowInstPub()
 {
-    _topic = TopicName(PUB_FLOWINST);
+    _topic = PUB_FLOWINST;
 }
 
 FlowShortPub::FlowShortPub()
 {
-    _topic = TopicName(PUB_FLOWSHORT);
+    _topic = PUB_FLOWSHORT;
 }
 
 FlowLongPub::FlowLongPub()
 {
-    _topic = TopicName(PUB_FLOWLONG);
+    _topic = PUB_FLOWLONG;
 }
 
 StatePub::StatePub()
 {
-    _topic = TopicName(PUB_STATE);
+    _topic = PUB_STATE;
 }
 
 EfficiencyPub::EfficiencyPub()
 {
-    _topic = TopicName(PUB_EFFICIENCY);
+    _topic = PUB_EFFICIENCY;
 }
+
+OverrideSub::OverrideSub() {}
 
 OverrideOnSub::OverrideOnSub()
 {
-    _topic = TopicName(SUB_OVERRIDEON);
+    _topic = SUB_OVERRIDEON;
 }
 
 OverrideOffSub::OverrideOffSub()
 {
-    _topic = TopicName(SUB_OVERRIDEOFF);
+    _topic = SUB_OVERRIDEOFF;
 }
 
-bool OverrideOnPub::value_changed()
+const char *OverrideOnPub::value_gen()
 {
-    const char *tmp = mqtt->override_on_state() ? "1" : "0";
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return mqtt->override_on_state() ? "1" : "0";
 }
 
-bool OverrideOffPub::value_changed()
+const char *OverrideOffPub::value_gen()
 {
-    const char *tmp = mqtt->override_off_state() ? "1" : "0";
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return mqtt->override_off_state() ? "1" : "0";
 }
 
-bool UptimePub::value_changed()
+const char *UptimePub::value_gen()
 {
-    Timestamp Now = now();
-    char tmp[30];
+    Timestmp Now = now();
+    static char tmp[30];
     sprintf(tmp, "%lld", Now / (1 * MINUTES));
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-bool StatePub::value_changed()
+const char *StatePub::value_gen()
 {
-    if (value()->equals(sm->cur_state_name())) {
-        return false;
-    }
-    value()->update(sm->cur_state_name());
-    return true;
+    return sm->cur_state_name();
 }
 
-bool Level1Pub::value_changed()
+const char *Level1Pub::value_gen()
 {
-    char tmp[30];
+    static char tmp[30];
     sprintf(tmp, "%.0f", levelmeter->level_pct());
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-bool Level2Pub::value_changed()
+const char *Level2Pub::value_gen()
 {
-    char tmp[30];
+    static char tmp[30];
     sprintf(tmp, "%.0f", flowmeter->volume());
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-bool LevelErrPub::value_changed()
+const char *LevelErrPub::value_gen()
 {
-    const char *msg = levelmeter->failure_detected() ? "1" : "0";
-    if (value()->equals(msg)) {
-        return false;
-    }
-    value()->update(msg);
-    return true;
+    return levelmeter->failure_detected() ? "1" : "0";
 }
 
-bool FlowInstPub::value_changed()
+const char *FlowInstPub::value_gen()
 {
-    char tmp[30];
+    static char tmp[30];
     if (flowmeter->rate(FLOWRATE_INSTANT) < 0) {
         sprintf(tmp, "0");
     } else {
         sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_INSTANT));
     }
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-bool FlowShortPub::value_changed()
+const char *FlowShortPub::value_gen()
 {
-    char tmp[30];
+    static char tmp[30];
     if (flowmeter->rate(FLOWRATE_SHORT) < 0) {
         sprintf(tmp, "0");
     } else {
         sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_SHORT));
     }
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-bool FlowLongPub::value_changed()
+const char *FlowLongPub::value_gen()
 {
-    char tmp[30];
+    static char tmp[30];
     if (flowmeter->rate(FLOWRATE_LONG) < 0) {
         sprintf(tmp, "0");
     } else {
         sprintf(tmp, "%.1f", flowmeter->rate(FLOWRATE_LONG));
     }
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-bool EfficiencyPub::value_changed()
+const char *EfficiencyPub::value_gen()
 {
-    char tmp[30];
+    static char tmp[30];
     if (pump->is_running()) {
         double volume = flowmeter->volume();
         double exp_volume = flowmeter->expected_volume() + 0.0001;
@@ -205,35 +164,37 @@ bool EfficiencyPub::value_changed()
     } else {
         sprintf(tmp, "0");
     }
-    if (value()->equals(tmp)) {
-        return false;
-    }
-    value()->update(tmp);
-    return true;
+    return tmp;
 }
 
-void OverrideOnSub::new_value(const char *v, size_t s)
+int OverrideSub::parse(const StrBuf &v) const
 {
-    if (strcasecmp(v, "On") == 0) {
+    if (v.equalsi("On") || v.equalsi("1")) {
+        return 1;
+    } else if (v.equalsi("Off") || v.equalsi("0")) {
+        return -1;
+    }
+    return 0;
+}
+
+void OverrideOnSub::new_value(const StrBuf &v)
+{
+    int res = parse(v);
+    
+    if (res == 1) {
         mqtt->annotate_override_on_state(true);
-    } else if (strcasecmp(v, "1") == 0) {
-        mqtt->annotate_override_on_state(true);
-    } else if (strcasecmp(v, "Off") == 0) {
-        mqtt->annotate_override_on_state(false);
-    } else if (strcasecmp(v, "0") == 0) {
+    } else if (res == -1) {
         mqtt->annotate_override_on_state(false);
     }
 }
 
-void OverrideOffSub::new_value(const char *v, size_t s)
+void OverrideOffSub::new_value(const StrBuf &v)
 {
-    if (strcasecmp(v, "On") == 0) {
+    int res = parse(v);
+    
+    if (res == 1) {
         mqtt->annotate_override_off_state(true);
-    } else if (strcasecmp(v, "1") == 0) {
-        mqtt->annotate_override_off_state(true);
-    } else if (strcasecmp(v, "Off") == 0) {
-        mqtt->annotate_override_off_state(false);
-    } else if (strcasecmp(v, "0") == 0) {
+    } else if (res == -1) {
         mqtt->annotate_override_off_state(false);
     }
 }
@@ -288,52 +249,3 @@ void MQTT::annotate_override_off_state(bool state)
 {
     _override_off_state = state;
 }
-
-void MQTT::eval()
-{
-    // must call super method
-    MQTTBase::eval();
-#ifdef UNDER_TEST
-   // simulate receiving MQTT commands
-   std::ifstream f;
-   int x = 0;
-   f.open("mqtt.sim");
-   if (f.is_open()) {
-       f >> x;
-       std::remove("mqtt.sim");
-   }
-   f.close();
-   if (x <= 0) {
-       return;
-   }
-
-   const char *sub_topic = "Invalid@#!";
-   const char *msg = "Invalid@#!";
-   static const char *msg_on_variants[] = {"On", "on", "1"};
-   static const char *msg_off_variants[] = {"Off", "off", "0"};
-   if (x == 1) {
-       sub_topic = SUB_OVERRIDEON;
-       msg = msg_on_variants[random() % 3];
-   } else if (x == 2) {
-       sub_topic = SUB_OVERRIDEON;
-       msg = msg_off_variants[random() % 3];
-   } else if (x == 3) {
-       sub_topic = SUB_OVERRIDEOFF;
-       msg = msg_on_variants[random() % 3];
-   } else if (x == 4) {
-       sub_topic = SUB_OVERRIDEOFF;
-       msg = msg_off_variants[random() % 3];
-   } else if (x == 5) {
-       sub_topic = "NoSuchSubTopic";
-       msg = msg_on_variants[random() % 3];
-   } else if (x == 6) {
-       sub_topic = SUB_OVERRIDEON;
-       msg = "O";
-   } else if (x == 7) {
-       sub_topic = SUB_OVERRIDEOFF;
-       msg = "";
-   }
-   mqttimpl_trampoline2(sub_topic, (uint8_t*) msg, strlen(msg));
-#endif
-}
-

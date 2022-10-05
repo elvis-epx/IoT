@@ -53,7 +53,6 @@ function fastflow () {
 }
 
 function runme () {
-    nvram
     if which valgrind >/dev/null; then
         ./val &
     else
@@ -76,11 +75,45 @@ function quit () {
 
 function nvram () {
     echo "ssid" > nvram.sim
+    echo "foo" >> nvram.sim
+    echo "password" >> nvram.sim
     if [ "$(($RANDOM % 2))" = 0 ]; then
-        echo "foo" >> nvram.sim
-    else
         echo "None" >> nvram.sim
+    else
+        echo "bar" >> nvram.sim
     fi
+    echo "mqtt" >> nvram.sim
+    echo "1.2.3.4" >> nvram.sim
+    echo "mqttport" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "1883" >> nvram.sim
+    fi
+}
+
+function nvram_invmqtt () {
+    echo "ssid" > nvram.sim
+    echo "foo" >> nvram.sim
+    echo "password" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "bar" >> nvram.sim
+    fi
+    echo "mqtt" >> nvram.sim
+    echo "1.2.3" >> nvram.sim
+    echo "mqttport" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "1883" >> nvram.sim
+    fi
+}
+
+function nvram_nowifi () {
+    echo "ssid" > nvram.sim
+    echo "None" >> nvram.sim
     echo "password" >> nvram.sim
     if [ "$(($RANDOM % 2))" = 0 ]; then
         echo "None" >> nvram.sim
@@ -93,6 +126,25 @@ function nvram () {
     else
         echo "None" >> nvram.sim
     fi
+    echo "mqttport" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "1883" >> nvram.sim
+    fi
+}
+
+function nvram_nomqtt () {
+    echo "ssid" > nvram.sim
+    echo "foo" >> nvram.sim
+    echo "password" >> nvram.sim
+    if [ "$(($RANDOM % 2))" = 0 ]; then
+        echo "None" >> nvram.sim
+    else
+        echo "bar" >> nvram.sim
+    fi
+    echo "mqtt" >> nvram.sim
+    echo "None" >> nvram.sim
     echo "mqttport" >> nvram.sim
     if [ "$(($RANDOM % 2))" = 0 ]; then
         echo "None" >> nvram.sim

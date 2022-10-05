@@ -6,8 +6,10 @@
 #ifndef __NVRAM_H
 #define __NVRAM_H
 
+#include "StrBuf.h"
+
 void arduino_nvram_clear_all();
-char *arduino_nvram_load(const char*);
+void arduino_nvram_load(StrBuf&, const char*);
 void arduino_nvram_save(const char*, const char *);
 
 #endif

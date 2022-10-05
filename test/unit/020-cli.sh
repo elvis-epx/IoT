@@ -2,6 +2,7 @@
 
 . unit/defs.sh
 
+nvram_nowifi
 runme
 
 cli "!help"
