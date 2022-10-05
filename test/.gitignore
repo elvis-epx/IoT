@@ -10,4 +10,3 @@ test
 out/
 main_coverage.info
 __pycache__/
-Constants.h
