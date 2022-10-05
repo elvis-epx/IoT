@@ -19,6 +19,7 @@
 #define SUB_OVERRIDEOFF "cmnd/H2OControl/OverrideOff"
 
 #define PUB_LOGDEBUG_TOPIC "tele/H2OControl/logdebug"
+#define SUB_OTA_TOPIC "cmnd/H2OControl/OTA"
 #define MQTT_RELAY_ID "H2OControl"
 
 class UptimePub: public PubTopic
@@ -129,6 +130,7 @@ public:
 
     const char *mqtt_id() const;
     const char *logdebug_topic() const;
+    const char *ota_topic() const;
 
 private:
     bool _override_on_state;

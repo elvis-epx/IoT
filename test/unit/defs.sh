@@ -12,6 +12,11 @@ function mqtt () {
     sleep 1
 }
 
+function mqttota () {
+    ./mqttota $*
+    sleep 1
+}
+
 function cond () {
     ./cond $1 $2 "$3"
 }

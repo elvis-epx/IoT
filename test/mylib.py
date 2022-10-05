@@ -64,3 +64,5 @@ def gen_mqtt(item):
     
     open("mqtt.sim", "w").write("%s\n%s\nOk\n" % args[item])
 
+def gen_mqtt_ota(password):
+    open("mqtt.sim", "w").write("cmnd/H2OControl/OTA\n%s\nOk\n" % password)

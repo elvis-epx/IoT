@@ -217,6 +217,11 @@ const char *MQTT::logdebug_topic() const
     return PUB_LOGDEBUG_TOPIC;
 }
 
+const char *MQTT::ota_topic() const
+{
+    return SUB_OTA_TOPIC;
+}
+
 const char *MQTT::mqtt_id() const
 {
     return MQTT_RELAY_ID;

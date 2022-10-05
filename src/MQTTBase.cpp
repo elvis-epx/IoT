@@ -4,6 +4,9 @@
 #else
 #include <WiFi.h>
 #endif
+#ifndef UNDER_TEST
+#include <ArduinoOTA.h>
+#endif
 
 #include <PubSubClient.h>
 
@@ -11,6 +14,7 @@
 #include "LogDebug.h"
 #include "Elements.h"
 #include "NVRAM.h"
+#include "Console.h"
 
 WiFiClient wifi;
 PubSubClient mqttimpl(wifi);
@@ -47,6 +51,16 @@ bool PubTopic::value_has_changed()
     return true;
 }
 
+OTATopic::OTATopic(const char *topic)
+{
+    _topic = topic;
+}
+
+void OTATopic::new_value(const StrBuf& v)
+{
+    if (! v.equals("abracadabra")) return;
+    mqtt->activate_ota();
+}
 
 PubTopic::~PubTopic() {}
 SubTopic::~SubTopic() {}
@@ -75,6 +89,8 @@ MQTTBase::MQTTBase()
     }
     wifi_enabled = !wifi_ssid.equals("None");
     mqtt_enabled = wifi_enabled && !mqtt_address.equals("None");
+
+    ota_activated = false;
 }
 
 void MQTTBase::start()
@@ -89,6 +105,13 @@ void MQTTBase::start()
     } else {
         Log::d("Wi-Fi not configured");
     }
+
+    const char *ota = ota_topic();
+    if (ota) {
+        auto ota_sub = Ptr<SubTopic>(new OTATopic(ota));
+        sub_topics.push_back(ota_sub);
+    }
+
     init_mqttimpl();
 }
 
@@ -160,6 +183,11 @@ void MQTTBase::eval_mqttimpl()
 {
     if (mqtt_enabled) {
         mqttimpl.loop();
+    }
+    if (ota_activated) {
+#ifndef UNDER_TEST
+        ArduinoOTA.handle();
+#endif
     }
 }
 
@@ -285,4 +313,39 @@ Ptr<PubTopic> MQTTBase::pub_by_topic(const StrBuf& name)
         }
     }
     return Ptr<PubTopic>(0);
+}
+
+void MQTTBase::activate_ota()
+{
+    if (ota_activated) return;
+
+#ifndef UNDER_TEST
+    ArduinoOTA.onStart([]() {
+        console_println("OTA onStart");
+    });
+    ArduinoOTA.onEnd([]() {
+        console_println("OTA onEnd");
+    });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        console_println("OTA progress...");
+    });
+    ArduinoOTA.onError([](ota_error_t error) {
+        if (error == OTA_AUTH_ERROR) {
+            console_println("OTA authentication failure");
+        } else if (error == OTA_BEGIN_ERROR) {
+            console_println("OTA failure at begin");
+        } else if (error == OTA_CONNECT_ERROR) {
+            console_println("OTA connection failure");
+        } else if (error == OTA_RECEIVE_ERROR) {
+            console_println("OTA rx failure");
+        } else if (error == OTA_END_ERROR) {
+            console_println("OTA failure at end");
+        } else {
+            console_println("OTA unspecified error");
+        }
+    });
+    ArduinoOTA.begin();
+#endif
+    console_println("OTA activated");
+    ota_activated = true;
 }

@@ -34,6 +34,12 @@ protected:
     StrBuf _topic;
 };
 
+class OTATopic: public SubTopic {
+public:
+    OTATopic(const char *);
+    void new_value(const StrBuf&);
+};
+
 class MQTTBase {
 public:
     MQTTBase();
@@ -45,6 +51,8 @@ public:
 
     virtual const char *mqtt_id() const = 0;
     virtual const char *logdebug_topic() const = 0;
+    virtual const char *ota_topic() const = 0;
+    void activate_ota();
     const char *wifi_status();
     const char *mqtt_status();
 
@@ -75,6 +83,8 @@ private:
     Vector<StrBuf> pub_pending;
     Timeout next_pub_update;
     Timeout next_general_pub;
+
+    bool ota_activated;
 
 protected:
     Vector<Ptr<PubTopic>> pub_topics;
