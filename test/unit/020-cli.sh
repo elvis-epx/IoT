@@ -47,6 +47,12 @@ cli "!mqttport None"
 sleep 2
 cli "!mqttport"
 sleep 2
+cli "!sensor foo"
+sleep 2
+cli "!sensor 1"
+sleep 2
+cli "!sensor"
+sleep 2
 cli "!status"
 sleep 2
 cli "!defconfig"

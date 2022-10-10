@@ -25,11 +25,11 @@ def read_state():
     l = []
     while len(l) < 1:
         try:
-            l = open("gpio2.sim").readlines()
+            l = open("gpiomcpw.sim").readlines()
         except FileNotFoundError:
             pass
         if len(l) < 1:
-            print("Waiting for gpio2.sim...")
+            print("Waiting for gpiomcpw.sim...")
             time.sleep(1)
 
     d["pump"] = float(l[0])
@@ -47,7 +47,7 @@ def gen_sensors(items):
     for arg in items[1:]:
         bitmap = bitmap & ~args[arg]
     
-    open("gpio.sim", "w").write("%d" % bitmap)
+    open("gpiomcpr.sim", "w").write("%d" % bitmap)
 
 def gen_mqtt(item):
     args = {}

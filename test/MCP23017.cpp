@@ -11,7 +11,7 @@ uint32_t MCP23017::readPort(int)
 {
     uint32_t bitmap = 0;
     std::ifstream f;
-    f.open("gpio.sim");
+    f.open("gpiomcpr.sim");
     f >> bitmap;
     f.close();
     return bitmap;
@@ -20,7 +20,7 @@ uint32_t MCP23017::readPort(int)
 void MCP23017::writePort(int, uint32_t output_bitmap)
 {
     std::ofstream f;
-    f.open("gpio2.sim");
+    f.open("gpiomcpw.sim");
     f << output_bitmap;
     f.close();
 }

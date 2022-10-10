@@ -95,6 +95,8 @@ function nvram () {
     else
         echo "1883" >> nvram.sim
     fi
+    echo "sensor_mode" >> nvram.sim
+    echo "0" >> nvram.sim
 }
 
 function nvram_invmqtt () {
@@ -156,6 +158,11 @@ function nvram_nomqtt () {
     else
         echo "1883" >> nvram.sim
     fi
+}
+
+function nvram_sensormode() {
+    echo "sensor_mode" > nvram.sim
+    echo "1" >> nvram.sim
 }
 
 function cli () {
