@@ -4,13 +4,16 @@
  */
 
 #include <stdlib.h>
-#include "NVRAM.h"
+#ifdef UNDER_TEST
 #include <string.h>
+#endif
 #include <Preferences.h>
+#include "NVRAM.h"
+#include "Constants.h"
 
 extern Preferences prefs;
 
-static const char* chapter = "H2OControl";
+static const char* chapter = NVRAM_CHAPTER;
 
 void arduino_nvram_clear_all()
 {

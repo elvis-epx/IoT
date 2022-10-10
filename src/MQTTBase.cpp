@@ -13,6 +13,7 @@
 #include "MQTTBase.h"
 #include "LogDebug.h"
 #include "Elements.h"
+#include "Constants.h"
 #include "NVRAM.h"
 #include "Console.h"
 
@@ -58,7 +59,7 @@ OTATopic::OTATopic(const char *topic)
 
 void OTATopic::new_value(const StrBuf& v)
 {
-    if (! v.equals("abracadabra")) return;
+    if (! v.equals(OTA_PASSWORD)) return;
     mqtt->activate_ota();
 }
 

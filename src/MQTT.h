@@ -3,25 +3,6 @@
 
 #include "MQTTBase.h"
 
-#define PUB_UPTIME "stat/H2OControl/Uptime"
-#define PUB_STATE "stat/H2OControl/State"
-#define PUB_LEVEL1 "stat/H2OControl/Level1"
-#define PUB_LEVEL2 "stat/H2OControl/Level2"
-#define PUB_LEVELERR "stat/H2OControl/LevelErr"
-#define PUB_FLOWINST "stat/H2OControl/FLowInst"
-#define PUB_FLOWSHORT "stat/H2OControl/FlowShort"
-#define PUB_FLOWLONG "stat/H2OControl/FlowLong"
-#define PUB_EFFICIENCY "stat/H2OControl/Efficiency"
-#define PUB_OVERRIDEON "stat/H2OControl/OverrideOn"
-#define PUB_OVERRIDEOFF "stat/H2OControl/OverrideOff"
-
-#define SUB_OVERRIDEON "cmnd/H2OControl/OverrideOn"
-#define SUB_OVERRIDEOFF "cmnd/H2OControl/OverrideOff"
-
-#define PUB_LOGDEBUG_TOPIC "tele/H2OControl/logdebug"
-#define SUB_OTA_TOPIC "cmnd/H2OControl/OTA"
-#define MQTT_RELAY_ID "H2OControl"
-
 class UptimePub: public PubTopic
 {
 public:

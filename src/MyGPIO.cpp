@@ -1,5 +1,6 @@
 #include "MyGPIO.h"
 #include "Elements.h"
+#include "Constants.h"
 #include "ArduinoBridge.h"
 #ifdef UNDER_TEST
 #define IRAM_ATTR
@@ -17,7 +18,7 @@ static void IRAM_ATTR pulse_trampoline()
 
 #define FLOWMETER_PIN 14
 
-// note: inverted pump logic bit. This is because the 3V3 relay we use
+// About inverse pump logic bit. The 3V3 relay we use
 // is like that - turns ON when input is grounded. So we need to raise
 // the pin to 1 to turn it OFF. We had two options:
 //
@@ -37,17 +38,19 @@ static const uint32_t PUMP_BIT = 0x01;
 MyGPIO::MyGPIO()
 {
     pulses = 0;
-    // note: inverted pump logic bit
-    output_bitmap = 0 | PUMP_BIT;
+    output_bitmap = 0 | (RELAY_INVERSE_LOGIC ? PUMP_BIT : 0);
 
     i2c_begin();
     mcp.init();
 
-    // high bits = input. Third parameter is pullup and all-1 by default
+    // Port A = all output
     mcp.portMode(MCP23017Port::A, 0);
-    mcp.writeRegister(MCP23017Register::GPIO_A, 0 | PUMP_BIT); // reset
+    // shortcut to set default output bits as fast as possible
+    // (important when relay is inverse logic)
+    mcp.writeRegister(MCP23017Register::GPIO_A, output_bitmap);
+    // Port B = all input
     mcp.portMode(MCP23017Port::B, 0b11111111);
-    mcp.writeRegister(MCP23017Register::GPIO_B, 0); // reset
+    mcp.writeRegister(MCP23017Register::GPIO_B, 0);
     // flow meter
     arduino_pinmode(FLOWMETER_PIN, INPUT_PULLUP);
 #ifndef UNDER_TEST
@@ -71,10 +74,10 @@ uint32_t MyGPIO::read()
     return bitmap;
 }
 
-void MyGPIO::write_pump(bool state)
+void MyGPIO::write_pump(bool logical_state)
 {
-    // note: inverted pump logic bit
-    write_output(state ? 0 : ~0, PUMP_BIT);
+    bool pin_state = RELAY_INVERSE_LOGIC ? (!logical_state) : logical_state;
+    write_output(pin_state ? ~0 : 0, PUMP_BIT);
 }
 
 void MyGPIO::write_output(uint32_t bitmap, uint32_t bitmask)

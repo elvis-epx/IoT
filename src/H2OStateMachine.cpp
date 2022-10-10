@@ -101,7 +101,7 @@ static bool high_level(int)
 
 static bool pump_rest(int)
 {
-    if (sm->last_movement().elapsed() > (5 * MINUTES)) {
+    if (sm->last_movement().elapsed() > PUMP_REST_TIME) {
         return true;
     }
     return false;
@@ -109,7 +109,7 @@ static bool pump_rest(int)
 
 static bool lvlf_recover(int)
 {
-    if (sm->last_movement().elapsed() > (12 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > LEVEL_FAIL_RECOVERY) {
         return true;
     }
     return false;
@@ -117,7 +117,7 @@ static bool lvlf_recover(int)
 
 static bool lfl_recover(int)
 {
-    if (sm->last_movement().elapsed() > (12 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > LOWFLOW_LONG_RECOVERY) {
         return true;
     }
     return false;
@@ -125,7 +125,7 @@ static bool lfl_recover(int)
 
 static bool pto_recover(int)
 {
-    if (sm->last_movement().elapsed() > (6 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > PUMP_TIMEOUT_RECOVERY) {
         return true;
     }
     return false;
@@ -133,7 +133,7 @@ static bool pto_recover(int)
 
 static bool lfs_recover(int)
 {
-    if (sm->last_movement().elapsed() > (2 * 60 * MINUTES)) {
+    if (sm->last_movement().elapsed() > LOWFLOW_SHORT_RECOVERY) {
         return true;
     }
     return false;
@@ -173,11 +173,11 @@ static bool manual_off_sw_0(int)
 
 static bool detect_flow_fail(int)
 {
-    if (flowmeter->last_movement().elapsed() < (30 * SECONDS)) {
+    if (flowmeter->last_movement().elapsed() < MINIMUM_FLOW_LATENCY) {
         return false;
     }
 
-    if (pump->running_time().elapsed() < (2 * pump->flow_delay())) {
+    if (pump->running_time().elapsed() < (FLOW_DELAY_TOLERANCE * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
@@ -192,13 +192,12 @@ static bool detect_low_flow_s(int)
         return false;
     }
 
-    if (pump->running_time().elapsed() < (2 * pump->flow_delay())) {
+    if (pump->running_time().elapsed() < (FLOW_DELAY_TOLERANCE * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
 
-    if (flowmeter->rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE / 4)) {
-        // less than 25% expected flow
+    if (flowmeter->rate(FLOWRATE_SHORT) < (ESTIMATED_PUMP_FLOWRATE * LOWFLOW_SHORT_TOLERANCE)) {
         return true;
     }
 
@@ -207,7 +206,7 @@ static bool detect_low_flow_s(int)
 
 static bool detect_low_flow_l(int)
 {
-    if (pump->running_time().elapsed() < (2 * pump->flow_delay())) {
+    if (pump->running_time().elapsed() < (FLOW_DELAY_TOLERANCE * pump->flow_delay())) {
         // might be filling pipe between pump and flow meter
         return false;
     }
@@ -217,8 +216,7 @@ static bool detect_low_flow_l(int)
         return false;
     }
 
-    if (flowmeter->rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE / 3)) {
-        // less than 33% expected flow
+    if (flowmeter->rate(FLOWRATE_LONG) < (ESTIMATED_PUMP_FLOWRATE * LOWFLOW_LONG_TOLERANCE)) {
         return true;
     }
 
@@ -229,7 +227,7 @@ static bool pump_timeout(int)
 {
     Timestmp fillup_time = (TANK_CAPACITY / ESTIMATED_PUMP_FLOWRATE) * MINUTES;
 
-    if (pump->running_time().elapsed() > (fillup_time * 2)) {
+    if (pump->running_time().elapsed() > (fillup_time * PUMP_TIMEOUT_TOLERANCE)) {
         return true;
     }
     return false;
@@ -246,7 +244,7 @@ static bool detect_level_fail(int)
     // pumped volume since last level change
     double pumped = flowmeter->volume();
 
-    if (pumped > (2 * dvolume)) {
+    if (pumped > (LEVEL_FAIL_TOLERANCE * dvolume)) {
         return true;
     }
     return false;
