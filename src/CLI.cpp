@@ -57,6 +57,17 @@ static void cli_parse_password(const char *candidate)
     console_println("Wi-Fi password saved, call !restart to apply");
 }
 
+static void cli_parse_sensor(const char *candidate)
+{
+    if (*candidate != '0' && *candidate != '1') {
+        console_println("Sensor mode should be either 0 or 1");
+        return;
+    }
+    
+    arduino_nvram_save("sensor_mode", candidate);
+    console_println("Sensor mode changed, call !restart to apply");
+}
+
 static void cli_parse_password_empty()
 {
     StrBuf password;
@@ -70,6 +81,15 @@ static void cli_parse_password_empty()
         console_println(tmp);
         console_println("Set password to None for Wi-Fi network without password.");
     }
+}
+
+static void cli_parse_sensor_empty()
+{
+    StrBuf sensor_mode;
+    arduino_nvram_load(sensor_mode, "sensor_mode");
+    console_print("Sensor mode switch = ");
+    console_println(sensor_mode.c_str());
+    console_println(" (0 or None = disabled, 1 = enabled)");
 }
 
 static void cli_parse_mqtt(const char *candidate)
@@ -138,6 +158,7 @@ static void cli_parse_help()
     console_println("!password [PASSWORD]   Get/set Wi-Fi password (None if no password)");
     console_println("!mqtt [ADDRESS]        Get/set MQTT broker address (None to disable)");
     console_println("!mqttport [PORT]       Get/set MQTT broker port (None to disable)");
+    console_println("!sensor [1|0]          Get/set sensor mode switch");
     console_println("!status                Show Wi-Fi/MQTT connection status");
     console_println("!defconfig             Reset all configurations saved in NVRAM");
     console_println("!restart               Restart controller");
@@ -155,6 +176,8 @@ static void cli_parse_meta()
         cli_parse_mqttport(cli_buf + 10);
     } else if (strncmp("!password ", cli_buf, 10) == 0 && strlen(cli_buf) >= 11) {
         cli_parse_password(cli_buf + 10);
+    } else if (strncmp("!sensor ", cli_buf, 8) == 0 && strlen(cli_buf) >= 9) {
+        cli_parse_sensor(cli_buf + 8);
     } else if (strcmp("!ssid", cli_buf) == 0) {
         cli_parse_ssid_empty();
     } else if (strcmp("!mqtt", cli_buf) == 0) {
@@ -163,6 +186,8 @@ static void cli_parse_meta()
         cli_parse_mqttport_empty();
     } else if (strcmp("!password", cli_buf) == 0) {
         cli_parse_password_empty();
+    } else if (strcmp("!sensor", cli_buf) == 0) {
+        cli_parse_sensor_empty();
     } else if (strcmp("!status", cli_buf) == 0) {
         cli_status();
     } else if (strcmp("!help", cli_buf) == 0) {

@@ -1,6 +1,7 @@
 #include "H2OStateMachine.h"
 #include "Elements.h"
 #include "Constants.h"
+#include "NVRAM.h"
 
 Initial::Initial(int i): State(i) {}
 
@@ -23,6 +24,13 @@ void ManualOn::enter()
 Off::Off(int i): State(i) {}
 
 void Off::enter()
+{
+    pump->off();
+}
+
+Sensor::Sensor(int i): State(i) {}
+
+void Sensor::enter()
 {
     pump->off();
 }
@@ -76,9 +84,16 @@ void LevelFailure::enter()
     pump->off();
 }
 
-static bool initial_off(int)
+static bool sensor_mode(int)
 {
-    return true;
+    StrBuf sensor_mode;
+    arduino_nvram_load(sensor_mode, "sensor_mode");
+    return sensor_mode.equals("1");
+}
+
+static bool active_mode(int)
+{
+    return !sensor_mode(0);
 }
 
 static bool low_level(int)
@@ -253,6 +268,7 @@ static bool detect_level_fail(int)
 H2OStateMachine::H2OStateMachine(): StateMachine(0)
 {
     auto initial = Ptr<State>(new Initial(0));
+    auto sensor = Ptr<State>(new Sensor(0));
     auto off = Ptr<State>(new Off(0));
     auto off_rest = Ptr<State>(new HisteresisOff(0));
     auto manual_off = Ptr<State>(new ManualOff(0));
@@ -264,8 +280,12 @@ H2OStateMachine::H2OStateMachine(): StateMachine(0)
     auto pumptimeout = Ptr<State>(new PumpTimeout(0));
     auto level_fail = Ptr<State>(new LevelFailure(0));
 
-    initial->add(initial_off, "initial_off", off);
+    initial->add(sensor_mode, "sensor_mode", sensor);
+    initial->add(active_mode, "active_mode", off);
     add(initial);
+
+    /* this state is terminal */
+    add(sensor);
 
     off->add(manual_off_sw_1, "manual_off_sw_1", manual_off);
     off->add(manual_on_sw_1,  "manual_on_sw_1",  manual_on);

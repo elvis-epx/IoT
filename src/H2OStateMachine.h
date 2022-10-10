@@ -11,6 +11,14 @@ public:
 };
 
 /* Pump off */
+class Sensor: public State {
+public:
+    Sensor(int);
+    virtual void enter();
+    virtual const char* name() const { return "Sensor"; };
+};
+
+/* Pump off */
 class Off: public State {
 public:
     Off(int);
