@@ -7,6 +7,9 @@
 #ifndef UNDER_TEST
 #include <ArduinoOTA.h>
 #endif
+#if defined(ESP32)
+#include <esp_task_wdt.h>
+#endif
 
 #include <PubSubClient.h>
 
@@ -346,6 +349,13 @@ void MQTTBase::activate_ota()
         }
     });
     ArduinoOTA.begin();
+    // disable hardware watchdog because OTA causes long event loop blocks
+#if defined(ESP32)
+    esp_task_wdt_delete(NULL);
+#endif
+#ifdef ESP8266
+    ESP.wdtEnable(500);
+#endif
 #endif
     console_println("OTA activated");
     ota_activated = true;
