@@ -162,6 +162,8 @@ void Display::show(char **msg)
         }
         hw.display();
     }
+
+    /*
     console_print(msg[0]);
     console_print(" || ");
     console_print(msg[1]);
@@ -169,4 +171,5 @@ void Display::show(char **msg)
     console_print(msg[2]);
     console_print(" || ");
     console_println(msg[3]);
+    */
 }
