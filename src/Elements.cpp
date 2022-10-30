@@ -28,7 +28,7 @@ void elements_setup() {
     console_setup();
 
 #if defined(ESP32)
-    esp_task_wdt_init(3, true);
+    esp_task_wdt_init(15, true);
     esp_task_wdt_add(NULL);
 #endif
 #ifdef ESP8266
