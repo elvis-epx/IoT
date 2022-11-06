@@ -25,7 +25,7 @@ cond pump eq 1
 sensors 20 40 60 80 100
 
 # Recovery time
-advance $((12 * 3600))
 sleep 5
+advance $((12 * 3600))
 cond state eq "Off"
 cond pump eq 1

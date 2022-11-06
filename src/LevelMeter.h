@@ -3,6 +3,8 @@
 
 #include "Timer.h"
 
+#define DEBOUNCE_LENGTH 4
+
 class LevelMeter
 {
 public:
@@ -27,7 +29,9 @@ private:
     double capacity; // estimated tank capacity in liters
 
     bool failure;
-    uint32_t last_bitmap;
+    uint32_t last_debounced_bitmap;
+    uint32_t last_bitmaps[DEBOUNCE_LENGTH];
+    bool first_bitmap;
 };
 
 #endif

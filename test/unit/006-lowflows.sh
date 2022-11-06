@@ -18,8 +18,8 @@ cond state eq "F slow 2"
 cond pump eq 1
 
 sensors 20 40 60 80 100
+sleep 5
 
 advance $((2 * 3600))
-sleep 5
 cond state eq "Off"
 cond pump eq 1

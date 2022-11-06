@@ -6,7 +6,9 @@ LevelMeter::LevelMeter(const double levels[], double capacity):
 {
     current_level = 100;
     next_eval = Timeout(1 * SECONDS);
+    next_eval.advance();
     failure = false;
+    first_bitmap = true;
 }
 
 bool LevelMeter::failure_detected() const
@@ -20,9 +22,26 @@ void LevelMeter::eval()
         return;
     }
 
-    last_bitmap = gpio->read_level_sensors();
+    uint32_t bitmap = gpio->read_level_sensors();
 
-    // display.debug("sensor bitmap", (int) last_bitmap);
+    for (int i = 0; i < (DEBOUNCE_LENGTH - 1); ++i) {
+        if (first_bitmap) {
+            last_bitmaps[i + 1] = bitmap;
+        }
+        last_bitmaps[i] = last_bitmaps[i + 1];
+    }
+    last_bitmaps[DEBOUNCE_LENGTH - 1] = bitmap;
+    first_bitmap = false;
+
+    bool debounced = true;
+    for (int i = 0; i < (DEBOUNCE_LENGTH - 1); ++i) {
+        debounced = debounced && (last_bitmaps[i] == last_bitmaps[i + 1]);
+    }
+    if (debounced) {
+        last_debounced_bitmap = last_bitmaps[0];
+    }
+    
+    // display.debug("sensor bitmap", (int) last_debounced_bitmap);
 
     double new_level = 0;
     failure = false;
@@ -31,7 +50,7 @@ void LevelMeter::eval()
 
     for (int i = 0; levels[i] != 0; ++i) {
         // pull-up logic
-        bool bit = !(last_bitmap & (0x01 << i));
+        bool bit = !(last_debounced_bitmap & (0x01 << i));
         // display.debug("\tsw  ", i);
         // display.debug("\tbit ", bit ? "On" : "Off");
 
@@ -87,6 +106,6 @@ double LevelMeter::next_level_liters() const
 /*
 uint32_t LevelMeter::bitmap() const
 {
-    return last_bitmap;
+    return last_debounced_bitmap;
 }
 */

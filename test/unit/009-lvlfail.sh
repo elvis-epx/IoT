@@ -20,6 +20,7 @@ cond pump eq 1
 advance $((3600 * 6))
 
 sensors 20 40 60 80 100
+sleep 5
 cond state eq "F level"
 cond pump eq 1
 

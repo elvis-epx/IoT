@@ -18,18 +18,21 @@ cond level_err eq 0
 fastflow 48 $((40 * 60))
 # Change level to avoid "level unchanged" failure
 sensors 20
+sleep 5
 # -------------------------- 40 min mark
 
 # More 30 min / 300L
 fastflow 48 $((40 * 60))
 # Change level 
 sensors 20 40
+sleep 5
 # -------------------------- 80 min mark
 
 # More 30 min / 300L
 fastflow 48 $((40 * 60))
 # Change level 
 sensors 20 40 60
+sleep 5
 # -------------------------- 120 min mark
 
 # More 30 min
@@ -42,7 +45,7 @@ cond pump eq 1
 sensors 20 40 60 80 100
 
 # Recovery time
-advance $((6 * 3600))
 sleep 5
+advance $((6 * 3600))
 cond state eq "Off"
 cond pump eq 1
