@@ -18,9 +18,6 @@ if arg not in state:
     raise Exception("arg not in state: %s" % arg)
 if cond not in conds:
     raise Exception("invalid condition: %s" % cond)
-if arg in ("state", ):
-    if cond not in ("eq", "ne"):
-        raise Exception("Invalid condition for string")
 else:
     val = float(val)
 

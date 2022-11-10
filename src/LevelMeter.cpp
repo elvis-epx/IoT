@@ -84,23 +84,9 @@ double LevelMeter::level_pct() const
     return current_level;
 }
 
-double LevelMeter::level_liters() const
+double LevelMeter::level_vol() const
 {
     return current_level * capacity / 100;
-}
-
-double LevelMeter::next_level_liters() const
-{
-    double next_level = 100;
-
-    for (int i = 0; levels[i] > 0; ++i) {
-        if (levels[i] > current_level) {
-            next_level = levels[i];
-            break;
-        }
-    }
-
-    return next_level * capacity / 100;
 }
 
 /*

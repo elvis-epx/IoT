@@ -16,11 +16,9 @@ static Adafruit_SSD1306 hw(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
 Display::Display()
 {
-    row2_phase = 1;
     row3_phase = 1;
     next_update = Timeout(1 * SECONDS);
-    next_row2_update = Timeout(5 * SECONDS);
-    next_row3_update = Timeout(5 * SECONDS);
+    next_row3_update = Timeout(2 * SECONDS);
 
     ok = hw.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
     if (ok) {
@@ -66,16 +64,9 @@ void Display::eval()
         return;
     }
 
-    if (!next_row2_update.pending()) {
-        ++row2_phase;
-        if (row2_phase > 3) {
-            row2_phase = 1;
-        }
-    }
-
     if (!next_row3_update.pending()) {
         ++row3_phase;
-        if (row3_phase > 4) {
+        if (row3_phase > 2) {
             row3_phase = 1;
         }
     }
@@ -87,53 +78,17 @@ void Display::eval()
     char *msg[4];
     msg[0] = msg0; msg[1] = msg1; msg[2] = msg2; msg[3] = msg3;
 
-    sprintf(msg[0], "%s", sm->cur_state_name());
-
     const char *err = levelmeter->failure_detected() ? "E " : "";
-    sprintf(msg[1], "%s%.0f%% + %.0fL", err, levelmeter->level_pct(), flowmeter->volume());
+    sprintf(msg[0], "%s%.0f%% + %.0f" VOL_UNIT, err, levelmeter->level_pct(), flowmeter->volume());
 
-    if (row2_phase == 1) {
-        double rate = flowmeter->rate(FLOWRATE_LONG);
-        if (rate >= 0) {
-            sprintf(msg[2], "%.1fL/min x 30m", rate);
-        } else {
-            row2_phase = 2;
-        }
-    }
-    if (row2_phase == 2) {
-        double rate = flowmeter->rate(FLOWRATE_SHORT);
-        if (rate >= 0) {
-            sprintf(msg[2], "%.1fL/min x 2m", rate);
-        } else {
-            row2_phase = 3;
-        }
-    }
-    if (row2_phase == 3) {
-        double rate = flowmeter->rate(FLOWRATE_INSTANT);
-        if (rate >= 0) {
-            sprintf(msg[2], "%.1fL/min x 10s", rate);
-        } else {
-            sprintf(msg[2], "...");
-        }
-    }
+    double rate = flowmeter->rate();
+    sprintf(msg[1], "%.1f" VOL_UNIT "/min", rate);
 
+    millis_to_hms(now(), msg[2]);
+    
     if (row3_phase == 1) {
-        millis_to_hms(now(), msg[3]);
-    }
-    if (row3_phase == 2) {
-        if (pump->is_running()) {
-            double volume = flowmeter->volume();
-            double exp_volume = flowmeter->expected_volume() + 0.0001;
-            sprintf(msg[3], "Efficiency %.0f%%",
-                    100 * volume / exp_volume);
-        } else {
-            row3_phase = 3;
-        }
-    }
-    if (row3_phase == 3) {
         sprintf(msg[3], "WiFi %s", mqtt->wifi_status());
-    }
-    if (row3_phase == 4) {
+    } else {
         sprintf(msg[3], "MQTT %s", mqtt->mqtt_status());
     }
 

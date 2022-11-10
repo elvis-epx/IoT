@@ -5,7 +5,6 @@
 sensors 20 40 60 80 100
 nvram
 runme
-cond state eq "Off"
 
 echo "Advancing 1M seconds"
 advance 1000000

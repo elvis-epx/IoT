@@ -23,12 +23,10 @@ int main()
 
         std::ofstream g;
         g.open("state.sim");
-        g << sm->cur_state_name() << std::endl;
         g << levelmeter->level_pct() << std::endl;
-        g << levelmeter->level_liters() << std::endl;
-        g << flowmeter->rate(FLOWRATE_INSTANT) << std::endl;
-        g << flowmeter->rate(FLOWRATE_SHORT) << std::endl;
-        g << flowmeter->rate(FLOWRATE_LONG) << std::endl;
+        g << levelmeter->level_vol() << std::endl;
+        g << flowmeter->volume() << std::endl;
+        g << flowmeter->rate() << std::endl;
         if (levelmeter->failure_detected()) {
             g << "E";
         }
@@ -50,8 +48,6 @@ int main()
         f.close();
     }
 
-    // test invalid flow rate argument
-    assert(flowmeter->rate(12345) == -2);
     Log::d("int", 1);
     Log::d("double", 1.0);
     Log::d("string", "bla");

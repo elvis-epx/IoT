@@ -2,10 +2,10 @@
 
 . unit/defs.sh
 
-sensors 20 40 60 80 100
+sensors 20 40 60 80
 nvram_nowifi
 runme
 advance 45
-cond state eq "Off"
-cond pump eq 1 # inverse 3v3 relay module logic
 cond level_err eq 0
+cond level% eq 80
+cond levelL eq 800

@@ -16,8 +16,6 @@ static void IRAM_ATTR pulse_trampoline()
     gpio->pulse();
 }
 
-#define FLOWMETER_PIN 14
-
 // About inverse pump logic bit. The 3V3 relay we use
 // is like that - turns ON when input is grounded. So we need to raise
 // the pin to 1 to turn it OFF. We had two options:
@@ -38,16 +36,13 @@ static const uint32_t PUMP_BIT = 0x01;
 MyGPIO::MyGPIO()
 {
     pulses = 0;
-    output_bitmap = 0 | (RELAY_INVERSE_LOGIC ? PUMP_BIT : 0);
 
     i2c_begin();
     mcp.init();
 
     // Port A = all output
     mcp.portMode(MCP23017Port::A, 0);
-    // shortcut to set default output bits as fast as possible
-    // (important when relay is inverse logic)
-    mcp.writeRegister(MCP23017Register::GPIO_A, output_bitmap);
+    mcp.writeRegister(MCP23017Register::GPIO_A, 0);
     // Port B = all input
     mcp.portMode(MCP23017Port::B, 0b11111111);
     mcp.writeRegister(MCP23017Register::GPIO_B, 0);
@@ -58,13 +53,11 @@ MyGPIO::MyGPIO()
 #else
     mcp.sim_pulse_cb = pulse_trampoline;
 #endif
-
-    write_output(output_bitmap, ~0);
 }
 
 uint32_t MyGPIO::read_level_sensors()
 {
-    return read() & 0b11111;
+    return read() & LEVEL_SENSOR_MASK;
 }
 
 uint32_t MyGPIO::read()
@@ -72,18 +65,6 @@ uint32_t MyGPIO::read()
     uint32_t bitmap = 0;
     bitmap = mcp.readPort(MCP23017Port::B);
     return bitmap;
-}
-
-void MyGPIO::write_pump(bool logical_state)
-{
-    bool pin_state = RELAY_INVERSE_LOGIC ? (!logical_state) : logical_state;
-    write_output(pin_state ? ~0 : 0, PUMP_BIT);
-}
-
-void MyGPIO::write_output(uint32_t bitmap, uint32_t bitmask)
-{
-    output_bitmap = (output_bitmap & ~bitmask) | (bitmap & bitmask);
-    mcp.writePort(MCP23017Port::A, output_bitmap);
 }
 
 void MyGPIO::pulse()

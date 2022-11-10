@@ -1,5 +1,5 @@
 CFLAGS=-DDEBUG -DUNDER_TEST -fsanitize=undefined -fstack-protector-strong -fstack-protector-all -std=c++1y -Wall -g -O0 -fprofile-arcs -ftest-coverage --coverage -fno-elide-constructors -I.
-OBJ=StateMachine.o H2OStateMachine.o ArduinoBridge.o Pump.o LevelMeter.o FlowMeter.o Timer.o MyGPIO.o Display.o LogDebug.o MQTT.o MQTTBase.o Console.o CLI.o Preferences.o NVRAM.o Serial.o Elements.o Wire.o StrBuf.o PubSubClient.o WiFi.o Adafruit_SSD1306.o MCP23017.o
+OBJ=ArduinoBridge.o LevelMeter.o FlowMeter.o Timer.o MyGPIO.o Display.o LogDebug.o MQTT.o MQTTBase.o Console.o CLI.o Preferences.o NVRAM.o Serial.o Elements.o Wire.o StrBuf.o PubSubClient.o WiFi.o Adafruit_SSD1306.o MCP23017.o
 
 all: test
 

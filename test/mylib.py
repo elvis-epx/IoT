@@ -4,35 +4,22 @@ import json, time, random
 
 def read_state():
     l = []
-    while len(l) < 7: 
+    while len(l) < 4: 
         try:
             l = open("state.sim").readlines()
         except FileNotFoundError:
             pass
-        if len(l) < 7:
+        if len(l) < 4:
             print("Waiting for state.sim...")
             time.sleep(1)
 
     d = {}
-    d["state"] = l[0].strip()
-    d["level%"] = float(l[1].strip())
-    d["levelL"] = float(l[2].strip())
-    d["rate0"] = float(l[3].strip())
-    d["rate1"] = float(l[4].strip())
-    d["rate2"] = float(l[5].strip())
-    d["level_err"] = ("E" in l[6]) and 1 or 0
+    d["level%"] = float(l[0].strip())
+    d["levelL"] = float(l[1].strip())
+    d["levelplus"] = float(l[2].strip())
+    d["rate"] = float(l[3].strip())
+    d["level_err"] = ("E" in l[4]) and 1 or 0
 
-    l = []
-    while len(l) < 1:
-        try:
-            l = open("gpiomcpw.sim").readlines()
-        except FileNotFoundError:
-            pass
-        if len(l) < 1:
-            print("Waiting for gpiomcpw.sim...")
-            time.sleep(1)
-
-    d["pump"] = float(l[0])
     return d
 
 def gen_sensors(items):
@@ -54,13 +41,7 @@ def gen_mqtt(item):
     on = random.choice(["On", "on", "1"])
     off = random.choice(["Off", "off", "0"])
     inval = random.choice(["", "o", "O", "of", "Invalid"])
-    args["mon-up"] = ("cmnd/H2OControl/OverrideOn", on)
-    args["mon-down"] = ("cmnd/H2OControl/OverrideOn", off)
-    args["moff-up"] = ("cmnd/H2OControl/OverrideOff", on)
-    args["moff-down"] = ("cmnd/H2OControl/OverrideOff", off)
     args["inval-sub"] = ("cmnd/H2OControl/Invalid", off)
-    args["inval-mon"] = ("cmnd/H2OControl/OverrideOn", inval)
-    args["inval-moff"] = ("cmnd/H2OControl/OverrideOff", inval)
     
     open("mqtt.sim", "w").write("%s\n%s\nOk\n" % args[item])
 

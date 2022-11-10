@@ -16,8 +16,7 @@ public:
     void eval();
 
     double level_pct() const; // in %
-    double level_liters() const; // in liters
-    double next_level_liters() const; // in liters
+    double level_vol() const; // in volume unit
     bool failure_detected() const;
     uint32_t bitmap() const;
 
@@ -26,7 +25,7 @@ private:
     Timeout next_eval;
     const double *levels;
     double current_level;
-    double capacity; // estimated tank capacity in liters
+    double capacity; // estimated tank capacity in volume units
 
     bool failure;
     uint32_t last_debounced_bitmap;
