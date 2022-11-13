@@ -19,7 +19,7 @@
 #define PUB_LEVEL1 "stat/H2OControl/Level1"
 #define PUB_LEVEL2 "stat/H2OControl/Level2"
 #define PUB_LEVELERR "stat/H2OControl/LevelErr"
-#define PUB_FLOWINST "stat/H2OControl/FLow"
+#define PUB_FLOWINST "stat/H2OControl/Flow"
 
 #define PUB_LOGDEBUG_TOPIC "tele/H2OControl/logdebug"
 #define SUB_OTA_TOPIC "cmnd/H2OControl/OTA"
