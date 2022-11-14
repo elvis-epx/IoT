@@ -10,17 +10,45 @@ public:
     virtual const char *value_gen() override;
 };
 
-class Level1Pub: public PubTopic
+class VolUnitPub: public PubTopic
 {
 public:
-    Level1Pub();
+    VolUnitPub();
     virtual const char *value_gen() override;
 };
 
-class Level2Pub: public PubTopic
+class CoarseLevelPctPub: public PubTopic
 {
 public:
-    Level2Pub();
+    CoarseLevelPctPub();
+    virtual const char *value_gen() override;
+};
+
+class CoarseLevelVolPub: public PubTopic
+{
+public:
+    CoarseLevelVolPub();
+    virtual const char *value_gen() override;
+};
+
+class EstimatedLevelVolPub: public PubTopic
+{
+public:
+    EstimatedLevelVolPub();
+    virtual const char *value_gen() override;
+};
+
+class EstimatedLevelStrPub: public PubTopic
+{
+public:
+    EstimatedLevelStrPub();
+    virtual const char *value_gen() override;
+};
+
+class PumpedAfterLevelChangePub: public PubTopic
+{
+public:
+    PumpedAfterLevelChangePub();
     virtual const char *value_gen() override;
 };
 

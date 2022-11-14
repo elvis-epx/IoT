@@ -9,14 +9,34 @@ UptimePub::UptimePub()
     _topic = PUB_UPTIME;
 }
 
-Level1Pub::Level1Pub()
+VolUnitPub::VolUnitPub()
 {
-    _topic = PUB_LEVEL1;
+    _topic = PUB_VOLUME_UNIT;
 }
 
-Level2Pub::Level2Pub()
+CoarseLevelPctPub::CoarseLevelPctPub()
 {
-    _topic = PUB_LEVEL2;
+    _topic = PUB_COARSELEVEL_PCT;
+}
+
+CoarseLevelVolPub::CoarseLevelVolPub()
+{
+    _topic = PUB_COARSELEVEL_VOL;
+}
+
+PumpedAfterLevelChangePub::PumpedAfterLevelChangePub()
+{
+    _topic = PUB_PUMPEDAFTERLEVELCHANGE;
+}
+
+EstimatedLevelVolPub::EstimatedLevelVolPub()
+{
+    _topic = PUB_ESTIMATEDLEVEL_VOL;
+}
+
+EstimatedLevelStrPub::EstimatedLevelStrPub()
+{
+    _topic = PUB_ESTIMATEDLEVEL_STR;
 }
 
 LevelErrPub::LevelErrPub()
@@ -26,7 +46,7 @@ LevelErrPub::LevelErrPub()
 
 FlowPub::FlowPub()
 {
-    _topic = PUB_FLOWINST;
+    _topic = PUB_FLOW;
 }
 
 const char *UptimePub::value_gen()
@@ -37,17 +57,46 @@ const char *UptimePub::value_gen()
     return tmp;
 }
 
-const char *Level1Pub::value_gen()
+const char *VolUnitPub::value_gen()
+{
+    static char tmp[10];
+    sprintf(tmp, VOL_UNIT);
+    return tmp;
+}
+
+const char *CoarseLevelPctPub::value_gen()
 {
     static char tmp[30];
     sprintf(tmp, "%.0f", levelmeter->level_pct());
     return tmp;
 }
 
-const char *Level2Pub::value_gen()
+const char *CoarseLevelVolPub::value_gen()
+{
+    static char tmp[30];
+    sprintf(tmp, "%.0f", levelmeter->level_vol());
+    return tmp;
+}
+
+const char *PumpedAfterLevelChangePub::value_gen()
 {
     static char tmp[30];
     sprintf(tmp, "%.0f", flowmeter->volume());
+    return tmp;
+}
+
+const char *EstimatedLevelVolPub::value_gen()
+{
+    static char tmp[30];
+    sprintf(tmp, "%.0f", levelmeter->level_vol() + flowmeter->volume());
+    return tmp;
+}
+
+const char *EstimatedLevelStrPub::value_gen()
+{
+    static char tmp[30];
+    const char *err = levelmeter->failure_detected() ? "E " : "";
+    sprintf(tmp, "%s%.0f%% + %.0f" VOL_UNIT, err, levelmeter->level_pct(), flowmeter->volume());
     return tmp;
 }
 
@@ -66,8 +115,12 @@ const char *FlowPub::value_gen()
 MQTT::MQTT()
 {
     pub_topics.push_back(Ptr<PubTopic>(new UptimePub()));
-    pub_topics.push_back(Ptr<PubTopic>(new Level1Pub()));
-    pub_topics.push_back(Ptr<PubTopic>(new Level2Pub()));
+    pub_topics.push_back(Ptr<PubTopic>(new VolUnitPub()));
+    pub_topics.push_back(Ptr<PubTopic>(new CoarseLevelVolPub()));
+    pub_topics.push_back(Ptr<PubTopic>(new CoarseLevelPctPub()));
+    pub_topics.push_back(Ptr<PubTopic>(new PumpedAfterLevelChangePub()));
+    pub_topics.push_back(Ptr<PubTopic>(new EstimatedLevelVolPub()));
+    pub_topics.push_back(Ptr<PubTopic>(new EstimatedLevelStrPub()));
     pub_topics.push_back(Ptr<PubTopic>(new LevelErrPub()));
     pub_topics.push_back(Ptr<PubTopic>(new FlowPub()));
 }
