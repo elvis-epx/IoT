@@ -45,6 +45,12 @@ StrBuf* PubTopic::value()
     return &_value;
 }
 
+// override if necessary
+bool PubTopic::retained()
+{
+    return false;
+}
+
 bool PubTopic::value_has_changed()
 {
     const char *candidate = value_gen();
@@ -291,22 +297,22 @@ void MQTTBase::pub_data()
     Ptr<PubTopic> pub = pub_by_topic(pub_pending[0]);
     pub_pending.remov(0);
     if (pub) {
-        do_pub_data(pub->topic().c_str(), pub->value()->c_str());
+        do_pub_data(pub->topic().c_str(), pub->value()->c_str(), pub->retained());
     }
 }
 
-void MQTTBase::do_pub_data(const char *topic, const char *value) const
+void MQTTBase::do_pub_data(const char *topic, const char *value, bool retained) const
 {
     // do not call Log::d() here to avoid infinite loop via pub_logdebug()
     if (mqtt_enabled) {
-        mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), true);
+        mqttimpl.publish(topic, (const uint8_t*) value, strlen(value), retained);
     }
 }
 
 void MQTTBase::pub_logdebug(const char *msg)
 {
     // do not call Log::d() here to avoid infinite loop
-    do_pub_data(logdebug_topic(), msg);
+    do_pub_data(logdebug_topic(), msg, false);
 }
 
 Ptr<PubTopic> MQTTBase::pub_by_topic(const StrBuf& name)

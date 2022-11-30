@@ -15,6 +15,7 @@ public:
     virtual ~PubTopic();
     StrBuf topic() const;
     StrBuf *value();
+    virtual bool retained();
     virtual bool value_has_changed();
     virtual const char *value_gen() = 0;
 protected:
@@ -64,7 +65,7 @@ private:
     void sub_data_event(const char *topic, const StrBuf &payload);
     void update_pub_data();
     void pub_data();
-    void do_pub_data(const char *topic, const char *value) const;
+    void do_pub_data(const char *topic, const char *value, bool retained) const;
     void init_mqttimpl();
     void chk_mqttimpl();
     void chk_wifi();
