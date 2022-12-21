@@ -1,0 +1,11 @@
+*.cop
+*.ucop
+*_config.txt
+*.fcop
+__pycache__
+.coverage
+htmlcov/
+.coverage.*
+*.sim
+tmppiggy
+log

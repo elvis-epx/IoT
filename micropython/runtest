@@ -1,0 +1,11 @@
+#!/bin/bash
+
+test=justrun
+if [ "$1" != "" ]; then
+        test="$1"
+fi
+echo 
+echo "*** Running test $1 ***"
+echo
+TEST_FLAVOR=`cat testsuite/${test}/flavor`
+FLAVOR=$TEST_FLAVOR TEST_FOLDER=testsuite/${test} bash -x testsuite/${test}/script

@@ -1,0 +1,9 @@
+ssid <SSID>
+password <password or None>
+mqttbroker <address or DNS name>
+mqttname H2OControl 
+watchdog <0|1>
+unit L
+capacity 1000
+levelsensors 20,40,60,80,100
+flowpulserate 4.8

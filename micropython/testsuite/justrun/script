@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+wifi GOT_IP
+sleep 115
+advance 60000
+advance 60000
+advance $((30 * 60 * 1000))
+sleep 5
+quit

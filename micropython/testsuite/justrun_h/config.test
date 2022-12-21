@@ -1,0 +1,11 @@
+ssid SSID
+password PASSWORD
+mqttbroker 1.2.3.4
+mqttname H2OControl
+bla
+ble None
+
+unit L
+capacity 1000
+levelsensors 20,40,60,80,100
+flowpulserate 4.8

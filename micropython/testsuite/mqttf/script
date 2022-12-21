@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+mqttfail connect_permanent
+sleep 10
+wifi GOT_IP
+sleep 5
+
+while true; do
+    advance 30000
+    if has_quit; then
+        break
+    fi
+done

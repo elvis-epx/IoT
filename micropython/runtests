@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for test in `ls testsuite | grep -v '\.'`; do
+    ./runtest $test
+done

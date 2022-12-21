@@ -1,0 +1,5 @@
+ssid <SSID>
+password <password or None>
+mqttbroker <address or DNS name>
+mqttname RelayControl
+watchdog <0|1>

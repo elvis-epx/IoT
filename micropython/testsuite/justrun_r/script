@@ -1,0 +1,106 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+wifi GOT_IP
+sleep 10
+assert gpio 25 1
+assert gpio 26 1
+assert gpio 27 1
+assert gpio 33 1
+assert mqtt stat/RelayControl/0/State 0
+assert mqtt stat/RelayControl/1/State 0
+assert mqtt stat/RelayControl/2/State 0
+assert mqtt stat/RelayControl/3/State 0
+
+mqttsub cmnd/RelayControl/2/TurnOnWithTimeout 30
+sleep 3
+assert gpio 25 1
+assert gpio 26 1
+assert gpio 27 0
+assert gpio 33 1
+assert mqtt stat/RelayControl/0/State 0
+assert mqtt stat/RelayControl/1/State 0
+assert mqtt stat/RelayControl/2/State 1
+assert mqtt stat/RelayControl/3/State 0
+
+mqttsub cmnd/RelayControl/1/TurnOnWithTimeout 30
+sleep 3
+assert gpio 25 1
+assert gpio 26 0
+assert gpio 27 0
+assert gpio 33 1
+assert mqtt stat/RelayControl/1/State 1
+
+mqttsub cmnd/RelayControl/0/TurnOnWithTimeout 30
+sleep 3
+assert gpio 25 0
+assert gpio 26 0
+assert gpio 27 0
+assert gpio 33 1
+assert mqtt stat/RelayControl/0/State 1
+
+mqttsub cmnd/RelayControl/3/TurnOnWithTimeout 30
+sleep 3
+assert gpio 25 0
+assert gpio 26 0
+assert gpio 27 0
+assert gpio 33 0
+assert mqtt stat/RelayControl/3/State 1
+
+mqttsub cmnd/RelayControl/1/TurnOnWithTimeout 0
+sleep 3
+assert gpio 25 0
+assert gpio 26 1
+assert gpio 27 0
+assert gpio 33 0
+assert mqtt stat/RelayControl/1/State 0
+
+advance $((20 * 1000))
+sleep 3
+assert gpio 25 1
+assert gpio 26 1
+assert gpio 27 1
+assert gpio 33 1
+assert mqtt stat/RelayControl/0/State 0
+assert mqtt stat/RelayControl/1/State 0
+assert mqtt stat/RelayControl/2/State 0
+assert mqtt stat/RelayControl/3/State 0
+
+mqttsub cmnd/RelayControl/1/TurnOnWithTimeout foo
+sleep 3
+assert gpio 25 1
+assert gpio 26 1
+assert gpio 27 1
+assert gpio 33 1
+assert mqtt stat/RelayControl/1/State 0
+
+mqttsub cmnd/RelayControl/1/TurnOnWithTimeout -1
+sleep 3
+assert gpio 25 1
+assert gpio 26 1
+assert gpio 27 1
+assert gpio 33 1
+assert mqtt stat/RelayControl/1/State 0
+
+mqttsub cmnd/RelayControl/1/TurnOnWithTimeout 6000
+sleep 3
+assert gpio 25 1
+assert gpio 26 0
+assert gpio 27 1
+assert gpio 33 1
+assert mqtt stat/RelayControl/1/State 1
+
+advance $((10 * 60 * 1000))
+sleep 3
+assert gpio 26 1
+assert mqtt stat/RelayControl/1/State 0
+
+ssd1306f
+
+advance 60000
+advance $((30 * 60 * 1000))
+sleep 5
+quit

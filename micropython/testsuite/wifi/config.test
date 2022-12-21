@@ -1,0 +1,3 @@
+ssid SSID
+mqttbroker 1.2.3.4
+mqttname TempSensor

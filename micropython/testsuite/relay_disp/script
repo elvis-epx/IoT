@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+ssd1306f
+runme
+sleep 5
+wifi GOT_IP
+sleep 5

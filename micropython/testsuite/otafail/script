@@ -1,0 +1,113 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+wifi GOT_IP
+sleep 6
+mqttsub cmnd/TempSensor/OTA open
+sleep 1
+
+# File in the way of a folder path
+
+TESTFILE=folder.sim/fail1.sim
+rm -rf folder.sim
+mkdir -p folder.sim
+echo bla > $TESTFILE
+touch $TEST_FOLDER/folder.sim
+./otatool 127.0.0.1 $TESTFILE && ( echo "otatool should have failed"; exit 1 )
+rm -f $TESTFILE
+rm -rf folder.sim
+
+# Wrong packet size at header (too short)
+
+TESTFILE=fail1.sim
+echo "bla" > $TESTFILE
+
+# Wrong packet size at header (too short)
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE length1a && ( echo "otatool should have failed"; exit 1 )
+
+# Wrong packet size at header (too long)
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE length1b && ( echo "otatool should have failed"; exit 1 )
+
+# Wrong packet size at payload (too long)
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE length2b && ( echo "otatool should have failed"; exit 1 )
+
+# Wrong packet size at payload (too short)
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE length1b && ( echo "otatool should have failed"; exit 1 )
+
+# Bad checksum at header
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE checksum1 && ( echo "otatool should have failed"; exit 1 )
+
+# Close connection at header
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE zero1 && ( echo "otatool should have failed"; exit 1 )
+
+# Close connection using RST, for recv() header
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE rst && ( echo "otatool should have failed"; exit 1 )
+
+# Close connection using RST, for send() header response
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE rstw1 && ( echo "otatool should have failed"; exit 1 )
+
+# Close connection using RST, for send() payload response
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE rstw2 && ( echo "otatool should have failed"; exit 1 )
+
+# Close connection at payload
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE zero2 && ( echo "otatool should have failed"; exit 1 )
+
+# Timeout at header
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE timeout1 && ( echo "otatool should have failed"; exit 1 )
+
+# Timeout at payload
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE timeout2 && ( echo "otatool should have failed"; exit 1 )
+
+# Fragmentation (non fatal)
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE frag
+
+# Packet valid but short for the app
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE short && ( echo "otatool should have failed"; exit 1 )
+
+# Send too much file data (more than declared length)
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE overflow && ( echo "otatool should have failed"; exit 1 )
+
+# Send valid packet but type at unexpected moment
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE type1 && ( echo "otatool should have failed"; exit 1 )
+
+# Send valid packet but type at unexpected moment
+echo
+echo
+./otatool 127.0.0.1 $TESTFILE type2 && ( echo "otatool should have failed"; exit 1 )
+
+rm -f $TESTFILE

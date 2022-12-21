@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+wifi GOT_IP
+sleep 30
+mqttsub cmnd/TempSensor/test bla
+sleep 3
+mqttsub cmnd/TempSensor/invalid bla
+sleep 10
+quit

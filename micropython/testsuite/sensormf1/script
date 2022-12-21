@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+wifi GOT_IP
+hdc1080 25,80
+bme280 1012
+advance 60000
+sleep 3
+advance 60000
+sleep 3
+hdc1080 fail
+bme280 fail
+advance 60000
+sleep 3
+advance 60000
+sleep 3
+quit
