@@ -189,8 +189,55 @@ def test_malfunction(_):
 def test_malfunction_cl(_):
     Log.info("driver: test_malfunction_cl")
     assert ctx['sm'] == "Off"
+    Timeout.new("t", 0, test_fill100_a)
 
-    Timeout.new("t", 0, go_offline)
+def test_fill100_a(_):
+    Log.info("driver: test_fill100_a")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "79.9")
+    Timeout.new("t", 5, test_fill100_b)
+
+def test_fill100_b(_):
+    Log.info("driver: test_fill100_b")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "PumpedAfterLevelChange", "300")
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    Timeout.new("t", 5, test_fill100_c)
+
+def test_fill100_c(_):
+    Log.info("driver: test_fill100_c")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
+    Timeout.new("t", 5, test_fill100_d)
+
+def test_fill100_d(_):
+    Log.info("driver: test_fill100_d")
+    assert ctx['sm'] == "On"
+    def stepper(task):
+        mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+        mqtt_client.publish(H2O_PREFIX + "EstimatedLevelStr", "80%% + %dL" % (stepper.x * 10))
+        mqtt_client.publish(H2O_PREFIX + "PumpedAfterLevelChange", "%d" % (stepper.x * 10))
+        mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
+        if stepper.x >= 7:
+            Timeout.new("t", 0, test_fill100_e)
+        else:
+            stepper.x += 1
+            task.restart()
+    stepper.x = 1
+    Timeout.new("t", 10, stepper)
+
+def test_fill100_e(_):
+    Log.info("driver: test_fill100_e")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    mqtt_client.publish(H2O_PREFIX + "PumpedAfterLevelChange", "255")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
+    Timeout.new("t", 5, test_fill100_rest)
+
+def test_fill100_rest(_):
+    Log.info("driver: test_rest_rest")
+    assert ctx['sm'] == "Resting"
+    Timeout.new("t", 5, go_offline)
 
 def go_offline(_):
     Log.info("driver: go_offline")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3 
 
 import os, sys
-from time import time
+import time
 import paho.mqtt.client as mqtt
 from myeventloop import EventLoop, Log, Timeout
 from myeventloop.queue import Queue
@@ -26,11 +26,14 @@ MQTT_STATE = "stat/%s/State" % MY_MQTT_PREFIX
 
 MQTT_PUMP = "cmnd/%s/0/TurnOnWithTimeout" % RELAY
 
-LEVEL_LOW_THRESHOLD = 80.0 - 0.2
-LEVEL_FULL_THRESHOLD = 100.0 - 0.1
+LEVEL_LOW_THRESHOLD = 80.0 - 0.01
+LEVEL_FULL_THRESHOLD = 100.0 - 0.01
 
 TANK_CAPACITY = 1000.0 # L
 EXPECTED_FLOW = 13.0 # L/min
+
+TOPPING_VOLUME = TANK_CAPACITY * (LEVEL_FULL_THRESHOLD - LEVEL_LOW_THRESHOLD) / 100.0 * 1.2
+TOPPING_MINIMUM_TIME = 60 # s
 
 PIPE_LENGTH = 75.0 # m
 PIPE_DIAMETER = 25.0 / 1000.0 # m
@@ -190,7 +193,7 @@ class WaterStateMachine(StateMachine):
     # Informative only
     def log_tanklevel(self):
         def on_levelstr(s):
-            Log.info("Tank level %s" % s)
+            Log.info("Tank level str %s" % s)
         self.q.on_msg(self, "stat/%s/EstimatedLevelStr" % H2O, on_levelstr, True)
 
     def on_off(self):
@@ -219,11 +222,42 @@ class WaterStateMachine(StateMachine):
         self.detect_malfunction()
         self.log_tanklevel()
 
+        self.pumped_after_level_change = 0.0
+
+        def on_pumped(vol):
+            Log.info("Pumped %f" % vol)
+            self.pumped_after_level_change = vol
+
+        self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, on_pumped, True)
+
+        self.almost_full_time = None
+
         def on_level(level):
             Log.info("Tank level %f" % level)
+
             if level >= LEVEL_FULL_THRESHOLD:
                 Log.info("Level is full")
                 self.trans_now("rest")
+                return
+
+            if level < LEVEL_LOW_THRESHOLD:
+                return
+
+            # LEVEL_LOW_THRESHOLD <= level < LEVEL_FULL_THRESHOLD
+            # Increased protection against overflow: pump only remaining volume
+
+            if self.almost_full_time is None:
+                self.almost_full_time = time.time()
+                self.pumped_after_level_change = 0.0
+                return
+
+            if (time.time() - self.almost_full_time) < TOPPING_MINIMUM_TIME:
+                return
+
+            if self.pumped_after_level_change > TOPPING_VOLUME:
+                Log.info("Pumped topping volume")
+                self.trans_now("rest")
+
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
         # Safety measure in case of dry pump
@@ -238,6 +272,7 @@ class WaterStateMachine(StateMachine):
                     on_flow.virgin = False
                 lowflow_task.restart()
         on_flow.virgin = True
+
         self.q.on_float(self, "stat/%s/Flow" % H2O, on_flow, True)
 
     def on_manualon(self):
