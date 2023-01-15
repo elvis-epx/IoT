@@ -1,6 +1,6 @@
 import machine
 from third import ssd1306
-from epx.loop import Task, SECONDS, MILISSECONDS, Cronometer
+from epx.loop import Task, SECONDS, MILISSECONDS, Longcronometer
 
 RELAY_PINS = [25, 26, 27, 33]        # ESP32
 INVERSE_LOGIC = const(1)             # some 3v3 Arduino relays
@@ -54,7 +54,7 @@ class Display:
         self.mqtt = mqtt
         self.task = Task(True, "display", self.refresh, 500 * MILISSECONDS)
         self.blink = True
-        self.uptime = Cronometer()
+        self.uptime = Longcronometer()
 
     def refresh(self, task):
         if not self.impl:

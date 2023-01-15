@@ -10,7 +10,7 @@ MINUTES = (60 * SECONDS)
 running = True
 millis_offset = 0 # used to fast-forward time in tests
 
-class Cronometer:
+class Shortcronometer:
     def __init__(self):
         self.restart()
 
@@ -19,6 +19,17 @@ class Cronometer:
 
     def elapsed(self):
         return millis_diff(millis(), self.base)
+
+
+class Longcronometer:
+    def __init__(self):
+        self.restart()
+
+    def restart(self):
+        self.base = time.time() # integer in MicroPython
+
+    def elapsed(self):
+        return (time.time() - self.base) * 1000
 
 
 class StateMachine:
@@ -100,6 +111,9 @@ class Task:
         self.name = name
         self.cb = cb
         self.delay = delay
+        if delay >= 0x40000000:
+            # time.ticks_ms() wraps in 31 or 32 bits, so tasks can't be longer than 12 days or so
+            raise Exception("Task too long TODO add support to long timeouts")
         self.fudge = fudge
         Task.last_id += 1
         self.nid = Task.last_id

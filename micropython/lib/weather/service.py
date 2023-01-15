@@ -1,5 +1,5 @@
 from epx.mqtt import MQTTPub, MQTTSub
-from epx.loop import Cronometer, SECONDS, MINUTES
+from epx.loop import SECONDS, MINUTES
 
 class Temperature(MQTTPub):
     def __init__(self, sensor):

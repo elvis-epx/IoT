@@ -1,5 +1,5 @@
 from third import ssd1306
-from epx.loop import Task, SECONDS, MILISSECONDS, Cronometer
+from epx.loop import Task, SECONDS, MILISSECONDS, Longcronometer
 
 class Display:
     def __init__(self, config, i2c, net, mqtt, levelmeter, flowmeter):
@@ -15,7 +15,7 @@ class Display:
         self.levelmeter = levelmeter
         self.flowmeter = flowmeter
         self.task = Task(True, "display", self.refresh, 1000 * MILISSECONDS)
-        self.uptime = Cronometer()
+        self.uptime = Longcronometer()
         self.blink = False
 
     def refresh(self, task):

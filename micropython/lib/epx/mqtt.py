@@ -3,7 +3,7 @@ import gc
 from uumqtt.simple2 import MQTTClient, MQTTException
 import ubinascii
 
-from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Cronometer
+from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer
 from epx import loop
 
 
@@ -222,7 +222,7 @@ class OTASub(MQTTSub):
 class Uptime(MQTTPub):
     def __init__(self):
         MQTTPub.__init__(self, "stat/%s/Uptime", 60 * SECONDS, 30 * MINUTES, False)
-        self.uptime = Cronometer()
+        self.uptime = Longcronometer()
 
     def gen_msg(self):
         return "%d" % (self.uptime.elapsed() // MINUTES)

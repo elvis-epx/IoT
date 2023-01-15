@@ -1,6 +1,6 @@
 import network
 
-from epx.loop import Task, SECONDS, MINUTES, StateMachine, reboot, Cronometer
+from epx.loop import Task, SECONDS, MINUTES, StateMachine, reboot, Shortcronometer
 from epx import loop
 
 class Net:
@@ -36,7 +36,7 @@ class Net:
         self.impl = network.WLAN(network.STA_IF)
         self.impl.active(False)
         self.sm.schedule_trans("idle", 1 * SECONDS)
-        self.last_connection = Cronometer()
+        self.last_connection = Shortcronometer()
 
     def on_idle(self):
         self.impl.active(False)
@@ -81,7 +81,7 @@ class Net:
             pass
         else:
             print("WiFi error", ws)
-            self.last_connection = Cronometer()
+            self.last_connection = Shortcronometer()
             self.sm.schedule_trans_now("connlost")
 
     def on_connlost(self):

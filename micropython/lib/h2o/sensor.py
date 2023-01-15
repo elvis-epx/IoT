@@ -1,4 +1,4 @@
-from epx.loop import Task, SECONDS, MINUTES, Cronometer
+from epx.loop import Task, SECONDS, MINUTES, Shortcronometer
 from epx import loop
 from third import mcp23017
 from machine import Pin
@@ -15,7 +15,7 @@ class FlowMeter:
         self.latest_rate = 0.0 # in units/minute
 
         self.task = Task(True, "flowmeter", self.eval, 1 * SECONDS)
-        self.cronometer = Cronometer()
+        self.cronometer = Shortcronometer()
 
         self.pin = Pin(14, Pin.IN)
         self.pin.irq(trigger = Pin.IRQ_RISING, handler=self.irq)
