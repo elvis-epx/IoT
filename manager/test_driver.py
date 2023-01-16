@@ -237,6 +237,42 @@ def test_fill100_e(_):
 def test_fill100_rest(_):
     Log.info("driver: test_rest_rest")
     assert ctx['sm'] == "Resting"
+    Timeout.new("t", 35, test_fill80100_a)
+
+def test_fill80100_a(_):
+    Log.info("driver: test_fill80100_a")
+    assert ctx['sm'] == "Off"
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "100.0")
+    Timeout.new("t", 5, test_fill80100_b)
+
+def test_fill80100_b(_):
+    Log.info("driver: test_fill80100_b")
+    assert ctx['sm'] == "Off"
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "81.0")
+    Timeout.new("t", 5, test_fill80100_c)
+
+def test_fill80100_c(_):
+    Log.info("driver: test_fill80100_c")
+    assert ctx['sm'] == "Off"
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "81.0")
+    Timeout.new("t", 35, test_fill80100_c2)
+
+def test_fill80100_c2(_):
+    Log.info("driver: test_fill80100_c2")
+    assert ctx['sm'] == "Off"
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "81.0")
+    Timeout.new("t", 5, test_fill80100_d)
+
+def test_fill80100_d(_):
+    Log.info("driver: test_fill80100_d")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "100.0")
+    Timeout.new("t", 5, test_fill80100_e)
+
+def test_fill80100_e(_):
+    Log.info("driver: test_fill80100_e")
+    assert ctx['sm'] == "Resting"
     Timeout.new("t", 5, go_offline)
 
 def go_offline(_):

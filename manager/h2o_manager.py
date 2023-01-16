@@ -34,6 +34,9 @@ EXPECTED_FLOW = 13.0 # L/min
 
 TOPPING_VOLUME = TANK_CAPACITY * (LEVEL_FULL_THRESHOLD - LEVEL_LOW_THRESHOLD) / 100.0 * 1.2
 TOPPING_MINIMUM_TIME = 60 # s
+TOPPING_DELAY = 1.0 * 60 * 60 # h -> s
+if under_test:
+    TOPPING_DELAY = 0.5 * 60
 
 PIPE_LENGTH = 75.0 # m
 PIPE_DIAMETER = 25.0 / 1000.0 # m
@@ -41,7 +44,7 @@ PIPE_RADIUS = PIPE_DIAMETER / 2.0 # m
 PIPE_AREA = PIPE_RADIUS * PIPE_RADIUS * 3.14159 # m2
 PIPE_CAPACITY = PIPE_LENGTH * PIPE_AREA * 1000.0 # m3 -> L
 
-RESTING_TIME = 2.0 * 60 # min -> sec
+RESTING_TIME = 4.0 * 60 # min -> sec
 if under_test:
     RESTING_TIME = 0.5 * 60
 
@@ -206,10 +209,24 @@ class WaterStateMachine(StateMachine):
         self.detect_malfunction()
         self.log_tanklevel()
 
+        self.almost_full_time = None
+
         def on_level(level):
             if level < LEVEL_LOW_THRESHOLD:
+                # e.g. < 80%
                 Log.info("Level below threshold")
                 self.trans_now("on")
+            elif level < LEVEL_FULL_THRESHOLD:
+                # e.g. between 80% and 100%
+                if self.almost_full_time is None:
+                    Log.info("Level almost full - timeout started")
+                    self.almost_full_time = time.time()
+                elif (time.time() - self.almost_full_time) >= TOPPING_DELAY:
+                    Log.info("Level almost full for long time")
+                    self.trans_now("on")
+            else:
+                self.almost_full_time = None
+
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
     def on_on(self):
