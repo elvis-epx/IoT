@@ -23,6 +23,8 @@ MQTT_CLIENT_ID = "%s" % MY_MQTT_PREFIX
 MQTT_MANUALOFF = "cmnd/%s/ManualOff" % MY_MQTT_PREFIX
 MQTT_MANUALON = "cmnd/%s/ManualOn" % MY_MQTT_PREFIX
 MQTT_STATE = "stat/%s/State" % MY_MQTT_PREFIX
+MQTT_WARNING = "stat/%s/Warning" % MY_MQTT_PREFIX
+MQTT_UPTIME = "stat/%s/Uptime" % MY_MQTT_PREFIX
 
 MQTT_PUMP = "cmnd/%s/0/TurnOnWithTimeout" % RELAY
 
@@ -190,6 +192,7 @@ class WaterStateMachine(StateMachine):
     def detect_malfunction(self):
         def on_msg(n):
             if n > 0:
+                self.mqtt_client.publish(MQTT_WARNING, "Sensor malfunction %d" % n)
                 self.trans_now("malfunction")
         self.q.on_int(self, "stat/%s/Malfunction" % H2O, on_msg, True)
 
@@ -273,6 +276,7 @@ class WaterStateMachine(StateMachine):
 
             if self.pumped_after_level_change > TOPPING_VOLUME:
                 Log.info("Pumped topping volume")
+                self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
                 self.trans_now("rest")
 
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
@@ -327,6 +331,7 @@ class WaterStateMachine(StateMachine):
 
     def on_lowflow(self):
         self.mqtt_client.publish(MQTT_STATE, "LowFlowError")
+        self.mqtt_client.publish(MQTT_WARNING, "Low flow, stopping pump")
         self.pump_off()
 
         self.detect_manualon()
@@ -335,6 +340,7 @@ class WaterStateMachine(StateMachine):
 
     def on_timeout(self):
         self.mqtt_client.publish(MQTT_STATE, "TimeoutError")
+        self.mqtt_client.publish(MQTT_WARNING, "Timeout, stopping pump")
         self.pump_off()
         
         self.detect_manualon()
@@ -453,6 +459,15 @@ h2o_uptime_sm.trans_now("disconnected")
 relay_uptime_sm.trans_now("disconnected")
 mqtt_sm.trans_now("disconnected")
 water_sm.trans_now("nomqtt")
+
+startup = time.time()
+
+def report_uptime(task):
+    uptime_minutes = (time.time() - startup) // 60
+    mqtt_client.publish(MQTT_UPTIME, "%d" % uptime_minutes)
+    task.restart()
+
+uptime_to = Timeout.new("report_uptime", 60, report_uptime)
 
 try:
     loop.loop()
