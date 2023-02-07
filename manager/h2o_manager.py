@@ -37,6 +37,7 @@ EXPECTED_FLOW = 13.0 # L/min
 
 TOPPING_VOLUME = TANK_CAPACITY * (LEVEL_FULL_THRESHOLD - LEVEL_LOW_THRESHOLD) / 100.0 * 1.2
 TOPPING_MINIMUM_TIME = 60 # s
+TOPPING_TIME_ALAW = TOPPING_VOLUME / EXPECTED_FLOW * 60 # (L / L/min) -> min -> s
 TOPPING_DELAY = 6.0 * 60 * 60 # h -> s
 if under_test:
     TOPPING_DELAY = 0.5 * 60
@@ -275,10 +276,16 @@ class WaterStateMachine(StateMachine):
             if (time.time() - self.almost_full_time) < TOPPING_MINIMUM_TIME:
                 return
 
-            if self.pumped_after_level_change > TOPPING_VOLUME:
-                Log.info("Pumped topping volume")
-                self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
-                self.trans_now("rest")
+            if not alaw:
+                if self.pumped_after_level_change > TOPPING_VOLUME:
+                    Log.info("Pumped topping volume")
+                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
+                    self.trans_now("rest")
+            else:
+                if (time.time() - self.almost_full_time) > TOPPING_TIME_ALAW:
+                    Log.info("Pumped topping volume (estimated)")
+                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping (estimated) topping volume")
+                    self.trans_now("rest")
 
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
@@ -286,7 +293,7 @@ class WaterStateMachine(StateMachine):
         if not alaw:
             lowflow_task = self.schedule_trans("lowflow", LOWFLOW_TIMEOUT)
         else:
-            Log.info("(Alternate law - not monitoring flow")
+            Log.info("(Alternate law - not monitoring flow)")
             lowflow_task = None
         # Safety measure in case of leaking
         self.schedule_trans("timeout", PUMP_TIMEOUT)
