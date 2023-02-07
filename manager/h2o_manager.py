@@ -40,6 +40,7 @@ TOPPING_MINIMUM_TIME = 60 # s
 TOPPING_TIME_ALAW = TOPPING_VOLUME / EXPECTED_FLOW * 60 # (L / L/min) -> min -> s
 TOPPING_DELAY = 6.0 * 60 * 60 # h -> s
 if under_test:
+    TOPPING_TIME_ALAW = 0.5 * 60
     TOPPING_DELAY = 0.5 * 60
 
 PIPE_LENGTH = 75.0 # m
