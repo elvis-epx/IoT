@@ -11,7 +11,8 @@ Log.set_level(Log.DEBUG)
 
 MQTT_HOST = sys.argv[1]
 MQTT_PORT = 1883
-under_test = len(sys.argv) > 2 and sys.argv[2] == "--test"
+under_test = "--test" in sys.argv
+alaw = "--alternate-law" in sys.argv
 
 H2O = "H2OControl"
 RELAY = "RelayControl"
@@ -282,7 +283,11 @@ class WaterStateMachine(StateMachine):
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
         # Safety measure in case of dry pump
-        lowflow_task = self.schedule_trans("lowflow", LOWFLOW_TIMEOUT)
+        if not alaw:
+            lowflow_task = self.schedule_trans("lowflow", LOWFLOW_TIMEOUT)
+        else:
+            Log.info("(Alternate law - not monitoring flow")
+            lowflow_task = None
         # Safety measure in case of leaking
         self.schedule_trans("timeout", PUMP_TIMEOUT)
 
@@ -291,7 +296,8 @@ class WaterStateMachine(StateMachine):
                 if on_flow.virgin:
                     Log.info("Flow detected")
                     on_flow.virgin = False
-                lowflow_task.restart()
+                if lowflow_task:
+                    lowflow_task.restart()
         on_flow.virgin = True
 
         self.q.on_float(self, "stat/%s/Flow" % H2O, on_flow, True)
