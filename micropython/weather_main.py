@@ -5,6 +5,7 @@ from epx.config import Config
 from epx.watchdog import Watchdog
 from epx.net import Net
 from weather.sensor import Sensor
+from weather.actuator import Display
 from epx.mqtt import MQTT
 from weather.service import Temperature, Humidity, Pressure, Malfunction
 from machine import I2C, Pin
@@ -21,5 +22,7 @@ mqtt.pub(Temperature(sensor))
 mqtt.pub(Humidity(sensor))
 mqtt.pub(Pressure(sensor))
 mqtt.pub(Malfunction(sensor))
+
+display = Display(config, i2c, sensor)
     
 loop.run()

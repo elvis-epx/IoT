@@ -11,7 +11,7 @@ relay: relay_boot.cop relay_main.cop relay_config.cop relaylib uumqtt third epx
 
 h2olib: lib/h2o/service.ucop lib/h2o/sensor.ucop lib/h2o/actuator.ucop lib/h2o/__init__.ucop
 
-weatherlib: lib/weather/service.ucop lib/weather/sensor.ucop lib/weather/__init__.ucop
+weatherlib: lib/weather/service.ucop lib/weather/sensor.ucop lib/weather/actuator.ucop lib/weather/__init__.ucop
 
 relaylib: lib/relay/service.ucop lib/relay/actuator.ucop lib/relay/__init__.ucop
 

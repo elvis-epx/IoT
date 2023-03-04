@@ -29,7 +29,8 @@ class Sensor:
         task = Task(False, "sensor", self.enable, 15 * SECONDS)
 
     def enable(self, _):
-        task = Task(True, "sensor_read", self.eval, 60 * SECONDS)
+        # FIXME variable time
+        task = Task(True, "sensor_read", self.eval, 5 * SECONDS)
         task.advance()
 
     def eval(self, _):
