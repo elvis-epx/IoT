@@ -103,15 +103,15 @@ class WaterStateMachine(StateMachine):
         self.add_queue(queue)
         self.add_sm(mqttsm)
 
-        self.add_state("nomqtt", self.on_nomqtt)
-        self.add_state("off", self.on_off)
-        self.add_state("manualoff", self.on_manualoff)
-        self.add_state("on", self.on_on)
-        self.add_state("manualon", self.on_manualon)
-        self.add_state("rest", self.on_rest)
-        self.add_state("lowflow", self.on_lowflow)
-        self.add_state("timeout", self.on_timeout)
-        self.add_state("malfunction", self.on_malfunction)
+        self.add_state("nomqtt", self.to_nomqtt)
+        self.add_state("off", self.to_off)
+        self.add_state("manualoff", self.to_manualoff)
+        self.add_state("on", self.to_on)
+        self.add_state("manualon", self.to_manualon)
+        self.add_state("rest", self.to_rest)
+        self.add_state("lowflow", self.to_lowflow)
+        self.add_state("timeout", self.to_timeout)
+        self.add_state("malfunction", self.to_malfunction)
 
         # Ordinary sequence
         self.add_transition("initial", "nomqtt")
@@ -167,7 +167,7 @@ class WaterStateMachine(StateMachine):
         self.mqtt_client.publish(MQTT_PUMP, "0")
         Log.info("Pump off")
 
-    def on_nomqtt(self):
+    def to_nomqtt(self):
         self.mqtt_client.publish(MQTT_STATE, "Offline")
 
         def on_conn():
@@ -205,7 +205,7 @@ class WaterStateMachine(StateMachine):
             Log.info("Tank level str %s" % s)
         self.q.on_msg(self, "stat/%s/EstimatedLevelStr" % H2O, on_levelstr, True)
 
-    def on_off(self):
+    def to_off(self):
         self.mqtt_client.publish(MQTT_STATE, "Off")
         self.pump_off()
 
@@ -235,7 +235,7 @@ class WaterStateMachine(StateMachine):
 
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
-    def on_on(self):
+    def to_on(self):
         self.mqtt_client.publish(MQTT_STATE, "On")
         self.pump_on()
 
@@ -310,7 +310,7 @@ class WaterStateMachine(StateMachine):
 
         self.q.on_float(self, "stat/%s/Flow" % H2O, on_flow, True)
 
-    def on_manualon(self):
+    def to_manualon(self):
         self.mqtt_client.publish(MQTT_STATE, "ManualOn")
         self.pump_on()
 
@@ -325,7 +325,7 @@ class WaterStateMachine(StateMachine):
                 self.trans_now("rest")
         self.q.on_int(self, MQTT_MANUALON, on_msg, True)
 
-    def on_manualoff(self):
+    def to_manualoff(self):
         self.mqtt_client.publish(MQTT_STATE, "ManualOff")
         self.pump_off()
         self.detect_nomqtt()
@@ -335,7 +335,7 @@ class WaterStateMachine(StateMachine):
                 self.trans_now("off")
         self.q.on_int(self, MQTT_MANUALOFF, on_msg, True)
 
-    def on_rest(self):
+    def to_rest(self):
         self.mqtt_client.publish(MQTT_STATE, "Resting")
         self.pump_off()
 
@@ -343,7 +343,7 @@ class WaterStateMachine(StateMachine):
         self.detect_manualoff()
         self.schedule_trans("off", RESTING_TIME)
 
-    def on_lowflow(self):
+    def to_lowflow(self):
         self.mqtt_client.publish(MQTT_STATE, "LowFlowError")
         self.mqtt_client.publish(MQTT_WARNING, "Low flow, stopping pump")
         self.pump_off()
@@ -352,7 +352,7 @@ class WaterStateMachine(StateMachine):
         self.detect_manualoff()
         self.schedule_trans("off", LOWFLOW_RECOVER)
 
-    def on_timeout(self):
+    def to_timeout(self):
         self.mqtt_client.publish(MQTT_STATE, "TimeoutError")
         self.mqtt_client.publish(MQTT_WARNING, "Timeout, stopping pump")
         self.pump_off()
@@ -361,7 +361,7 @@ class WaterStateMachine(StateMachine):
         self.detect_manualoff()
         self.schedule_trans("off", PUMPTIMEOUT_RECOVER)
 
-    def on_malfunction(self):
+    def to_malfunction(self):
         self.mqtt_client.publish(MQTT_STATE, "Malfunction")
         self.pump_off()
 
@@ -377,9 +377,9 @@ class MQTTStateMachine(StateMachine):
     def __init__(self, h2osm, relaysm):
         super().__init__("mqttsm")
 
-        self.add_state("disconnected", self.on_disconnected)
-        self.add_state("connecting", self.on_connecting)
-        self.add_state("connected", self.on_connected)
+        self.add_state("disconnected", self.to_disconnected)
+        self.add_state("connecting", self.to_connecting)
+        self.add_state("connected", self.to_connected)
         self.add_transition("initial", "disconnected")
         self.add_transition("disconnected", "connecting")
         self.add_transition("connecting", "disconnected")
@@ -392,17 +392,17 @@ class MQTTStateMachine(StateMachine):
         self.add_sm(h2osm)
         self.add_sm(relaysm)
 
-    def on_disconnected(self):
+    def to_disconnected(self):
         def on_change():
             self.trans_now("connecting")
         self.h2osm.observe(self, "a", "connected", on_change)
 
-    def on_connecting(self):
+    def to_connecting(self):
         def on_change():
             self.trans_now("connected")
         self.relaysm.observe(self, "a", "connected", on_change)
 
-    def on_connected(self):
+    def to_connected(self):
         def on_change():
             self.trans_now("disconnected")
             
@@ -415,9 +415,9 @@ class UptimeStateMachine(StateMachine):
         super().__init__("uptime_%s" % prefix)
         self.prefix = prefix
 
-        self.add_state("disconnected", self.on_disconnected)
-        self.add_state("connecting", self.on_connecting)
-        self.add_state("connected", self.on_connected)
+        self.add_state("disconnected", self.to_disconnected)
+        self.add_state("connecting", self.to_connecting)
+        self.add_state("connected", self.to_connected)
 
         self.add_transition("initial", "disconnected")
         self.add_transition("disconnected", "connecting")
@@ -428,7 +428,7 @@ class UptimeStateMachine(StateMachine):
         self.add_queue(queue)
         self.q = queue
 
-    def on_disconnected(self):
+    def to_disconnected(self):
         self.uptime = -1
 
         def on_uptime(new_uptime):
@@ -439,7 +439,7 @@ class UptimeStateMachine(StateMachine):
 
         self.q.on_int(self, "stat/%s/Uptime" % self.prefix, on_uptime, True)
 
-    def on_connecting(self):
+    def to_connecting(self):
         self.schedule_trans("disconnected", 1.5 * 60)
 
         def on_uptime(new_uptime):
@@ -450,7 +450,7 @@ class UptimeStateMachine(StateMachine):
 
         self.q.on_int(self, "stat/%s/Uptime" % self.prefix, on_uptime, True)
 
-    def on_connected(self):
+    def to_connected(self):
         to_task = self.schedule_trans("disconnected", 2.5 * 60)
 
         def on_uptime(new_uptime):
