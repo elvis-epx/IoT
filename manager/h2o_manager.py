@@ -123,10 +123,14 @@ class WaterStateMachine(StateMachine):
         # Failures
         self.add_transition("on", "lowflow")
         self.add_transition("on", "timeout")
+        self.add_transition("on", "malfunction")
+        self.add_transition("off", "malfunction")
         # Failure resolution
         self.add_transition("lowflow", "off")
         self.add_transition("timeout", "off")
+        self.add_transition("malfunction", "off")
 
+        # Respect 'timeout' and 'rest' even if MQTT goes dark
         self.add_transition("off", "nomqtt")
         self.add_transition("manualoff", "nomqtt")
         self.add_transition("on", "nomqtt")
@@ -134,13 +138,12 @@ class WaterStateMachine(StateMachine):
         self.add_transition("malfunction", "noqmtt")
 
         # All states except "manual off" can go to "manual on"
-        self.add_transition("on", "manualon")
         self.add_transition("off", "manualon")
+        self.add_transition("on", "manualon")
         self.add_transition("rest", "manualon")
         self.add_transition("lowflow", "manualon")
         self.add_transition("timeout", "manualon")
-        # Only exit from "manualon", apart from MQTT disconnection
-        self.add_transition("manualon", "rest")
+        self.add_transition("manualon", "rest") # Only exit
 
         # Any state can go to "manualoff"
         self.add_transition("off", "manualoff")
@@ -149,12 +152,9 @@ class WaterStateMachine(StateMachine):
         self.add_transition("rest", "manualoff")
         self.add_transition("lowflow", "manualoff")
         self.add_transition("timeout", "manualoff")
-        # Only exit from "manualoff", apart from MQTT disconnection
-        self.add_transition("manualoff", "off")
+        self.add_transition("manualoff", "off") # Only exit
 
-        self.add_transition("off", "malfunction")
-        self.add_transition("on", "malfunction")
-        self.add_transition("malfunction", "off")
+        # FIXME generate graph and/or autotest for state machine
 
     def pump_on(self):
         def keep_on(task):
