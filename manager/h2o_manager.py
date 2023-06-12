@@ -215,7 +215,7 @@ class WaterStateMachine(StateMachine):
         self.detect_malfunction()
         self.log_tanklevel()
 
-        self.almost_full_time = None
+        self.topping_delay = None
 
         def on_level(level):
             if level < LEVEL_LOW_THRESHOLD:
@@ -224,14 +224,14 @@ class WaterStateMachine(StateMachine):
                 self.trans_now("on")
             elif level < LEVEL_FULL_THRESHOLD:
                 # e.g. between 80% and 100%
-                if self.almost_full_time is None:
+                if not self.topping_delay:
                     Log.info("Level almost full - timeout started")
-                    self.almost_full_time = time.time()
-                elif (time.time() - self.almost_full_time) >= TOPPING_DELAY:
-                    Log.info("Level almost full for long time")
-                    self.trans_now("on")
+                    self.topping_delay = self.schedule_trans("on", TOPPING_DELAY)
             else:
-                self.almost_full_time = None
+                # 100%
+                if self.topping_delay:
+                    self.topping_delay.cancel()
+                    self.topping_delay = None
 
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
