@@ -249,6 +249,18 @@ def test_fill80100_b(_):
     Log.info("driver: test_fill80100_b")
     assert ctx['sm'] == "Off"
     mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "81.0")
+    Timeout.new("t", 15, test_fill80100_b2)
+
+def test_fill80100_b2(_):
+    Log.info("driver: test_fill80100_b2")
+    assert ctx['sm'] == "Off"
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "100.0")
+    Timeout.new("t", 5, test_fill80100_b3)
+
+def test_fill80100_b3(_):
+    Log.info("driver: test_fill80100_b3")
+    assert ctx['sm'] == "Off"
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "81.0")
     Timeout.new("t", 15, test_fill80100_c)
 
 def test_fill80100_c(_):

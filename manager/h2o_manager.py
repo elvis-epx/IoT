@@ -230,6 +230,7 @@ class WaterStateMachine(StateMachine):
             else:
                 # 100%
                 if self.topping_delay:
+                    Log.info("Cancelling almost-full timeout")
                     self.topping_delay.cancel()
                     self.topping_delay = None
 
