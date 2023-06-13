@@ -246,70 +246,104 @@ class WaterStateMachine(StateMachine):
         self.detect_malfunction()
         self.log_tanklevel()
 
-        self.pumped_after_level_change = 0.0
+        # Safety measure in case of severe leaking
 
-        def on_pumped(vol):
-            Log.info("Pumped %f" % vol)
-            self.pumped_after_level_change = vol
+        self.schedule_trans("timeout", PUMP_TIMEOUT)
 
-        self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, on_pumped, True)
+        # Safety measure in case of dry pump
 
-        self.almost_full_time = None
+        if alaw:
+            Log.info("(Alternate law - not monitoring flow)")
+        else:
+            lowflow_task = self.schedule_trans("lowflow", LOWFLOW_TIMEOUT)
+
+            def on_flow(flow):
+                if flow <= LOWFLOW_THRESHOLD:
+                    return
+                if not on_flow.logged:
+                    Log.info("Flow detected")
+                    on_flow.logged = True
+                lowflow_task.restart()
+            on_flow.logged = False
+
+            self.q.on_float(self, "stat/%s/Flow" % H2O, on_flow, True)
+
+        # Forward declarations
+
+        almost_full = almost_full_regular = almost_full_alaw = None
+        self.almost_full_timer = self.almost_full_pretimer = None
+
+        # Monitor level changes
 
         def on_level(level):
             Log.info("Tank level %f" % level)
 
+            # Tank quite empty
+            if level < LEVEL_LOW_THRESHOLD:
+                if self.almost_full_pretimer:
+                    self.almost_full_pretimer.cancel()
+                    self.almost_full_pretimer = None
+                if self.almost_full_timer:
+                    self.almost_full_timer.cancel()
+                    self.almost_full_timer = None
+                return
+
+            # Tank full
             if level >= LEVEL_FULL_THRESHOLD:
                 Log.info("Level is full")
                 self.trans_now("rest")
                 return
 
-            if level < LEVEL_LOW_THRESHOLD:
-                return
-
-            # LEVEL_LOW_THRESHOLD <= level < LEVEL_FULL_THRESHOLD
-            # Increased protection against overflow: pump only remaining volume
-
-            if self.almost_full_time is None:
-                self.almost_full_time = time.time()
-                self.pumped_after_level_change = 0.0
-                return
-
-            if (time.time() - self.almost_full_time) < TOPPING_MINIMUM_TIME:
-                return
-
-            if not alaw:
-                if self.pumped_after_level_change > TOPPING_VOLUME:
-                    Log.info("Pumped topping volume")
-                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
-                    self.trans_now("rest")
-            else:
-                if (time.time() - self.almost_full_time) > TOPPING_TIME_ALAW:
-                    Log.info("Pumped topping volume (estimated)")
-                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping (estimated) topping volume")
-                    self.trans_now("rest")
+            # Tank almost full: special handling
+            almost_full(level)
 
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
-        # Safety measure in case of dry pump
-        if not alaw:
-            lowflow_task = self.schedule_trans("lowflow", LOWFLOW_TIMEOUT)
-        else:
-            Log.info("(Alternate law - not monitoring flow)")
-            lowflow_task = None
-        # Safety measure in case of leaking
-        self.schedule_trans("timeout", PUMP_TIMEOUT)
+        # Special handling for almost-full tank
 
-        def on_flow(flow):
-            if flow > LOWFLOW_THRESHOLD:
-                if on_flow.virgin:
-                    Log.info("Flow detected")
-                    on_flow.virgin = False
-                if lowflow_task:
-                    lowflow_task.restart()
-        on_flow.virgin = True
+        def almost_full(level):
+            # Wait a minimum time before any decision
+            if not self.almost_full_pretimer:
+                self.almost_full_pretimer = self.timeout("almost_full_pre", TOPPING_MINIMUM_TIME, lambda task: None)
+            if self.almost_full_pretimer.alive():
+                return
 
-        self.q.on_float(self, "stat/%s/Flow" % H2O, on_flow, True)
+            if alaw:
+                almost_full_alaw(level)
+            else:
+                almost_full_regular(level)
+
+        # Basic time-based protection against overflow for alternate law
+
+        def almost_full_alaw(level):
+            if self.almost_full_timer:
+                return
+
+            def timeout(task):
+                # It was expected that tank was full by this time
+                Log.info("Pumped topping volume (estimated)")
+                self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping (estimated) topping volume")
+                self.trans_now("rest")
+ 
+            self.almost_full_timer = self.timeout("almost_full", TOPPING_TIME_ALAW - TOPPING_MINIMUM_TIME, timeout)
+
+        # Volume-based protection against overflow for regular case (w/ functional flow sensor)
+
+        def almost_full_regular(level):
+            if self.almost_full_timer:
+                return
+            # Simple canary to mark whether we have installed the pumped volume observer
+            self.almost_full_timer = self.timeout("almost_full", 0, lambda task: None)
+
+            # Observe the pumped volume
+            def on_pumped(vol):
+                if vol > TOPPING_VOLUME:
+                    # It was expected that level went 100% after so much volume pumped
+                    Log.info("Pumped topping volume")
+                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
+                    self.trans_now("rest")
+
+            self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, on_pumped, True)
 
     def to_manualon(self):
         self.mqtt_client.publish(MQTT_STATE, "ManualOn")
