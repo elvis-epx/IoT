@@ -98,6 +98,7 @@ def test_fillup_a(_):
     Log.info("driver: test_fillup_a")
     assert ctx['sm'] == "On"
     mqtt_client.publish(H2O_PREFIX + "EstimatedLevelStr", "80% + 10L")
+    mqtt_client.publish(H2O_PREFIX + "Flow", "0.0")
     mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
     Timeout.new("t", 5, test_fillup_b)
 
@@ -126,7 +127,7 @@ def test_timeout_b(_):
     Log.info("driver: test_timeout_b")
     assert ctx['sm'] == "On"
 
-    # simulate flow but never fill up, until TimeoutErro
+    # simulate flow but never fill up, until TimeoutError
     def sim_flow(task):
         mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
         mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "79.7")
@@ -205,6 +206,27 @@ def test_fill100_b(_):
 
 def test_fill100_c(_):
     Log.info("driver: test_fill100_c")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
+    Timeout.new("t", 11, test_fill100_c1)
+
+def test_fill100_c1(_):
+    Log.info("driver: test_fill100_c1")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
+    Timeout.new("t", 5, test_fill100_c2)
+
+def test_fill100_c2(_):
+    Log.info("driver: test_fill100_c2")
+    assert ctx['sm'] == "On"
+    mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
+    mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "70.0")
+    Timeout.new("t", 5, test_fill100_c3)
+
+def test_fill100_c3(_):
+    Log.info("driver: test_fill100_c4")
     assert ctx['sm'] == "On"
     mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
     mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
