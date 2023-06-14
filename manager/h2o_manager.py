@@ -294,26 +294,19 @@ class WaterStateMachine(StateMachine):
 
         self.almost_full_timer = None
 
-        # Entry point for almost-full logic
+        # Almost-full logic, entry point
 
         def almost_full(level):
-            # Wait a minimum time before any decision
+            # 1st or 2nd stage timer already installed
             if self.almost_full_timer:
                 return
-            def closure(_):
-                self.almost_full_timer = None
-                almost_full_in(level)
-            self.almost_full_timer = self.timeout("almost_full_pre", TOPPING_MINIMUM_TIME, closure)
 
-        # Almost full logic, second stage, called after TOPPING_MINIMUM_TIME
+            # 1st stage: wait a minimum time before taking any decision
+            def f(_):
+                almost_full_2nd(level)
+            self.almost_full_timer = self.timeout("almost_full_pre", TOPPING_MINIMUM_TIME, f)
 
-        def almost_full_in(level):
-            if alaw:
-                almost_full_alaw(level)
-            else:
-                almost_full_regular(level)
-
-        # Cancel almost-full timers (e.g. if level recedes to <80%)
+        # Cancel almost-full timer (e.g. if level recedes to <80%)
 
         def cancel_almost_full(level):
             if self.almost_full_timer:
@@ -322,12 +315,17 @@ class WaterStateMachine(StateMachine):
             # Only way to 'cancel' an MQTT observer is replacing it
             self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, lambda _: None, False)
 
+        # Almost-full logic, 2nd stage, called after TOPPING_MINIMUM_TIME
+
+        def almost_full_2nd(level):
+            if alaw:
+                almost_full_alaw(level)
+            else:
+                almost_full_regular(level)
+
         # Almost-full logic: basic time-based protection against overflow for alternate law
 
         def almost_full_alaw(level):
-            if self.almost_full_timer:
-                return
-
             def timeout(task):
                 # It was expected that tank was full by this time
                 Log.info("Pumped topping volume (estimated)")
@@ -339,8 +337,6 @@ class WaterStateMachine(StateMachine):
         # Almost-full logic: volume-based protection against overflow
 
         def almost_full_regular(level):
-            if self.almost_full_timer:
-                return
             # Simple canary to mark installation of the observer
             self.almost_full_timer = self.timeout("almost_full", 0, lambda task: None)
 
