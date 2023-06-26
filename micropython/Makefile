@@ -72,31 +72,31 @@ relay_main.cop: relay_main.py
 	touch $@
 
 lib.fcop:
-	pyboard.py -d $(PORT) -f mkdir :/lib
+	pyboard.py -d $(PORT) -f mkdir :/lib || echo
 	touch $@
 
 h2o.fcop: lib.fcop
-	pyboard.py -d $(PORT) -f mkdir :/lib/h2o
+	pyboard.py -d $(PORT) -f mkdir :/lib/h2o || echo
 	touch $@
 
 weather.fcop: lib.fcop
-	pyboard.py -d $(PORT) -f mkdir :/lib/weather
+	pyboard.py -d $(PORT) -f mkdir :/lib/weather || echo
 	touch $@
 
 relay.fcop: lib.fcop
-	pyboard.py -d $(PORT) -f mkdir :/lib/relay
+	pyboard.py -d $(PORT) -f mkdir :/lib/relay || echo
 	touch $@
 
 epx.fcop: lib.fcop
-	pyboard.py -d $(PORT) -f mkdir :/lib/epx
+	pyboard.py -d $(PORT) -f mkdir :/lib/epx || echo
 	touch $@
 
 third.fcop: lib.fcop
-	pyboard.py -d $(PORT) -f mkdir :/lib/third
+	pyboard.py -d $(PORT) -f mkdir :/lib/third || echo
 	touch $@
 
 uumqtt.fcop: lib.fcop
-	pyboard.py -d $(PORT) -f mkdir :/lib/uumqtt
+	pyboard.py -d $(PORT) -f mkdir :/lib/uumqtt || echo
 	touch $@
 
 clean-coverage:
