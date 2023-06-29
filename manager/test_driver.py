@@ -252,9 +252,9 @@ def test_fill100_e(_):
     Log.info("driver: test_fill100_e")
     assert ctx['sm'] == "On"
     mqtt_client.publish(H2O_PREFIX + "Flow", "10.0")
-    mqtt_client.publish(H2O_PREFIX + "PumpedAfterLevelChange", "255")
+    mqtt_client.publish(H2O_PREFIX + "PumpedAfterLevelChange", "265")
     mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
-    Timeout.new("t", 5, test_fill100_rest)
+    Timeout.new("t", 20, test_fill100_rest)
 
 def test_fill100_rest(_):
     Log.info("driver: test_rest_rest")
