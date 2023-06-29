@@ -290,6 +290,26 @@ class WaterStateMachine(StateMachine):
 
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
+        # Monitor volume pumped
+
+        self.pumped_volume_0 = None
+        self.pumped_volume = None
+
+        def net_pumped_volume():
+            if self.pumped_volume_0 is None:
+                return 0.0
+            return self.pumped_volume - self.pumped_volume_0
+
+        def on_pumped(vol):
+            self.pumped_volume = vol
+            if self.pumped_volume_0 is None or vol < self.pumped_volume_0:
+                # First sample, or coarse level has changed
+                self.pumped_volume_0 = vol
+            netvol = net_pumped_volume()
+            Log.info("Pumped volume after level change: %f (net %f)" % (vol, netvol))
+
+        self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, on_pumped, True)
+
         ####### Special handling for almost-full tank
 
         self.almost_full_timer = None
@@ -312,8 +332,6 @@ class WaterStateMachine(StateMachine):
             if self.almost_full_timer:
                 self.almost_full_timer.cancel()
                 self.almost_full_timer = None
-            # Only way to 'cancel' an MQTT observer is replacing it
-            self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, lambda _: None, False)
 
         # Almost-full logic, 2nd stage, called after TOPPING_MINIMUM_TIME
 
@@ -337,18 +355,16 @@ class WaterStateMachine(StateMachine):
         # Almost-full logic: volume-based protection against overflow
 
         def almost_full_regular(level):
-            # Simple canary to mark installation of the observer
-            self.almost_full_timer = self.timeout("almost_full", 0, lambda task: None)
-
-            # Observe the pumped volume
-            def on_pumped(vol):
-                if vol > TOPPING_VOLUME:
+            def timeout(task):
+                if net_pumped_volume() > TOPPING_VOLUME:
                     # It was expected that level went 100% after so much volume pumped
                     Log.info("Pumped topping volume")
                     self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
                     self.trans_now("rest")
+                    return
+                task.restart()
 
-            self.q.on_float(self, "stat/%s/PumpedAfterLevelChange" % H2O, on_pumped, True)
+            self.almost_full_timer = self.timeout("almost_full", 15, timeout)
 
     def to_manualon(self):
         self.mqtt_client.publish(MQTT_STATE, "ManualOn")
