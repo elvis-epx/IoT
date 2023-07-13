@@ -26,17 +26,13 @@ def do_loop(lora):
 
     lastSendTime = 0
     interval = 0
+    last_code_recv = "xxxxx"
 
     while True:
         if received:
             payload, rssi = received[0]
             received.pop(0)
             print("Received message len {} RSSI {}".format(len(payload), rssi))
-
-            # Simulate an error
-            payload = bytearray(payload)
-            payload[0] = 12
-            payload = bytes(payload)
 
             try:
                 bmsg, _, errors = rs.decode(payload)
@@ -49,6 +45,7 @@ def do_loop(lora):
             else:
                 try:
                     msg = bmsg.decode()
+                    last_code_recv = msg[-5:]
                 except:
                     msg = "Invalid"
 
@@ -69,7 +66,7 @@ def do_loop(lora):
             lastSendTime = now                                      # timestamp the message
             interval = int(INTERVAL_BASE + random.random() * INTERVAL)
 
-            smessage = ("abracadabra %06d" % msgCount).encode()
+            smessage = ("r%s t%05d" % (last_code_recv, msgCount)).encode()
             message = rs.encode(smessage)
             t0 = ticks_ms()
             sendMessage(lora, message)                              # send message
