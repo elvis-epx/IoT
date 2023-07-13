@@ -27,7 +27,7 @@ class Net:
         if 'ssid' in self.cfg.data:
             if 'password' not in self.cfg.data:
                 self.cfg.data['password'] = None
-            self.sm.schedule_trans("start", 1 * SECONDS)
+            self.sm.schedule_trans("start", 12 * SECONDS)
 
     def observe(self, name, state, cb):
         self.sm.observe(name, state, cb)

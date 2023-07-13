@@ -18,9 +18,12 @@ class Watchdog:
             print("Watchdog off")
             return
 
-        print("Watchdog on")
-        Task(True, "watchdog", self.main_thread_feed, 1 * SECONDS)
-        start_new_thread(self.wdt_thread, ())
+        print("Watchdog will be on in 10s")
+        def bring_up(_):
+            print("Watchdog on")
+            Task(True, "watchdog", self.main_thread_feed, 1 * SECONDS)
+            start_new_thread(self.wdt_thread, ())
+        Task(False, "watchdog_up", bring_up, 10 * SECONDS)
 
     def main_thread_feed(self, _):
         # Called by main thread, which handles Tasks

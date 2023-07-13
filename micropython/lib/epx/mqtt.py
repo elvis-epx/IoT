@@ -38,7 +38,7 @@ class MQTT:
 
         if "mqttbroker" in self.cfg.data and "mqttname" in self.cfg.data:
             self.name = self.cfg.data['mqttname']
-            self.sm.schedule_trans_now("start")
+            self.sm.schedule_trans("start", 12 * SECONDS)
             self.sub(TestSub())
             self.sub(OTASub())
             self.pub(Uptime())
