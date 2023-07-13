@@ -1,5 +1,5 @@
 from time import sleep_ms
-from machine import Pin, SPI, reset
+from machine import Pin, SoftSPI, reset
 from sx127x import SX127x
 
 # TTGO-LoRa32 v1.0 pinout. Other versions have different pinouts.
@@ -85,7 +85,7 @@ class TTGOLoRa:
         spi = None
 
         try:
-            spi = SPI(baudrate = 10000000, polarity = 0, phase = 0, bits = 8, firstbit = SPI.MSB,
+            spi = SoftSPI(baudrate = 10000000, polarity = 0, phase = 0, bits = 8, firstbit = SoftSPI.MSB,
                       sck = Pin(PIN_ID_SCK, Pin.OUT, Pin.PULL_DOWN),
                       mosi = Pin(PIN_ID_MOSI, Pin.OUT, Pin.PULL_UP),
                       miso = Pin(PIN_ID_MISO, Pin.IN, Pin.PULL_UP))

@@ -1,8 +1,5 @@
 open cu.usbserial-0001
 
-put sx127x.py
-put ssd1306.py
-put reedsolo.py
-put ttgolora.py
 put LoRaDuplexCallback.py
+put ttgolora.py
 put main.py
