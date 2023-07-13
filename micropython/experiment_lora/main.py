@@ -1,6 +1,5 @@
 import LoRaDuplexCallback
-from controller import Controller
+from ttgolora import TTGOLoRa
 
-controller = Controller()
-lora = controller.lora
+lora = TTGOLoRa().lora
 LoRaDuplexCallback.duplexCallback(lora)

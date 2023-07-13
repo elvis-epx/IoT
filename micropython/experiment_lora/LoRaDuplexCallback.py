@@ -7,7 +7,7 @@ INTERVAL_BASE = 2000    # interval between sends base
 
 def duplexCallback(lora):
     print("LoRa Duplex with callback")
-    lora.onReceive(on_receive)  # register the receive callback
+    lora.on_receive(on_receive)  # register the receive callback
     do_loop(lora)
 
 

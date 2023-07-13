@@ -2,6 +2,7 @@ from time import sleep_ms
 from machine import Pin, SPI, reset
 from sx127x import SX127x
 
+# TTGO-LoRa32 v1.0 pinout. Other versions have different pinouts.
 PIN_ID_FOR_LORA_RESET = 14
 PIN_ID_FOR_LORA_SS = 18
 PIN_ID_SCK = 5
@@ -15,7 +16,7 @@ PIN_ID_FOR_LORA_DIO4 = None
 PIN_ID_FOR_LORA_DIO5 = None
 
 
-class Controller:
+class TTGOLoRa:
     class Mock:
         pass
 
@@ -52,14 +53,14 @@ class Controller:
 
     def reset_pin(self, pin):
         pin.low()
-        sleep_ms(50) # FIXME replace by system
+        sleep_ms(50)
         pin.high()
-        sleep_ms(50) # FIXME replace by system
+        sleep_ms(50)
 
     def prepare_pin(self, pin_id, in_out = Pin.OUT):
         if pin_id is not None:
             pin = Pin(pin_id, in_out)
-            new_pin = Controller.Mock()
+            new_pin = TTGOLoRa.Mock()
             new_pin.pin_id = pin_id
             new_pin.value = pin.value
 
@@ -103,7 +104,7 @@ class Controller:
     def prepare_spi(self, spi):
 
         if spi:
-            new_spi = Controller.Mock()
+            new_spi = TTGOLoRa.Mock()
 
             def transfer(pin_ss, address, value = 0x00):
                 response = bytearray(1)

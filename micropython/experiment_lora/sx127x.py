@@ -68,13 +68,13 @@ class SX127x:
                  parameters = {'frequency': 915E6, 'tx_power_level': 17, 'signal_bandwidth': 125E3,
                                'spreading_factor': 8, 'coding_rate': 5, 'preamble_length': 8,
                                'implicitHeader': False, 'sync_word': 0x12, 'enable_CRC': False},
-                 onReceive = None):
+                 on_receive = None):
 
 
 
         self.name = name
         self.parameters = parameters
-        self._onReceive = onReceive
+        self._on_receive = on_receive
         self._lock = False
 
 
@@ -169,14 +169,18 @@ class SX127x:
         self._lock = False
 
 
-    def println(self, string, implicitHeader = False):
+    def send(self, bstring, implicitHeader = False):
         self.aquire_lock(True)  # wait until RX_Done, lock and begin writing.
 
         self.beginPacket(implicitHeader)
-        self.write(string.encode())
+        self.write(bstring)
         self.endPacket()
 
         self.aquire_lock(False) # unlock when done writing
+
+
+    def println(self, string, implicitHeader = False):
+        self.send(string.encode(), implicitHeader)
 
 
     def getIrqFlags(self):
@@ -290,8 +294,8 @@ class SX127x:
             self.writeRegister(REG_MODEM_CONFIG_1, config)
 
 
-    def onReceive(self, callback):
-        self._onReceive = callback
+    def on_receive(self, callback):
+        self._on_receive = callback
 
         if self.pin_RxDone:
             if callback:
@@ -318,9 +322,9 @@ class SX127x:
 
         if (irqFlags & IRQ_RX_DONE_MASK == IRQ_RX_DONE_MASK):  # RX_DONE only, irqFlags should be 0x40
             # automatically standby when RX_DONE
-            if self._onReceive:
+            if self._on_receive:
                 payload = self.read_payload()
-                self._onReceive(self, payload)
+                self._on_receive(self, payload)
 
         elif self.readRegister(REG_OP_MODE) != (MODE_LONG_RANGE_MODE | MODE_RX_SINGLE):
             # no packet received.
@@ -347,12 +351,12 @@ class SX127x:
 #        # set FIFO address to current RX address
 #        self.writeRegister(REG_FIFO_ADDR_PTR, self.readRegister(REG_FIFO_RX_CURRENT_ADDR))
 #
-#        if self._onReceive:
+#        if self._on_receive:
 #            payload = self.read_payload()
 #            print(payload)
 #            self.aquire_lock(False)     # unlock when done reading
 #
-#            self._onReceive(self, payload)
+#            self._on_receive(self, payload)
 #
 #        self.aquire_lock(False)             # unlock in any case.
 
