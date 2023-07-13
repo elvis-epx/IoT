@@ -83,7 +83,7 @@ def test_fill100_d(_):
     def stepper(task):
         mqtt_client.publish(H2O_PREFIX + "EstimatedLevelStr", "80% + 0L")
         mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
-        if stepper.x >= 6:
+        if stepper.x >= 5:
             Timeout.new("t", 0, test_fill100_e)
         else:
             stepper.x += 1
@@ -95,7 +95,7 @@ def test_fill100_e(_):
     Log.info("driver: test_fill100_e")
     assert ctx['sm'] == "On"
     mqtt_client.publish(H2O_PREFIX + "CoarseLevelPct", "80.0")
-    Timeout.new("t", 5, test_fill100_rest)
+    Timeout.new("t", 10, test_fill100_rest)
 
 def test_fill100_rest(_):
     Log.info("driver: test_rest_rest")
