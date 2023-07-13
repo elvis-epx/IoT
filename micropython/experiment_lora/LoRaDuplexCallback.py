@@ -31,16 +31,32 @@ def do_loop(lora):
         if received:
             payload, rssi = received[0]
             received.pop(0)
-            print("*** Received message len {} RSSI {}".format(len(payload), rssi))
+            print("Received message len {} RSSI {}".format(len(payload), rssi))
+
+            # Simulate an error
+            payload = bytearray(payload)
+            payload[0] = 12
+            payload = bytes(payload)
+
             try:
-                msg, _, errors = rs.decode(payload)
+                bmsg, _, errors = rs.decode(payload)
                 errors = len(errors)
             except:
                 errors = 999
 
+            if errors >= 999:
+                msg = "Corrupted"
+            else:
+                try:
+                    msg = bmsg.decode()
+                except:
+                    msg = "Invalid"
+
+            print("    Payload:", msg)
+
             display.fill(0)
-            display.text("Recv RSSI {}".format(rssi), 0, 0, 1)
-            display.text("size {}".format(len(payload)), 0, 12, 1)
+            display.text("Recv {} {}".format(rssi, len(payload)), 0, 0, 1)
+            display.text(msg[-15:], 0, 12, 1)
             display.text("errors {}".format(errors), 0, 24, 1)
             display.show()
 
@@ -53,15 +69,16 @@ def do_loop(lora):
             lastSendTime = now                                      # timestamp the message
             interval = int(INTERVAL_BASE + random.random() * INTERVAL)
 
-            message = ("abracadabra %06d" % msgCount).encode()
-            message = rs.encode(message)
+            smessage = ("abracadabra %06d" % msgCount).encode()
+            message = rs.encode(smessage)
             t0 = ticks_ms()
             sendMessage(lora, message)                              # send message
             t1 = ticks_ms()
-            print("Message sent in %d ms" % (t1 - t0))
+            print("Message sent in %d ms: " % (t1 - t0), smessage)
 
             display.fill(0)
             display.text("Sent {} ms".format(t1 - t0), 0, 0, 1)
+            display.text(smessage[-15:], 0, 12, 1)
             display.show()
 
             msgCount += 1
