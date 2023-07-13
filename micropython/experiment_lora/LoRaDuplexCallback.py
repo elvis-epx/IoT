@@ -18,13 +18,13 @@ def do_loop(lora):
     interval = 0
 
     while True:
-        now = ticks_ms() # FIXME replace by system
+        now = ticks_ms()
 
         if (now - lastSendTime > interval):
             lastSendTime = now                                      # timestamp the message
             interval = (lastSendTime % INTERVAL) + INTERVAL_BASE    # 2-3 seconds
 
-            message = "Ping %d" % msgCount
+            message = "abracadabra %06d" % msgCount
             t0 = ticks_ms()
             sendMessage(lora, message)                              # send message
             t1 = ticks_ms()
