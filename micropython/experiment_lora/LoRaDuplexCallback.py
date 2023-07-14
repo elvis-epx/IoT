@@ -3,11 +3,11 @@ import random
 from reedsolo import RSCodec
 import gc
 
-rs = RSCodec(6)
+rs = RSCodec(4)
 
-msgCount = 0            # count of outgoing messages
-INTERVAL = 5000         # interval between sends
-INTERVAL_BASE = 5000    # interval between sends base
+msgCount = 0
+INTERVAL_BASE = 5000
+INTERVAL_FUDGE = 5000
 
 display = None
 
@@ -64,7 +64,7 @@ def do_loop(lora):
 
         if (now - lastSendTime > interval):
             lastSendTime = now                                      # timestamp the message
-            interval = int(INTERVAL_BASE + random.random() * INTERVAL)
+            interval = int(INTERVAL_BASE + random.random() * INTERVAL_FUDGE)
 
             smessage = ("r%s t%05d" % (last_code_recv, msgCount)).encode()
             message = rs.encode(smessage)

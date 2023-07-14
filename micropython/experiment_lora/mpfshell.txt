@@ -1,4 +1,4 @@
-open cu.usbserial-0001
+open ttyUSB0
 
-put LoRaDuplexCallback.py
 put ttgolora.py
+put LoRaDuplexCallback.py

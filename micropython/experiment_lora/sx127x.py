@@ -40,6 +40,19 @@ REG_SYNC_WORD = 0x39
 REG_DIO_MAPPING_1 = 0x40
 REG_VERSION = 0x42
 
+# invert IQ
+REG_INVERTIQ = const(0x33)
+RFLR_INVERTIQ_RX_MASK = const(0xBF)
+RFLR_INVERTIQ_RX_OFF = const(0x00)
+RFLR_INVERTIQ_RX_ON = const(0x40)
+RFLR_INVERTIQ_TX_MASK = const(0xFE)
+RFLR_INVERTIQ_TX_OFF = const(0x01)
+RFLR_INVERTIQ_TX_ON = const(0x00)
+
+REG_INVERTIQ2 = const(0x3B)
+RFLR_INVERTIQ2_ON = const(0x19)
+RFLR_INVERTIQ2_OFF = const(0x1D)
+
 # modes
 MODE_LONG_RANGE_MODE = 0x80  # bit 7: 1 => LoRa mode
 MODE_SLEEP = 0x00
@@ -67,10 +80,9 @@ class SX127x:
                  name = 'SX127x',
                  parameters = {'frequency': 915E6, 'tx_power_level': 17, 'signal_bandwidth': 125E3,
                                'spreading_factor': 8, 'coding_rate': 5, 'preamble_length': 8,
-                               'implicitHeader': False, 'sync_word': 0x12, 'enable_CRC': False},
+                               'implicitHeader': False, 'sync_word': 0x12, 'enable_CRC': False,
+                               'invert_IQ': False},
                  on_receive = None):
-
-
 
         self.name = name
         self.parameters = parameters
@@ -113,6 +125,7 @@ class SX127x:
         self.setPreambleLength(self.parameters['preamble_length'])
         self.setSyncWord(self.parameters['sync_word'])
         self.enableCRC(self.parameters['enable_CRC'])
+        self.invertIQ(self.parameters["invert_IQ"])
 
         # set LowDataRateOptimize flag if symbol time > 16ms (default disable on reset)
         # self.writeRegister(REG_MODEM_CONFIG_3, self.readRegister(REG_MODEM_CONFIG_3) & 0xF7)  # default disable on reset
@@ -218,18 +231,12 @@ class SX127x:
 
 
     def setFrequency(self, frequency):
+        frequency = int(frequency)
         self._frequency = frequency
-
-        frfs = {169E6: (42, 64, 0),
-                433E6: (108, 64, 0),
-                434E6: (108, 128, 0),
-                866E6: (216, 128, 0),
-                868E6: (217, 0, 0),
-                915E6: (228, 192, 0)}
-
-        self.writeRegister(REG_FRF_MSB, frfs[frequency][0])
-        self.writeRegister(REG_FRF_MID, frfs[frequency][1])
-        self.writeRegister(REG_FRF_LSB, frfs[frequency][2])
+        frf = (frequency << 19) // 32000000
+        self.writeRegister(REG_FRF_MSB, (frf >> 16) & 0xFF)
+        self.writeRegister(REG_FRF_MID, (frf >> 8) & 0xFF)
+        self.writeRegister(REG_FRF_LSB, (frf >> 0) & 0xFF)
 
 
     def setSpreadingFactor(self, sf):
@@ -269,6 +276,36 @@ class SX127x:
         config = modem_config_2 | 0x04 if enable_CRC else modem_config_2 & 0xfb
         self.writeRegister(REG_MODEM_CONFIG_2, config)
 
+
+    def invertIQ(self, invertIQ):
+        if invertIQ:
+            self.writeRegister(
+                REG_INVERTIQ,
+                (
+                    (
+                        self.readRegister(REG_INVERTIQ)
+                        & RFLR_INVERTIQ_TX_MASK
+                        & RFLR_INVERTIQ_RX_MASK
+                    )
+                    | RFLR_INVERTIQ_RX_ON
+                    | RFLR_INVERTIQ_TX_ON
+                ),
+            )
+            self.writeRegister(REG_INVERTIQ2, RFLR_INVERTIQ2_ON)
+        else:
+            self.writeRegister(
+                REG_INVERTIQ,
+                (
+                    (
+                        self.readRegister(REG_INVERTIQ)
+                        & RFLR_INVERTIQ_TX_MASK
+                        & RFLR_INVERTIQ_RX_MASK
+                    )
+                    | RFLR_INVERTIQ_RX_OFF
+                    | RFLR_INVERTIQ_TX_OFF
+                ),
+            )
+            self.writeRegister(REG_INVERTIQ2, RFLR_INVERTIQ2_OFF)
 
     def setSyncWord(self, sw):
         self.writeRegister(REG_SYNC_WORD, sw)
