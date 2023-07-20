@@ -25,8 +25,8 @@ class TTGOLoRa:
         self.pin_reset = self.prepare_pin(pin_id_reset)
         self.reset_pin(self.pin_reset)
         self.lora = self.add_transceiver(SX127x(name = 'LoRa',
-                             parameters = {'frequency': 867500000, 'tx_power_level': 17, 'signal_bandwidth': 250E3,
-                               'spreading_factor': 7, 'coding_rate': 5, 'preamble_length': 8,
+                             parameters = {'frequency': 915750000, 'tx_power_level': 17, 'signal_bandwidth': 62500,
+                               'spreading_factor': 9, 'coding_rate': 5, 'preamble_length': 8,
                                'implicitHeader': False, 'sync_word': 0x12, 'enable_CRC': False,
                                'invert_IQ': False}))
 
