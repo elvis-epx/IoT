@@ -98,6 +98,7 @@ class WaterStateMachine(StateMachine):
     def __init__(self, queue, mqttsm, mqtt_client):
         super().__init__("water")
 
+        self.never_full_events = 0
         self.q = queue
         self.mqttsm = mqttsm
         self.mqtt_client = mqtt_client
@@ -230,6 +231,7 @@ class WaterStateMachine(StateMachine):
                     self.topping_delay = self.schedule_trans("on", TOPPING_DELAY)
             else:
                 # 100%
+                self.never_full_events = 0
                 if self.topping_delay:
                     Log.info("Cancelling almost-full timeout")
                     self.topping_delay.cancel()
@@ -282,6 +284,7 @@ class WaterStateMachine(StateMachine):
             # Tank full
             if level >= LEVEL_FULL_THRESHOLD:
                 Log.info("Level is full")
+                self.never_full_events = 0
                 self.trans_now("rest")
                 return
 
@@ -347,7 +350,9 @@ class WaterStateMachine(StateMachine):
             def timeout(task):
                 # It was expected that tank was full by this time
                 Log.info("Pumped topping volume (estimated)")
-                self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping (estimated) topping volume")
+                self.never_full_events += 1
+                if self.never_full_events >= 3:
+                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping (estimated) topping volume")
                 self.trans_now("rest")
  
             self.almost_full_timer = self.timeout("almost_full", TOPPING_TIME_ALAW - TOPPING_MINIMUM_TIME, timeout)
@@ -359,7 +364,9 @@ class WaterStateMachine(StateMachine):
                 if net_pumped_volume() > TOPPING_VOLUME:
                     # It was expected that level went 100% after so much volume pumped
                     Log.info("Pumped topping volume")
-                    self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
+                    self.never_full_events += 1
+                    if self.never_full_events >= 3:
+                        self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
                     self.trans_now("rest")
                     return
                 task.restart()
