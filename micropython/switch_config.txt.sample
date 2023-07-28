@@ -2,8 +2,7 @@ ssid <SSID>
 password <password or None>
 mqttbroker <address or DNS name>
 mqttname SwitchAreaX
-names room1
-inputmodes onoff|pulse|none
-inputs a01|none
-outputs b05
+names room1,room2
+inputmodes pulse,pulse
+switchmodes mem,nomem
 watchdog <0|1>

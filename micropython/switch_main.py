@@ -1,14 +1,15 @@
 print("*** START ***")
 
 from epx import loop
+from epx.loop import Task, MILISSECONDS
 from epx.config import Config
 from epx.watchdog import Watchdog
 from epx.net import Net
 from epx.mqtt import MQTT
 from epx.io import SerialIO
-from switch.service import SwitchPub, SwitchSub
 from switch.actuator import Switch, Display
 from switch.sensor import Manual
+from switch.service import SwitchPub, SwitchSub
 from machine import I2C, Pin
 
 config = Config()
@@ -18,25 +19,31 @@ gpio = SerialIO(i2c)
 net = Net(config)
 mqtt = MQTT(config, net, watchdog)
 
-display = Display(i2c, switches, net, mqtt)
-
 switches = {}
 
-names = [x for x in config["switches"].split(" ") if x]
-inputmodes = [x for x in config["inputmodes"].split(" ") if x]
-inputpins = [x for x in config["inputs"].split(" ") if x]
-outputpins = [x for x in config["outputs"].split(" ") if x]
+print(config.data)
+names = [x for x in config.data["switches"].split(",") if x]
+inputmodes = [x for x in config.data["inputmodes"].split(",") if x]
+switchmodes = [x for x in config.data["switchmodes"].split(",") if x]
 
-for i in range(0, len(names)):
+for i in range(0, min(len(inputmodes), len(names), len(switchmodes))):
     name = names[i]
     inputmode = inputmodes[i]
-    inputpin = inputpin[i]
-    outputpin = outputin[i]
+    switchmode = switchmodes[i]
 
-    manual = Manual(name, gpio, inputpin, inputmode)
-    switch = Switch(name, gpio, outputpin, manual)
+    manual = Manual(name, gpio, i, inputmode, switchmode)
+    switch = Switch(name, gpio, i, inputmode, switchmode, manual)
     switches[name] = switch
     mqtt.pub(SwitchPub(name, switch))
     mqtt.sub(SwitchSub(name, switch))
+
+def handle_gpio(_):
+    gpio.eval() # also does output
+    for name in switches.keys():
+        switches[name].manual.eval()
+
+Task(True, "handle_gpio", handle_gpio, 35 * MILISSECONDS)
+
+display = Display(i2c, switches, net, mqtt)
 
 loop.run()

@@ -1,0 +1,7 @@
+ssid SSID
+password PASSWORD
+mqttbroker 1.2.3.4
+mqttname Switch 
+switches aaa,bbb,ccc
+inputmodes a,b,c
+switchmodes mem,mem,nomem
