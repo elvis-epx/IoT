@@ -3,9 +3,14 @@
 . testsuite/defs.sh
 
 runme
+mcp23017 255
 sleep 5
 wifi GOT_IP
 sleep 115
+mcp23017 254
+sleep 5
+mcp23017 255
+sleep 5
 ssd1306f
 sleep 5
 quit

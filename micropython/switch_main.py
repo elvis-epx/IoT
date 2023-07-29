@@ -42,6 +42,7 @@ def handle_gpio(_):
     for name in switches.keys():
         switches[name].manual.eval()
 
+# FIXME test x initial gpio state
 Task(True, "handle_gpio", handle_gpio, 35 * MILISSECONDS)
 
 display = Display(i2c, switches, net, mqtt)
