@@ -6,16 +6,6 @@ runme
 sleep 5
 wifi GOT_IP
 sleep 115
-advance 60000
-advance 60000
-advance $((30 * 60 * 1000))
-i=0
-while [ "$i" -lt 60 ]; do
-    pulse 14 30
-    sleep 1
-    i=$(($i + 1))
-done
-sleep 5
 ssd1306f
 sleep 5
 quit
