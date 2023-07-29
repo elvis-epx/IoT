@@ -1,4 +1,4 @@
-import network
+import network, machine
 
 from epx.loop import Task, SECONDS, MINUTES, StateMachine, reboot, Shortcronometer
 from epx import loop
@@ -27,7 +27,9 @@ class Net:
         if 'ssid' in self.cfg.data:
             if 'password' not in self.cfg.data:
                 self.cfg.data['password'] = None
-            self.sm.schedule_trans("start", 12 * SECONDS)
+            # Delay startup of WiFi to after the watchdog is active (10s)
+            startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
+            self.sm.schedule_trans("start", startup_time * SECONDS)
 
     def observe(self, name, state, cb):
         self.sm.observe(name, state, cb)
