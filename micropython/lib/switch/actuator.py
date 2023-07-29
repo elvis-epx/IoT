@@ -33,7 +33,7 @@ class Switch:
         if self.state:
             self.switch(OFF)
         else:
-            sself.switch(ON)
+            self.switch(ON)
 
     def is_on(self):
         return self.state
@@ -63,7 +63,7 @@ class Display:
         self.impl.fill(0)
         names = list(self.switches.keys())
         names.sort()
-        for name in names:
+        for i, name in enumerate(names):
             if self.switches[name].is_on() and self.blink:
                 self.impl.fill_rect(0, i * 8, 12, 12, 1)
             else:

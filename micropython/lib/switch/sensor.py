@@ -42,6 +42,7 @@ class Manual:
         
         # Currently, only implement pulse switch
         if self.current:
+            print("manual %s toggling" % self.name)
             # Pulsed, toggle switch
             if self.switch:
                 self.switch.toggle()

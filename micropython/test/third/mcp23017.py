@@ -35,6 +35,13 @@ class Port:
             raise OSError()
         return self._gpio
 
+    @gpio.setter
+    def gpio(self, value):
+        if not ok:
+            raise OSError()
+        self._gpio = value
+        return value
+
 class MCP23017:
     def __init__(self, i2c, port):
         if not ok:
