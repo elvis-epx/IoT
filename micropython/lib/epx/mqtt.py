@@ -46,10 +46,12 @@ class MQTT:
     def pub(self, pubobj):
         pubobj.adjust_topic(self.name)
         self.publist.append(pubobj)
+        return pubobj
 
     def sub(self, subobj):
         subobj.adjust_topic(self.name)
         self.sublist[subobj.topic] = subobj
+        return subobj
 
     def on_start(self):
         self.disconn_backoff = 500 * MILISSECONDS
@@ -164,7 +166,7 @@ class MQTTPub:
     def adjust_topic(self, name):
         self.topic = self.topic % name.encode('ascii')
 
-    def forcepub(self, _):
+    def forcepub(self, _=None):
         self.eval(_, True)
 
     def eval(self, _, force=False):
