@@ -45,6 +45,14 @@ class ManualProgPub(MQTTPub):
     def gen_msg(self):
         return self.source.program_str()
 
+class ManualProgCompilationPub(MQTTPub):
+    def __init__(self, source):
+        MQTTPub.__init__(self, "stat/%s/ProgramCompilation", 24 * 60 * MINUTES, 24 * 60 * MINUTES, False)
+        self.source = source
+
+    def gen_msg(self):
+        return self.source.program_compilation_status()
+
 class ManualProgSub(MQTTSub):
     def __init__(self, source):
         self.source = source
@@ -53,4 +61,4 @@ class ManualProgSub(MQTTSub):
     def recv(self, topic, msg, retained, dup):
         value = msg.strip()
         if value:
-            self.source.compile_program(value)
+            self.source.compile_program(value, False)

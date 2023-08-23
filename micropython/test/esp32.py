@@ -13,10 +13,10 @@ class NVS:
 
     def _write(self, kind, key, value):
         fname = "%s/nvram_%s_%s_%s.key" % (machine.TEST_FOLDER, kind, self.namespace, key)
-        open(fname, "w").write(value)
+        open(fname, "wb").write(value)
 
     def set_i32(self, key, value):
-        self._write("i", key, "%d" % value)
+        self._write("i", key, b"%d" % value)
 
     def get_i32(self, key):
         blob = self._read("b", key)
@@ -28,7 +28,7 @@ class NVS:
             raise OSError("key not found II")
 
     def set_blob(self, key, value):
-        self._write("i", key, "%d" % value)
+        self._write("i", key, value)
 
     def get_blob(self, key, buffer):
         blob = self._read("b", key)

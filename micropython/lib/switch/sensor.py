@@ -1,5 +1,5 @@
 from epx.loop import Task, SECONDS, MINUTES, Shortcronometer
-from switch.service import ManualProgPub, ManualPub, ManualProgSub
+from switch.service import ManualProgPub, ManualPub, ManualProgSub, ManualProgCompilationPub
 
 # Handling of manual switches
 
@@ -12,6 +12,7 @@ class Manual:
         self.debounce_time = debounce_time
 
         self.program_string = ""
+        self.program_compilation_msg = ""
 
         n = self.iodriver.inputs
         self.input_current = [-1 for _ in range(0, n)]
@@ -22,11 +23,12 @@ class Manual:
         self.program = [None for _ in range(0, n)]
 
         self.pub = mqtt.pub(ManualProgPub(self))
+        self.compilation_pub = mqtt.pub(ManualProgCompilationPub(self))
         self.sub = mqtt.sub(ManualProgSub(self))
 
         self.eval_task = Task(True, "manual_poll", self.eval, poll_time)
 
-        self.compile_program(self.nvram.get_str("program") or "")
+        self.compile_program(self.nvram.get_str("program") or "", True)
 
     # Gather input bits
     def eval(self, _):
@@ -97,19 +99,30 @@ class Manual:
 
     # Compile new program
 
-    def compile_program(self, p):
-        if not self.do_compile_program(p):
-            p = self.default_program()
-            if not self.do_compile_program(p):
-                print("Double fault in program")
-                return
+    def compile_program(self, p, try_default):
+        err = self.do_compile_program(p)
+        if not err:
+            self.program_compilation_msg = "Success"
+        else:
+            print(err)
+            self.program_compilation_msg = err
+            if try_default:
+                p = self.default_program()
+                err = self.do_compile_program(p)
+                if err:
+                    print(err)
+                    self.program_compilation_msg = "Double fault"
+                else:
+                    print("Success")
+                    self.program_compilation_msg = "Success"
+        self.compilation_pub.forcepub()
 
     def do_compile_program(self, pstring):
         pstring = pstring.strip()
         if not pstring:
-            print("Program is nil")
-            return False
+            return "Program is nil"
 
+        print("Compiling program", pstring)
         programs = {}
 
         # manual record 1 ; manual record 2 ; ...
@@ -117,24 +130,27 @@ class Manual:
         p = [s.strip() for s in pstring.strip().split(";")]
 
         for pm in p:
+            if not pm:
+                continue
+
             # manual nr. : program kind : phases
+            print("\tCompiling manual", pm)
 
             pm = [s.strip() for s in pm.split(":")]
             if len(pm) != 3:
-                print("Program manual unexp")
-                return False
+                return "Program manual unexp: " + pm
 
             manual, kind, phases = pm
 
             try:
                 manual = int(manual) % len(self.program)
             except ValueError:
-                print("Program manual# unexp")
-                return False
+                return "Program manual# unexp: " + pm
 
             if kind not in ('P', ):
-                print("Program kind unexp")
-                return False
+                return "Program kind unexp: " + pm
+
+            print("\tManual %d kind %s" % (manual, kind))
 
             program = {}
             program['kind'] = kind
@@ -146,13 +162,13 @@ class Manual:
             phases = [s.strip() for s in phases.split("/")]
 
             if len(phases) < 2:
-                print("Phase list len unexp")
-                return False
+                return "Phase list len unexp: " + phases
 
             # example of 1 manual controlling 1 light, two phases: +1 / -1
             # example of 1 manual controlling 2 lights, four phases: -1,-2 / +1,+2 / +1,-2 / -1,+2
 
             for phase in phases:
+                print("\t\tPhase", phase)
                 # Parse switch(es) of every given phase
                 switches = [s.strip() for s in phase.split(",")]
 
@@ -163,23 +179,21 @@ class Manual:
                 for switch in switches:
                     # Switch is +n or -n where "n" is the switch number
                     if len(switch) < 2:
-                        print("Switch len unexp")
-                        return False
+                        return "Switch len unexp: " + phase
 
                     newstate = switch[0]
                     switch = switch[1:]
 
                     if newstate not in ('+', '-'):
-                        print("Switch sign unexp")
-                        return False
+                        return "Switch sign unexp: " + phase
                     newstate = newstate == '+' and 1 or 0
 
                     try:
                         switch = int(switch) % len(self.switches)
                     except ValueError:
-                        print("Phase switch# unexp")
-                        return False
+                        return "Phase switch# unexp: " + phase
 
+                    print("\t\t\tSwitch %d: %s" % (switch, newstate and "On" or "Off"))
                     switch_list.append((switch, newstate))
 
             programs[manual] = program
@@ -191,8 +205,9 @@ class Manual:
 
         self.program_string = pstring
         self.nvram.set_str("program", self.program_string)
+        self.pub.forcepub()
 
-        return True
+        return ""
 
     # If there is no program, tie every manual[n] to switch[n]
 
@@ -200,11 +215,14 @@ class Manual:
         p = ""
         for n in range(0, len(self.program)):
             switch = n % len(self.switches)
-            p += "%d:P:+%d/-%d;" % (n, switch, switch)
+            p += "%d:P:+%d/-%d; " % (n, switch, switch)
         return p
 
     def program_str(self):
         return self.program_string
+
+    def program_compilation_status(self):
+        return self.program_compilation_msg
 
     def manual_event(self, n):
         return self.input_pub_value[n]
