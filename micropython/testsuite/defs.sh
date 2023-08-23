@@ -11,7 +11,7 @@ if [ "$FLAVOR" = "" ]; then
 fi
 
 set -e
-rm -rf ${TEST_FOLDER}/*.sim
+rm -rf ${TEST_FOLDER}/*.sim ${TEST_FOLDER}/*.key
 
 function mqttsub () {
     echo -e "$1\n$2\n$3\n$4" > ${TEST_FOLDER}/mqttsub.sim
