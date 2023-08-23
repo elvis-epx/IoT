@@ -77,6 +77,9 @@ class Manual:
 
     def run_program(self, n):
         program = self.program[n]
+        if not program:
+            print("No program for manual %d" % n)
+            return
         phase = self.detect_phase(program)
         new_phase = (phase + 1) % len(program['phases'])
         for sw, st in program['phases'][phase]['switches']:
@@ -106,6 +109,8 @@ class Manual:
         if not pstring:
             print("Program is nil")
             return False
+
+        programs = {}
 
         # manual record 1 ; manual record 2 ; ...
 
@@ -177,11 +182,16 @@ class Manual:
 
                     switch_list.append((switch, newstate))
 
+            programs[manual] = program
+
+        # New program parsed and accepted as good; commit
+
+        for manual, program in programs.items():
             self.program[manual] = program
 
-        # New program parsed and accepted as good
         self.program_string = pstring
         self.nvram.set_str("program", self.program_string)
+
         return True
 
     # If there is no program, tie every manual[n] to switch[n]
