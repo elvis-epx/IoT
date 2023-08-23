@@ -29,10 +29,24 @@ class Pin:
         self.irq_cb = None
         pins.append(self)
 
-    def value(self, n):
-        if self.direction == Pin.IN:
-            return
-        open((TEST_FOLDER + "/" + "pin%d.sim") % self.pin, "w").write(n and "1" or "0")
+    def value(self, n = None):
+        if n is not None:
+            # write
+            if self.direction == Pin.IN:
+                return
+            open((TEST_FOLDER + "/" + "pin%d.sim") % self.pin, "w").write(n and "1" or "0")
+        else:
+            # read
+            if self.direction == Pin.OUT:
+                return
+            try:
+                data = open((TEST_FOLDER + "/" + "pin%d.sim") % self.pin).read()
+            except FileNotFoundError:
+                return 0
+            try:
+                return int(data) and 1 or 0
+            except ValueError:
+                return 0
 
     def irq(self, trigger, handler):
         self.irq_cb = handler
