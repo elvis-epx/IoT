@@ -4,7 +4,8 @@ from switch.service import ManualProgPub, ManualPub, ManualProgSub
 # Handling of manual switches
 
 class Manual:
-    def __init__(self, mqtt, iodriver, switches, poll_time, debounce_time):
+    def __init__(self, nvram, mqtt, iodriver, switches, poll_time, debounce_time):
+        self.nvram = nvram
         self.iodriver = iodriver
         self.switches = switches
         self.poll_time = poll_time
@@ -25,8 +26,7 @@ class Manual:
 
         self.eval_task = Task(True, "manual_poll", self.eval, poll_time)
 
-        # FIXME NVRAM x prog, program compiling, etc:
-        self.compile_program("")
+        self.compile_program(self.nvram.get_str("program") or "")
 
     # Gather input bits
     def eval(self, _):
@@ -181,6 +181,7 @@ class Manual:
 
         # New program parsed and accepted as good
         self.program_string = pstring
+        self.nvram.set_str("program", self.program_string)
         return True
 
     # If there is no program, tie every manual[n] to switch[n]
