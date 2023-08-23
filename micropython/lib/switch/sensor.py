@@ -95,14 +95,14 @@ class Manual:
     # Compile new program
 
     def compile_program(self, p):
-        if not self.do_compile_program():
+        if not self.do_compile_program(p):
             p = self.default_program()
-            if not self.do_compile_program():
+            if not self.do_compile_program(p):
                 print("Double fault in program")
                 return
 
     def do_compile_program(self, pstring):
-        pstring = pstring.strip():
+        pstring = pstring.strip()
         if not pstring:
             print("Program is nil")
             return False
@@ -140,7 +140,7 @@ class Manual:
 
             phases = [s.strip() for s in phases.split("/")]
 
-            if len(phase) < 2:
+            if len(phases) < 2:
                 print("Phase list len unexp")
                 return False
 
