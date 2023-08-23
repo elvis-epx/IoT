@@ -3,6 +3,7 @@
 . testsuite/defs.sh
 
 runme
+sleep 15
 mqttfail connect_permanent
 sleep 10
 wifi GOT_IP
