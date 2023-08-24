@@ -31,8 +31,8 @@ class NVRAM:
         buffer = bytearray(l)
         try:
             self.impl.get_blob(key, buffer)
-            print("nvram: str %s not found" % key)
         except OSError:
+            print("nvram: str %s not found" % key)
             return None
 
         try:

@@ -1,0 +1,8 @@
+ssid SSID
+password PASSWORD
+mqttbroker 1.2.3.4
+mqttname Switch 
+driver direct4
+watchdog 0
+poll 200
+debounce 800

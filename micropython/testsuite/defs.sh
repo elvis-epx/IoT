@@ -11,7 +11,7 @@ if [ "$FLAVOR" = "" ]; then
 fi
 
 set -e
-rm -rf ${TEST_FOLDER}/*.sim ${TEST_FOLDER}/*.key
+rm -rf ${TEST_FOLDER}/*.sim
 
 function mqttsub () {
     echo -e "$1\n$2\n$3\n$4" > ${TEST_FOLDER}/mqttsub.sim
@@ -154,6 +154,14 @@ function assert () {
 
 function gpio () {
     echo "$2" > ${TEST_FOLDER}/pin${1}.sim
+}
+
+# Usage: i|b namespace key value
+function nvram () {
+    echo -n "$4" > ${TEST_FOLDER}/nvram_${1}_${2}_${3}.sim
+    if [ "$1" = "b" ]; then
+        echo -n "${#4}" > ${TEST_FOLDER}/nvram_i_${2}_${3}_len.sim
+    fi
 }
 
 function runme () {
