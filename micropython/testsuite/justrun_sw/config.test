@@ -5,4 +5,4 @@ mqttname Switch
 driver direct4
 watchdog 0
 poll 200
-debounce 1000
+debounce 800

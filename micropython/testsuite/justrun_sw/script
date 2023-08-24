@@ -2,9 +2,33 @@
 
 . testsuite/defs.sh
 
+# Manuals
+gpio 26 1
+gpio 34 1
+gpio 33 1
+gpio 35 1
 runme
 sleep 5
+# Switches/relays
+assert gpio 16 0
+assert gpio 2 0
+assert gpio 32 0
+assert gpio 12 0
 wifi GOT_IP
-sleep 115
+sleep 5
+
+# Pulse Manual 0
+gpio 26 0
+sleep 1
+gpio 26 1
+assert gpio 16 1
+sleep 5
+gpio 26 0
+sleep 1
+gpio 26 1
+assert gpio 16 0
+
+
+sleep 60
 sleep 5
 quit

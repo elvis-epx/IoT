@@ -152,6 +152,10 @@ function assert () {
     fi
 }
 
+function gpio () {
+    echo "$2" > ${TEST_FOLDER}/pin${1}.sim
+}
+
 function runme () {
     python3-coverage run test.py $FLAVOR $TEST_FOLDER &
     export err=0

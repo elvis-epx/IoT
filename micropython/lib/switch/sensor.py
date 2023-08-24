@@ -34,7 +34,8 @@ class Manual:
     def eval(self, _):
         input_bits = self.iodriver.input()
         for n in range(0, self.iodriver.inputs):
-            self.eval_n(n, (input_bits & (1 << n)) and 1 or 0)
+            bit = (input_bits & (1 << n)) and 1 or 0
+            self.eval_n(n, bit)
 
     # Per-manual switch processing
     def eval_n(self, n, bit):
@@ -70,7 +71,7 @@ class Manual:
             # Currently, only implementation is the pulse switch
             print("manual %d pulsed" % n)
             self.input_pub_value[n] = "P"
-            self.input_pub[n].force_pub()
+            self.input_pub[n].forcepub()
             self.input_pub_value[n] = ""
             self.run_program(n)
 
@@ -84,7 +85,7 @@ class Manual:
             return
         phase = self.detect_phase(program)
         new_phase = (phase + 1) % len(program['phases'])
-        for sw, st in program['phases'][phase]['switches']:
+        for sw, st in program['phases'][new_phase]['switches']:
             self.switches[sw].switch(st)
 
     def detect_phase(self, program):
