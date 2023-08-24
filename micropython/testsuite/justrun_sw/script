@@ -35,6 +35,13 @@ gpio 26 1
 sleep 1
 assert gpio 16 0
 
+gpio 26 0
+sleep 0.5
+gpio 26 1
+sleep 1
+assert gpio 16 0
+
+
 # Nil program
 mqttsub cmnd/Switch/Program ";"
 sleep 1
@@ -87,11 +94,28 @@ gpio 26 1
 assert gpio 16 0
 assert gpio 2 0
 
+# Pulse Manual 3, no program associated
+gpio 35 0
+sleep 1
+gpio 35 1
+assert gpio 16 0
+assert gpio 2 0
+assert gpio 32 0
+assert gpio 12 0
+
 mqttsub cmnd/Switch/0/State 1
 sleep 1
 assert gpio 16 1
 
 mqttsub cmnd/Switch/1/State On
+sleep 1
+assert gpio 2 1
+
+mqttsub cmnd/Switch/1/State moo
+sleep 1
+assert gpio 2 1
+
+mqttsub cmnd/Switch/1/State 1
 sleep 1
 assert gpio 2 1
 
