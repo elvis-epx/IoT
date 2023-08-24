@@ -63,6 +63,6 @@ class ManualProgSub(MQTTSub):
         MQTTSub.__init__(self, "cmnd/%s/Program")
 
     def recv(self, topic, msg, retained, dup):
-        value = msg.strip()
+        value = msg.decode('utf-8').strip()
         if value:
             self.source.compile_program(value, False)

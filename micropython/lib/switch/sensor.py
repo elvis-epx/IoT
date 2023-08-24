@@ -120,8 +120,6 @@ class Manual:
 
     def do_compile_program(self, pstring):
         pstring = pstring.strip()
-        if not pstring:
-            return "Program is nil"
 
         print("Compiling program", pstring)
         programs = {}
@@ -130,26 +128,26 @@ class Manual:
 
         p = [s.strip() for s in pstring.strip().split(";")]
 
-        for pm in p:
-            if not pm:
+        for pms in p:
+            if not pms:
                 continue
 
             # manual nr. : program kind : phases
-            print("\tCompiling manual", pm)
+            print("\tCompiling manual", pms)
 
-            pm = [s.strip() for s in pm.split(":")]
+            pm = [s.strip() for s in pms.split(":")]
             if len(pm) != 3:
-                return "Program manual unexp: " + pm
+                return "Program manual unexp: " + pms
 
-            manual, kind, phases = pm
+            manual, kind, sphases = pm
 
             try:
                 manual = int(manual) % len(self.program)
             except ValueError:
-                return "Program manual# unexp: " + pm
+                return "Program manual# unexp: " + pms
 
             if kind not in ('P', ):
-                return "Program kind unexp: " + pm
+                return "Program kind unexp: " + pms
 
             print("\tManual %d kind %s" % (manual, kind))
 
@@ -160,10 +158,10 @@ class Manual:
             # Phases separated by /
             # There should be at least 2
 
-            phases = [s.strip() for s in phases.split("/")]
+            phases = [s.strip() for s in sphases.split("/")]
 
             if len(phases) < 2:
-                return "Phase list len unexp: " + phases
+                return "Phase list len unexp: " + sphases
 
             # example of 1 manual controlling 1 light, two phases: +1 / -1
             # example of 1 manual controlling 2 lights, four phases: -1,-2 / +1,+2 / +1,-2 / -1,+2
@@ -198,6 +196,9 @@ class Manual:
                     switch_list.append((switch, newstate))
 
             programs[manual] = program
+
+        if not programs:
+            return "Program is nil"
 
         # New program parsed and accepted as good; commit
 

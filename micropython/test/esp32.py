@@ -28,7 +28,7 @@ class NVS:
             raise OSError("key not found II")
 
     def set_blob(self, key, value):
-        self._write("i", key, value)
+        self._write("b", key, value)
 
     def get_blob(self, key, buffer):
         blob = self._read("b", key)

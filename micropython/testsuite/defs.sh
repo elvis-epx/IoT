@@ -133,7 +133,7 @@ function assert_mqtt ()
         sleep 1
     done
     LASTPUB=`grep "$1" ${TEST_FOLDER}/mqttpub.sim | tail -1`
-    if echo "$LASTPUB" | grep " $2 " >/dev/null; then
+    if echo "$LASTPUB" | grep " $2" >/dev/null; then
         return 0
     fi
     echo "MQTT topic $1 got unexpected msg, expected $2"
@@ -143,9 +143,9 @@ function assert_mqtt ()
 
 function assert () {
     if [ "$1" = "gpio" ]; then
-        assert_gpio $2 $3
+        assert_gpio "$2" "$3"
     elif [ "$1" = "mqtt" ]; then
-        assert_mqtt $2 $3
+        assert_mqtt "$2" "$3"
     else
         echo "Unsupported assert"
         return 1

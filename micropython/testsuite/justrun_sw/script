@@ -28,7 +28,50 @@ sleep 1
 gpio 26 1
 assert gpio 16 0
 
+# Flaky switch
+gpio 26 0
+sleep 0.2
+gpio 26 1
+sleep 1
+assert gpio 16 0
 
-sleep 60
+# Nil program
+mqttsub cmnd/Switch/Program ";"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Program is nil"
+
+mqttsub cmnd/Switch/Program "P:a"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Program manual unexp"
+
+mqttsub cmnd/Switch/Program "P:a:b"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Program manual# unexp"
+
+mqttsub cmnd/Switch/Program "0:X:b"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Program kind unexp"
+
+mqttsub cmnd/Switch/Program "0:P:+0"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Phase list len unexp"
+
+mqttsub cmnd/Switch/Program "0:P:+0/0"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Switch len unexp"
+
+mqttsub cmnd/Switch/Program "0:P:+0/x0"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Switch sign unexp"
+
+mqttsub cmnd/Switch/Program "0:P:+0/-a"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Phase switch# unexp"
+
+mqttsub cmnd/Switch/Program "0:P:+1/-1"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Success"
+assert mqtt "stat/Switch/Program " "0:P:+1/-1"
+
 sleep 5
 quit
