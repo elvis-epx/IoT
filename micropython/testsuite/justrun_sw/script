@@ -111,7 +111,7 @@ mqttsub cmnd/Switch/1/State On
 sleep 1
 assert gpio 2 1
 
-mqttsub cmnd/Switch/1/State moo
+mqttsub cmnd/Switch/3/State moo
 sleep 1
 assert gpio 2 1
 

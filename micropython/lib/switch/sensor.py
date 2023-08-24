@@ -20,7 +20,7 @@ class Manual:
         self.debounce_crono = [None for _ in range(0, n)]
         self.input_pub = [ mqtt.pub(ManualPub(self, "%d" % n, n)) for n in range(0, n) ]
         self.input_pub_value = [ "" for _ in range(0, n) ]
-        self.program = [None for _ in range(0, n)]
+        self.program = {}
 
         self.pub = mqtt.pub(ManualProgPub(self))
         self.compilation_pub = mqtt.pub(ManualProgCompilationPub(self))
@@ -28,7 +28,8 @@ class Manual:
 
         self.eval_task = Task(True, "manual_poll", self.eval, poll_time)
 
-        self.compile_program(self.nvram.get_str("program") or "", True)
+        self.program_in_nvram = self.nvram.get_str("program") or ""
+        self.compile_program(self.program_in_nvram, True)
 
     # Gather input bits
     def eval(self, _):
@@ -79,10 +80,10 @@ class Manual:
     # (generally, turning some lights on and others off)
 
     def run_program(self, n):
-        program = self.program[n]
-        if not program:
+        if n not in self.program:
             print("No program for manual %d" % n)
             return
+        program = self.program[n]
         phase = self.detect_phase(program)
         new_phase = (phase + 1) % len(program['phases'])
         for sw, st in program['phases'][new_phase]['switches']:
@@ -114,7 +115,6 @@ class Manual:
                     print(err)
                     self.program_compilation_msg = "Double fault"
                 else:
-                    print("Success")
                     self.program_compilation_msg = "Success"
         self.compilation_pub.forcepub()
 
@@ -142,7 +142,7 @@ class Manual:
             manual, kind, sphases = pm
 
             try:
-                manual = int(manual) % len(self.program)
+                manual = int(manual) % len(self.input_current)
             except ValueError:
                 return "Program manual# unexp: " + pms
 
@@ -202,11 +202,15 @@ class Manual:
 
         # New program parsed and accepted as good; commit
 
+        self.program = {}
         for manual, program in programs.items():
             self.program[manual] = program
 
+        if pstring != self.program_in_nvram:
+            self.nvram.set_str("program", pstring)
+            self.program_in_nvram = pstring
+
         self.program_string = pstring
-        self.nvram.set_str("program", self.program_string)
         self.pub.forcepub()
 
         return ""
@@ -215,7 +219,7 @@ class Manual:
 
     def default_program(self):
         p = ""
-        for n in range(0, len(self.program)):
+        for n in range(0, len(self.input_current)):
             switch = n % len(self.switches)
             p += "%d:P:+%d/-%d; " % (n, switch, switch)
         return p
