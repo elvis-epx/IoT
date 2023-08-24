@@ -73,5 +73,32 @@ sleep 1
 assert mqtt stat/Switch/ProgramCompilation "Success"
 assert mqtt "stat/Switch/Program " "0:P:+1/-1"
 
+# Pulse Manual 0, should change switch 1 now
+gpio 26 0
+sleep 1
+gpio 26 1
+assert gpio 16 0
+assert gpio 2 1
+# Another pulse
+sleep 5
+gpio 26 0
+sleep 1
+gpio 26 1
+assert gpio 16 0
+assert gpio 2 0
+
+mqttsub cmnd/Switch/0/State 1
+sleep 1
+assert gpio 16 1
+
+mqttsub cmnd/Switch/1/State On
+sleep 1
+assert gpio 2 1
+
+mqttsub cmnd/Switch/0/State off
+mqttsub cmnd/Switch/1/State 0
+assert gpio 16 0
+assert gpio 2 0
+
 sleep 5
 quit

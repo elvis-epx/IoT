@@ -180,9 +180,13 @@ def millis_diff(a, b):
 def millis_add(a, b):
     return time.ticks_add(a, b)
 
-def run():
+def run(led_pin=2):
     gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
-    led = machine.Pin(2, machine.Pin.OUT)
+
+    if led_pin > 0:
+        led = machine.Pin(led_pin, machine.Pin.OUT)
+    else:
+        led = None
 
     if hasattr(machine, 'TEST_ENV'):
         test_task = Task(True, "testh", machine.test_mock, 1 * SECONDS)
@@ -190,9 +194,11 @@ def run():
     while running:
         task, t = next_task()
         sleep(t)
-        led.value(1)
+        if led:
+            led.value(1)
         task.run()
-        led.value(0)
+        if led:
+            led.value(0)
 
 def reboot():
     machine.reset()

@@ -20,12 +20,12 @@ class SwitchSub(MQTTSub):
 
     def recv(self, topic, msg, retained, dup):
         value = msg.lower().strip()
-        if value in ("on", "1", "up"):
+        if value in (b"on", b"1", b"up"):
             self.switch.switch(ON)
-        elif value in ("off", "0", "down"):
+        elif value in (b"off", b"0", b"down"):
             self.switch.switch(OFF)
         else:
-            print("State: invalid value msg")
+            print("State: invalid value")
 
 
 class ManualPub(MQTTPub):
