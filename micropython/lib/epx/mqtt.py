@@ -160,12 +160,15 @@ class MQTTPub:
         self.msg = None
         self.changed = False
         self.retain = retain
-        Task(True, "eval_%s" % topic, self.eval, to).advance()
-        Task(True, "force_%s" % topic, self.forcepub, forcepubto)
+        if to > 0:
+            Task(True, "eval_%s" % topic, self.eval, to).advance()
+        if forcepubto > 0:
+            Task(True, "force_%s" % topic, self.forcepub, forcepubto)
 
     def adjust_topic(self, name):
         self.topic = self.topic % name.encode('ascii')
 
+    # May be called manually
     def forcepub(self, _=None):
         self.eval(_, True)
 

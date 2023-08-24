@@ -6,7 +6,8 @@ OFF = const(0)
 
 class SwitchPub(MQTTPub):
     def __init__(self, name, switch):
-        MQTTPub.__init__(self, "stat/%s/" + name + "/State", 1 * SECONDS, 30 * MINUTES, False)
+        # client may call forcepub()
+        MQTTPub.__init__(self, "stat/%s/" + name + "/State", 1 * SECONDS, 10 * MINUTES, False)
         self.switch = switch
 
     def gen_msg(self):
@@ -29,7 +30,8 @@ class SwitchSub(MQTTSub):
 
 class ManualPub(MQTTPub):
     def __init__(self, source, name, n):
-        MQTTPub.__init__(self, "stat/%s/Manual" + name + "/Event", 1 * SECONDS, 24 * 60 * MINUTES, False)
+        # client should call forcepub()
+        MQTTPub.__init__(self, "stat/%s/Manual" + name + "/Event", 0, 0, False)
         self.source = source
         self.n = n
 
@@ -39,7 +41,8 @@ class ManualPub(MQTTPub):
 
 class ManualProgPub(MQTTPub):
     def __init__(self, source):
-        MQTTPub.__init__(self, "stat/%s/Program", 30 * SECONDS, 24 * 60 * MINUTES, False)
+        # client should call forcepub()
+        MQTTPub.__init__(self, "stat/%s/Program", 0, 0, False)
         self.source = source
 
     def gen_msg(self):
@@ -47,7 +50,8 @@ class ManualProgPub(MQTTPub):
 
 class ManualProgCompilationPub(MQTTPub):
     def __init__(self, source):
-        MQTTPub.__init__(self, "stat/%s/ProgramCompilation", 24 * 60 * MINUTES, 24 * 60 * MINUTES, False)
+        # client should call forcepub()
+        MQTTPub.__init__(self, "stat/%s/ProgramCompilation", 0, 0, False)
         self.source = source
 
     def gen_msg(self):
