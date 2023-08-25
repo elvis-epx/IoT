@@ -3,4 +3,6 @@ password <password or None>
 mqttbroker <address or DNS name>
 mqttname SwitchAreaX
 driver direct4
+poll 40
+debounce 120
 watchdog <0|1>

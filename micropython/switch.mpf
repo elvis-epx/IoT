@@ -1,4 +1,4 @@
-open cu.usbserial-0001
+open ttyUSB0
 
 md /lib
 md /lib/epx
