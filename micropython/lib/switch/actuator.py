@@ -10,9 +10,10 @@ class Switch:
         self.name = "%d" % pin
         self.pub = mqtt.pub(SwitchPub(self.name, self))
         self.sub = mqtt.sub(SwitchSub(self.name, self))
-        self.state = -1
 
+        self.state = -1
         self.state_in_nvram = self.nvram.get_int(self.name)
+
         self.switch(self.state_in_nvram)
 
     def switch(self, new_state):
@@ -27,6 +28,7 @@ class Switch:
 
         if self.state_in_nvram is None or self.state_in_nvram != new_state:
             self.nvram.set_int(self.name, new_state)
+            self.state_in_nvram = new_state
 
     def is_on(self):
         return self.state

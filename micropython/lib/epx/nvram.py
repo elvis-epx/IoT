@@ -16,7 +16,8 @@ class NVRAM:
 
     def get_int(self, key):
         try:
-            return self.impl.get_i32(key)
+            n = self.impl.get_i32(key)
+            return n
         except OSError:
             print("nvram: int %s not found" % key)
             return None
