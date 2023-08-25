@@ -1,4 +1,4 @@
-open ttyUSB0
+open cu.usbserial-0001
 
 md /lib
 md /lib/epx
@@ -9,6 +9,7 @@ put lib/epx/net.py /lib/epx/net.py
 put lib/epx/watchdog.py /lib/epx/watchdog.py
 put lib/epx/loop.py /lib/epx/loop.py
 put lib/epx/ota.py /lib/epx/ota.py
+put lib/epx/nvram.py /lib/epx/nvram.py
 
 md /lib/uumqtt
 put lib/uumqtt/__init__.py  /lib/uumqtt/__init__.py 
@@ -27,6 +28,7 @@ put lib/switch/__init__.py /lib/switch/__init__.py
 put lib/switch/service.py /lib/switch/service.py
 put lib/switch/actuator.py /lib/switch/actuator.py
 put lib/switch/sensor.py /lib/switch/sensor.py
+put lib/switch/driver.py /lib/switch/driver.py
 
 put switch_boot.py boot.py
 put switch_main.py main.py
