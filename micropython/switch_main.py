@@ -6,7 +6,7 @@ from epx.watchdog import Watchdog
 from epx.net import Net
 from epx.mqtt import MQTT
 from epx.nvram import NVRAM
-from switch.driver import *
+drivers = __import__('switch.driver', None, None, [])
 from switch.actuator import Switch
 from switch.sensor import Manual
 
@@ -20,11 +20,9 @@ print(config.data)
 poll = int(config.data["poll"])
 debounce = int(config.data["debounce"])
 
-led = 2
-
-if "direct4" == config.data["driver"]:
-    driver = Direct4()
-    led = -1 # GPIO 2 is taken
+driver = getattr(drivers, config.data["driver"])()
+del drivers
+led = driver.led
 
 switches = [ Switch(nvram, mqtt, driver, i) for i in range(0, driver.outputs) ]
 bridge = Manual(nvram, mqtt, driver, switches, poll, debounce)
