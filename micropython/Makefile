@@ -1,5 +1,4 @@
-PORT=/dev/ttyUSB0
-# PORT=/dev/cu.usbserial-146160
+PORT := $(shell cat serial.txt)
 
 all: scr
 
@@ -7,7 +6,7 @@ clean: clean-coverage
 	rm -rf `find . -name __pycache__` `find . -name tmppiggy`
 
 scr:
-	screen $(PORT) 115200	
+	screen /dev/$(PORT) 115200
 
 clean-coverage:
 	python3-coverage erase

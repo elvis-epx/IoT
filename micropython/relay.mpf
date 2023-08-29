@@ -1,5 +1,3 @@
-open ttyUSB0
-
 md /lib
 md /lib/epx
 put lib/epx/__init__.py /lib/epx/__init__.py

@@ -1,3 +1,4 @@
 #!/bin/bash
 
-mpfshell -o ttyUSB0 -c "put $1_config.txt /config.txt" -n
+SERIAL_PORT=`cat serial.txt`
+mpfshell -o $SERIAL_PORT -c "put $1_config.txt /config.txt" -n

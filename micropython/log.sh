@@ -1,3 +1,3 @@
 #!/bin/bash -x
 
-pyboard.py -d /dev/ttyUSB0 | tee -a log
+pyboard.py -d /dev/$(cat serial.txt) | tee -a log
