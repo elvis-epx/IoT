@@ -232,3 +232,21 @@ class Manual:
 
     def manual_event(self, n):
         return self.input_pub_value[n]
+
+# Program "language"
+# a:X:+b,-c/-b,+c;
+# a = manual switch input pin (0..n)
+# X = program type. Currently, only P (pulsating switch) is implemented
+# b,c = relay output pins (0..n)
+# Programs separated by semicolon ;
+# Phases of a program separated by slash /
+# Relays affected in each phase separated by comma ,
+#
+# Example:
+# 0:P:+0/-0; 1:P:-1,-2/+1,+2/+1,-2/-1,+2; 2:P:+3/-3
+#
+# Manual 0 is a pulsating switch that controls relay 0
+# Manual 1, pulsating, controls relays 1 and 2, in four phases
+#          (off+off, on+on, on+off, off+on)
+# Manual 2, pulsating, controls relay 3
+# Manual 3 (if exists) unused
