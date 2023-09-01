@@ -4,12 +4,13 @@ from switch.service import ManualProgPub, ManualPub, ManualProgSub, ManualProgCo
 # Handling of manual switches
 
 class Manual:
-    def __init__(self, nvram, mqtt, iodriver, switches, poll_time, debounce_time):
+    def __init__(self, nvram, mqtt, iodriver, switches, poll_time, debounce_time, longpress_time):
         self.nvram = nvram
         self.iodriver = iodriver
         self.switches = switches
         self.poll_time = poll_time
         self.debounce_time = debounce_time
+        self.longpress_time = longpress_time
 
         self.program_string = ""
         self.program_compilation_msg = ""
@@ -18,6 +19,7 @@ class Manual:
         self.input_current = [-1 for _ in range(0, n)]
         self.input_next = [-1 for _ in range(0, n)]
         self.debounce_crono = [None for _ in range(0, n)]
+        self.longpress_crono = [None for _ in range(0, n)]
         self.input_pub = [ mqtt.pub(ManualPub(self, "%d" % n, n)) for n in range(0, n) ]
         self.input_pub_value = [ "" for _ in range(0, n) ]
         self.program = {}
@@ -54,7 +56,7 @@ class Manual:
             if bit == self.input_next[n]:
                 # new bit pattern is holding
                 if self.debounce_crono[n].elapsed() < self.debounce_time:
-                    # still in debounce time
+                    # still within debounce time
                     pass
                 else:
                     # commit change
@@ -68,25 +70,49 @@ class Manual:
     # Process manual switches that changed state
 
     def eval_in(self, n, old, new):
+        # Currently, only implementation is the pulse switch
+
         if old == 0 and new == 1:
-            # Currently, only implementation is the pulse switch
-            print("manual %d pulsed" % n)
+            # short pulse, rising edge
             self.input_pub_value[n] = "P"
             self.input_pub[n].forcepub()
             self.input_pub_value[n] = ""
             self.run_program(n)
 
+            # start counting long-press time
+            self.longpress_crono[n] = Shortcronometer()
+            return
+
+        if old == 1 and new == 0:
+            # short pulse, falling edge
+            if self.longpress_crono[n] is not None and \
+                    self.longpress_crono[n].elapsed() >= self.longpress_time:
+                # long press detected
+                self.input_pub_value[n] = "L"
+                self.input_pub[n].forcepub()
+                self.input_pub_value[n] = ""
+                self.run_program_longpress(n)
+
+        self.longpress_crono[n] = None
+
     # Apply program associated with manual
     # (generally, turning some lights on and others off)
 
-    def run_program(self, n):
+    def run_program_longpress(self, n):
+        self.run_program(n, phase=0)
+
+    def run_program(self, n, phase=None):
         if n not in self.program:
             print("No program for manual %d" % n)
             return
+
         program = self.program[n]
-        phase = self.detect_phase(program)
-        new_phase = (phase + 1) % len(program['phases'])
-        for sw, st in program['phases'][new_phase]['switches']:
+
+        if phase is None:
+            phase = self.detect_phase(program)
+            phase = (phase + 1) % len(program['phases'])
+
+        for sw, st in program['phases'][phase]['switches']:
             self.switches[sw].switch(st)
 
     def detect_phase(self, program):
@@ -221,7 +247,7 @@ class Manual:
         p = ""
         for n in range(0, len(self.input_current)):
             switch = n % len(self.switches)
-            p += "%d:P:+%d/-%d; " % (n, switch, switch)
+            p += "%d:P:-%d/+%d; " % (n, switch, switch)
         return p
 
     def program_str(self):
@@ -243,10 +269,13 @@ class Manual:
 # Relays affected in each phase separated by comma ,
 #
 # Example:
-# 0:P:+0/-0; 1:P:-1,-2/+1,+2/+1,-2/-1,+2; 2:P:+3/-3
+# 0:P:-0/+0; 1:P:-1,-2/+1,+2/+1,-2/-1,+2; 2:P:+3/-3
 #
 # Manual 0 is a pulsating switch that controls relay 0
 # Manual 1, pulsating, controls relays 1 and 2, in four phases
 #          (off+off, on+on, on+off, off+on)
 # Manual 2, pulsating, controls relay 3
 # Manual 3 (if exists) unused
+#
+# In P type, long press goes to 1st phase, so it is best the first phase
+# turns all lights off.
