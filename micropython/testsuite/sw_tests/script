@@ -96,8 +96,14 @@ assert gpio 12 0
 
 echo "############### and phase 0 via long press"
 sleep 2
+assert gpio 16 0
+assert gpio 2 0
+assert gpio 32 0
+assert gpio 12 0
 gpio 35 1
 sleep 1
+
+echo "############### no change by releasing longpress"
 assert gpio 16 0
 assert gpio 2 0
 assert gpio 32 0

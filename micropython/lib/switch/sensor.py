@@ -19,7 +19,7 @@ class Manual:
         self.input_current = [-1 for _ in range(0, n)]
         self.input_next = [-1 for _ in range(0, n)]
         self.debounce_crono = [None for _ in range(0, n)]
-        self.longpress_crono = [None for _ in range(0, n)]
+        self.longpress_task = [None for _ in range(0, n)]
         self.input_pub = [ mqtt.pub(ManualPub(self, "%d" % n, n)) for n in range(0, n) ]
         self.input_pub_value = [ "" for _ in range(0, n) ]
         self.program = {}
@@ -72,34 +72,29 @@ class Manual:
     def eval_in(self, n, old, new):
         # Currently, only implementation is the pulse switch
 
+        # Cancel any ongoing longpress timeout
+        if self.longpress_task[n] is not None:
+            self.longpress_task[n].cancel()
+            self.longpress_task[n] = None
+
         if old == 0 and new == 1:
             # short pulse, rising edge
+            self.run_program(n)
             self.input_pub_value[n] = "P"
             self.input_pub[n].forcepub()
             self.input_pub_value[n] = ""
-            self.run_program(n)
 
-            # start counting long-press time
-            self.longpress_crono[n] = Shortcronometer()
-            return
-
-        if old == 1 and new == 0:
-            # short pulse, falling edge
-            if self.longpress_crono[n] is not None and \
-                    self.longpress_crono[n].elapsed() >= self.longpress_time:
-                # long press detected
+            # schedule long-press timeout
+            def cb(_):
+                self.run_program_longpress(n)
                 self.input_pub_value[n] = "L"
                 self.input_pub[n].forcepub()
                 self.input_pub_value[n] = ""
-                self.run_program_longpress(n)
 
-        self.longpress_crono[n] = None
+            self.longpress_task[n] = Task(False, "longpress", cb, self.longpress_time)
 
-    # Apply program associated with manual
+    # Apply programs associated with manual
     # (generally, turning some lights on and others off)
-
-    def run_program_longpress(self, n):
-        self.run_program(n, phase=0)
 
     def run_program(self, n, phase=None):
         if n not in self.program:
@@ -114,6 +109,9 @@ class Manual:
 
         for sw, st in program['phases'][phase]['switches']:
             self.switches[sw].switch(st)
+
+    def run_program_longpress(self, n):
+        self.run_program(n, phase=0)
 
     def detect_phase(self, program):
         for i, phase in enumerate(program['phases']):

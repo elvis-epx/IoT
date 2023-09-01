@@ -18,6 +18,11 @@ test: clean-coverage
 	python3-coverage html
 	xdg-open htmlcov/index.html
 
+report:
+	python3-coverage combine || echo
+	python3-coverage html
+	xdg-open htmlcov/index.html
+
 test2: clean-coverage
 	./runtest justrun_h
 	./runtest h2o_disp
