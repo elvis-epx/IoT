@@ -1,3 +1,13 @@
 Based on https://github.com/reillybeacom/uPyLora.git and https://github.com/sergio303/micropython-sx127x
 
 Reed-Solomon module from https://github.com/tomerfiliba-org/reedsolomon.git
+
+Good results with SF9 62.5kHz for indoor LoRa (masonry house) and big backyard
+    could go with SF9 125kHz or faster if antenna better positioned (attic)
+
+Suggested protocol: 
+    type: 0.5 or 1 byte
+    topic: 1.5..2.5 bytes 
+    seq: 1 byte
+    payload
+    FEC: 4 bytes
