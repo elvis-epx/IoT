@@ -7,10 +7,10 @@ class Direct4:
     def __init__(self):
         self.inputs = 4
         self.outputs = 4
-        self.led = -1 # none
+        self.led = 2
 
         self.input_pins_no = [26, 34, 33, 35]
-        self.output_pins_no = [16, 2, 32, 12]
+        self.output_pins_no = [17, 16, 32, 12]
         self.input_pins = [ Pin(n, Pin.IN) for n in self.input_pins_no ]
         self.output_pins = [ Pin(n, Pin.OUT) for n in self.output_pins_no ]
 
