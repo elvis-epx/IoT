@@ -149,7 +149,7 @@ class Manual:
         programs = {}
 
         # manual record 1 ; manual record 2 ; ...
-
+        # always has at least 1 element
         p = [s.strip() for s in pstring.strip().split(";")]
 
         for pms in p:
@@ -183,14 +183,16 @@ class Manual:
             # There should be at least 2
 
             phases = [s.strip() for s in sphases.split("/")]
-
-            if len(phases) < 2:
-                return "Phase list len unexp: " + sphases
+            # always has at least 1 element
+            # we admit this so there can be manual switches that only do one thing
+            # e.g. only turn lights on, or only turn lights off
 
             # example of 1 manual controlling 1 light, two phases: +1 / -1
             # example of 1 manual controlling 2 lights, four phases: -1,-2 / +1,+2 / +1,-2 / -1,+2
 
             for phase in phases:
+                if not phase:
+                    return "Phase empty"
                 print("\t\tPhase", phase)
                 # Parse switch(es) of every given phase
                 switches = [s.strip() for s in phase.split(",")]

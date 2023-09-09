@@ -61,7 +61,16 @@ assert mqtt stat/Switch/ProgramCompilation "Program kind unexp"
 
 mqttsub cmnd/Switch/Program "0:P:+0"
 sleep 1
-assert mqtt stat/Switch/ProgramCompilation "Phase list len unexp"
+assert mqtt stat/Switch/ProgramCompilation "Success"
+assert mqtt "stat/Switch/Program " "0:P:+0"
+
+mqttsub cmnd/Switch/Program "0:P:"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Phase empty"
+
+mqttsub cmnd/Switch/Program "0:P:+0//-0"
+sleep 1
+assert mqtt stat/Switch/ProgramCompilation "Phase empty"
 
 mqttsub cmnd/Switch/Program "0:P:+0/0"
 sleep 1
