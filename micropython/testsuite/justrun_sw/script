@@ -10,8 +10,8 @@ gpio 35 1
 runme
 sleep 5
 # Switches/relays
+assert gpio 17 0
 assert gpio 16 0
-assert gpio 2 0
 assert gpio 32 0
 assert gpio 12 0
 wifi GOT_IP
@@ -21,25 +21,25 @@ sleep 5
 gpio 26 0
 sleep 1
 gpio 26 1
-assert gpio 16 1
+assert gpio 17 1
 sleep 5
 gpio 26 0
 sleep 1
 gpio 26 1
-assert gpio 16 0
+assert gpio 17 0
 
 # Flaky switch
 gpio 26 0
 sleep 0.2
 gpio 26 1
 sleep 1
-assert gpio 16 0
+assert gpio 17 0
 
 gpio 26 0
 sleep 0.5
 gpio 26 1
 sleep 1
-assert gpio 16 0
+assert gpio 17 0
 
 
 # Nil program
@@ -84,45 +84,45 @@ assert mqtt "stat/Switch/Program " "0:P:+1/-1"
 gpio 26 0
 sleep 1
 gpio 26 1
-assert gpio 16 0
-assert gpio 2 1
+assert gpio 17 0
+assert gpio 16 1
 # Another pulse
 sleep 5
 gpio 26 0
 sleep 1
 gpio 26 1
+assert gpio 17 0
 assert gpio 16 0
-assert gpio 2 0
 
 # Pulse Manual 3, no program associated
 gpio 35 0
 sleep 1
 gpio 35 1
+assert gpio 17 0
 assert gpio 16 0
-assert gpio 2 0
 assert gpio 32 0
 assert gpio 12 0
 
 mqttsub cmnd/Switch/0/State 1
 sleep 1
-assert gpio 16 1
+assert gpio 17 1
 
 mqttsub cmnd/Switch/1/State On
 sleep 1
-assert gpio 2 1
+assert gpio 16 1
 
 mqttsub cmnd/Switch/3/State moo
 sleep 1
-assert gpio 2 1
+assert gpio 16 1
 
 mqttsub cmnd/Switch/1/State 1
 sleep 1
-assert gpio 2 1
+assert gpio 16 1
 
 mqttsub cmnd/Switch/0/State off
 mqttsub cmnd/Switch/1/State 0
+assert gpio 17 0
 assert gpio 16 0
-assert gpio 2 0
 
 sleep 5
 quit
