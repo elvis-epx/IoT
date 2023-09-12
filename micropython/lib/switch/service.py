@@ -6,8 +6,8 @@ OFF = const(0)
 
 class SwitchPub(MQTTPub):
     def __init__(self, name, switch):
-        # client may call forcepub()
-        MQTTPub.__init__(self, "stat/%s/" + name + "/State", 1 * SECONDS, 10 * MINUTES, False)
+        # client should call forcepub()
+        MQTTPub.__init__(self, "stat/%s/" + name + "/State", 1 * MINUTES, 10 * MINUTES, False)
         self.switch = switch
 
     def gen_msg(self):
@@ -27,10 +27,11 @@ class SwitchSub(MQTTSub):
         else:
             print("State: invalid value")
 
+# Manual (pulsing) interruptor
 
 class ManualPub(MQTTPub):
     def __init__(self, source, name, n):
-        # client should call forcepub()
+        # client must call forcepub()
         MQTTPub.__init__(self, "stat/%s/Manual" + name + "/Event", 0, 0, False)
         self.source = source
         self.n = n
@@ -38,24 +39,29 @@ class ManualPub(MQTTPub):
     def gen_msg(self):
         return self.source.manual_event(self.n)
 
+# Manual interruptor program (map to switches)
 
 class ManualProgPub(MQTTPub):
     def __init__(self, source):
-        # client should call forcepub()
+        # client must call forcepub()
         MQTTPub.__init__(self, "stat/%s/Program", 0, 0, False)
         self.source = source
 
     def gen_msg(self):
         return self.source.program_str()
 
+# Manual program parsing/compilation result
+
 class ManualProgCompilationPub(MQTTPub):
     def __init__(self, source):
-        # client should call forcepub()
+        # client must call forcepub()
         MQTTPub.__init__(self, "stat/%s/ProgramCompilation", 0, 0, False)
         self.source = source
 
     def gen_msg(self):
         return self.source.program_compilation_status()
+
+# Manual program receiver
 
 class ManualProgSub(MQTTSub):
     def __init__(self, source):
