@@ -1,5 +1,5 @@
-import machine
 from machine import Pin
+import time
 
 # Direct usage of GPIO pins in breadboard, input is complementary (1 = OFF)
 
@@ -113,3 +113,72 @@ class minir4:
         for i, pin in enumerate(self.input_pins):
             bitmap += (pin.value() and 1 or 0) << i
         return ~bitmap
+
+# DTWonder www.dingtian-tech.com with 8 inputs and 8 outputs
+
+class dtwonder8:
+    def __init__(self):
+        self.inputs = 8
+        self.outputs = 8
+        self.led = -1 # none
+        self.led_inverse = 0
+
+        self.output_enable = Pin(32, Pin.OUT)
+        self.clock_inhibit = Pin(15, Pin.OUT)
+        self.clock = Pin(14, Pin.OUT)
+        self.bit_in = Pin(16, Pin.IN)
+        self.bit_out = Pin(13, Pin.OUT)
+
+        # disable all relays until first I/O is done
+        self.output_enable.value(1)
+        # Rest values
+        self.clock_inhibit.value(1)
+        self.clock.value(0)
+
+        self.output_bitmap = 0
+        self.do_io()
+
+    def output_pin(self, pin, value):
+        if value:
+            self.output_bitmap |= (1 << pin)
+        else:
+            self.output_bitmap &= ~(1 << pin)
+        self.do_io()
+
+    def input(self):
+        return ~self.do_io()
+
+    # Read 74HC165 and write 74HC595
+    # (they are tied together, so they need to be read and written at the same time)
+    # It seems that SH/LD of the '165 is tied together with CLK INH, so we don't need
+    # to operate this pin
+
+    def do_io(self):
+        input_bitmap = 0
+
+        # start transaction
+        time.sleep_us(1)
+        self.clock_inhibit.value(0)
+        time.sleep_us(1)
+
+        for bit in range(0, 8):
+            # Read bit from 165 and write bit to 595
+            input_bitmap |= (self.bit_in.value() and 1 or 0) << bit # LSB first
+            self.bit_out.value((self.output_bitmap & (1 << (7 - bit))) and 1 or 0) # MSB first
+
+            # Pulse clock to load 595 and shift 165
+            time.sleep_us(1)
+            self.clock.value(1)
+            time.sleep_us(1)
+            self.clock.value(0)
+            time.sleep_us(1)
+
+        # end transaction
+        time.sleep_us(1)
+        self.clock_inhibit.value(1)
+
+        # enable relays
+        time.sleep_us(1)
+        self.output_enable.value(0)
+
+        return input_bitmap
