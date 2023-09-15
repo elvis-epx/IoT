@@ -90,3 +90,26 @@ class hoffer6:
         for i, pin in enumerate(self.input_pins):
             bitmap += (pin.value() and 1 or 0) << i
         return bitmap
+
+# Sonoff Mini R4 (yes, it can run MicroPython)
+
+class minir4:
+    def __init__(self):
+        self.inputs = 1
+        self.outputs = 1
+        self.led = 19
+        self.led_inverse = 1
+
+        self.input_pins_no = [27, 0]
+        self.output_pins_no = [26]
+        self.input_pins = [ Pin(n, Pin.IN) for n in self.input_pins_no ]
+        self.output_pins = [ Pin(n, Pin.OUT) for n in self.output_pins_no ]
+
+    def output_pin(self, pin, value):
+        self.output_pins[pin].value(value)
+
+    def input(self):
+        bitmap = 0
+        for i, pin in enumerate(self.input_pins):
+            bitmap += (pin.value() and 1 or 0) << i
+        return ~bitmap
