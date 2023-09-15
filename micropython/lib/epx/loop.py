@@ -180,7 +180,7 @@ def millis_diff(a, b):
 def millis_add(a, b):
     return time.ticks_add(a, b)
 
-def run(led_pin=2):
+def run(led_pin=2, led_inverse=0):
     gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
 
     if led_pin > 0:
@@ -195,10 +195,10 @@ def run(led_pin=2):
         task, t = next_task()
         sleep(t)
         if led:
-            led.value(1)
+            led.value(not led_inverse)
         task.run()
         if led:
-            led.value(0)
+            led.value(led_inverse)
 
 def reboot():
     machine.reset()

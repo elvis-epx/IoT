@@ -8,6 +8,7 @@ class Direct4:
         self.inputs = 4
         self.outputs = 4
         self.led = 2
+        self.led_inverse = 0
 
         self.input_pins_no = [26, 34, 33, 35]
         self.output_pins_no = [17, 16, 32, 12]
@@ -30,6 +31,7 @@ class dtwonder2:
         self.inputs = 2
         self.outputs = 2
         self.led = -1 # none
+        self.led_inverse = 0
 
         self.input_pins_no = [36, 39]
         self.output_pins_no = [16, 2]
@@ -50,6 +52,7 @@ class dtwonder4:
         self.inputs = 4
         self.outputs = 4
         self.led = -1 # none
+        self.led_inverse = 0
 
         self.input_pins_no = [36, 39, 33, 35]
         self.output_pins_no = [16, 2, 32, 12]
@@ -72,6 +75,7 @@ class hoffer6:
         self.inputs = 8
         self.outputs = 6
         self.led = 2
+        self.led_inverse = 0
 
         self.input_pins_no = [36, 39, 32, 33, 25, 26, 27, 14]
         self.output_pins_no = [4, 16, 17, 18, 19, 23]

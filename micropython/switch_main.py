@@ -24,8 +24,9 @@ longpress = int(config.data["longpress"])
 driver = getattr(drivers, config.data["driver"])()
 del drivers
 led = driver.led
+led_inverse = driver.led_inverse
 
 switches = [ Switch(nvram, mqtt, driver, i) for i in range(0, driver.outputs) ]
 bridge = Manual(nvram, mqtt, driver, switches, poll, debounce, longpress)
 
-loop.run(led)
+loop.run(led, led_inverse)
