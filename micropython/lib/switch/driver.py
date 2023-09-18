@@ -95,7 +95,7 @@ class hoffer6:
 
 class minir4:
     def __init__(self):
-        self.inputs = 1
+        self.inputs = 2
         self.outputs = 1
         self.led = 19
         self.led_inverse = 1
@@ -146,7 +146,7 @@ class dtwonder8:
         self.do_io()
 
     def input(self):
-        return ~self.do_io()
+        return (~self.do_io()) & 0xff
 
     # Read 74HC165 and write 74HC595
     # (they are tied together, so they need to be read and written at the same time)
@@ -163,8 +163,10 @@ class dtwonder8:
 
         for bit in range(0, 8):
             # Read bit from 165 and write bit to 595
-            input_bitmap |= (self.bit_in.value() and 1 or 0) << bit # LSB first
-            self.bit_out.value((self.output_bitmap & (1 << (7 - bit))) and 1 or 0) # MSB first
+            # LSB first
+            input_bitmap |= (self.bit_in.value() and 1 or 0) << bit
+            # MSB first, but DTWonder defines MSB0 = relay 1, so LSB too
+            self.bit_out.value((self.output_bitmap & (1 << bit)) and 1 or 0)
 
             # Pulse clock to load 595 and shift 165
             time.sleep_us(1)
