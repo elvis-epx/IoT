@@ -2,6 +2,13 @@
 
 import socket, sys, time, struct
 
+# send MQTT message 'open' to cmnd/<DeviceName>/OTA
+# send MQTT message 'reboot' to cmnd/<DeviceName>/OTA after sending updates
+
+if len(sys.argv) < 3:
+    print("Usage: %s <ip addr> <file with path> [<failure to simulate>]"
+    sys.exit(1)
+
 addr, filename = sys.argv[1], sys.argv[2]
 simfail = ''
 if len(sys.argv) > 3:
