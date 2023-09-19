@@ -3,6 +3,8 @@ from epx import loop
 import machine
 from epx.loop import StateMachine, Task, SECONDS, MILISSECONDS
 import os
+from hashlib import sha1
+import binascii
 
 if hasattr(machine, 'TEST_ENV'):
     import socket
@@ -42,6 +44,7 @@ class OTAHandler:
         sm.add_transition("initial", "listen")
         sm.add_transition("listen", "header")
         sm.add_transition("header", "connlost")
+        sm.add_transition("header", "done")
         sm.add_transition("header", "payload")
         sm.add_transition("payload", "connlost")
         sm.add_transition("payload", "eof")
@@ -109,10 +112,16 @@ class OTAHandler:
             return
 
         self.buf += data
-        res = self.parse_packet(1, 6)
+        res, ptype = self.parse_packet({1: 6, 5: 4})
         if res <= 0:
             return
 
+        if ptype == 1:
+            self.header_to_payload()
+        else:
+            self.header_to_hash()
+
+    def header_to_payload(self):
         self.filelen = self.buf[2] * 256 + self.buf[3]
         self.filetot = 0
         self.filename = self.buf[4:-1].decode('ascii')
@@ -134,29 +143,61 @@ class OTAHandler:
 
         self.sm.schedule_trans_now("payload")
 
-    def parse_packet(self, exp_type, min_len):
+    def header_to_hash(self):
+        filename = self.buf[2:-1].decode('ascii')
+        self.buf = b''
+
+        if hasattr(machine, 'TEST_ENV'):
+            filename = machine.TEST_FOLDER + filename
+        try:
+            h = sha1()
+            f = open(filename, 'rb')
+            while True:
+                data = f.read(64)
+                if not data:
+                    break
+                h.update(data)
+                gc.collect()
+            h = binascii.hexlify(h.digest())
+        except OSError as e:
+            h = b'0' * 40
+
+        print("OTA file %s hash %s" % (filename, h))
+
+        try:
+            self.connection.send(b'6' + h)
+        except sockerror as e:
+            print("Failure while answering hash")
+            self.sm.schedule_trans_now("connlost")
+            return
+
+        self.sm.schedule_trans_now("done")
+
+    def parse_packet(self, exp_types):
         if len(self.buf) < 3:
-            return 0
+            return 0, 0
 
         length, ptype = self.buf[0], self.buf[1]
 
-        if ptype != exp_type:
+        if ptype not in exp_types:
             print("Unexpected pkt type")
             self.sm.schedule_trans_now("connlost")
-            return -1
+            return -1, 0
+
+        min_len = exp_types[ptype]
 
         if length < min_len:
             print("Unexpectedly short pkt len")
             self.sm.schedule_trans_now("connlost")
-            return -1
+            return -1, 0
 
         if len(self.buf) < length:
-            return 0
+            return 0, 0
 
         if len(self.buf) > length:
             print("Pkt too long")
             self.sm.schedule_trans_now("connlost")
-            return -1
+            return -1, 0
 
         checksum = 0
         for b in self.buf:
@@ -164,9 +205,9 @@ class OTAHandler:
         if checksum != 0:
             print("Invalid checksum")
             self.sm.schedule_trans_now("connlost")
-            return -1
+            return -1, 0
 
-        return 1
+        return 1, ptype
 
     def on_payload(self):
         self.sm.recurring_task("ota_payload", self.payload_poll, 50 * MILISSECONDS)
@@ -178,7 +219,7 @@ class OTAHandler:
             return
 
         self.buf += data
-        res = self.parse_packet(2, 3)
+        res, _ = self.parse_packet({2: 3})
         if res <= 0:
             return
 

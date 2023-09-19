@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
-import socket, sys, time, struct
+import socket, sys, time, struct, binascii
 
 # send MQTT message 'open' to cmnd/<DeviceName>/OTA
 # send MQTT message 'reboot' to cmnd/<DeviceName>/OTA after sending updates
 
 if len(sys.argv) < 3:
-    print("Usage: %s <ip addr> <file with path> [<failure to simulate>]" % sys.argv[0])
+    print("Usage: %s <ip addr> <send|hash> <file with path> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
     sys.exit(1)
 
-addr, filename = sys.argv[1], sys.argv[2]
+addr, op, filename = sys.argv[1], sys.argv[2], sys.argv[3]
 simfail = ''
-if len(sys.argv) > 3:
-    simfail = sys.argv[3]
+if len(sys.argv) > 4:
+    simfail = sys.argv[4]
 
 def make_packet(ptype, payload):
     length = len(payload) + 3
@@ -35,13 +35,17 @@ def make_packet(ptype, payload):
     return payload + bytes([checksum])
 
 port = 1337
-filedata = open(filename, 'rb').read()
 
 s = socket.socket()
 s.connect((addr, port))
 
-header = bytes([len(filedata) // 256, len(filedata) % 256]) + filename.encode('ascii')
-print("Sending header")
+if op == "send":
+    filedata = open(filename, 'rb').read()
+    header = bytes([len(filedata) // 256, len(filedata) % 256]) + filename.encode('ascii')
+else:
+    header = filename.encode('ascii')
+
+print("Sending header", file=sys.stderr)
 if simfail == 'timeout1':
     time.sleep(40)
 elif simfail == 'zero1':
@@ -53,7 +57,11 @@ elif simfail == 'rst':
     s.close()
     time.sleep(10)
 
-ptype = 1
+if op == "send":
+    ptype = 1
+else:
+    ptype = 5
+
 if simfail == 'type1':
     ptype = 2
 elif simfail == 'short':
@@ -77,9 +85,18 @@ if simfail == 'rstw1':
     s.close()
     time.sleep(10)
 
-print("Waiting for header Ack")
+print("Waiting for header Ack", file=sys.stderr)
+
+if op != 'send':
+    if s.recv(1) != b'6':
+        print("Invalid header response", file=sys.stderr)
+        sys.exit(1)
+    h = s.recv(41)[0:40]
+    print(h.decode('ascii'))
+    sys.exit(0)
+
 if s.recv(1) != b'1':
-    print("Invalid header Ack")
+    print("Invalid header Ack", file=sys.stderr)
     sys.exit(1)
 
 if simfail == 'overflow':
@@ -88,7 +105,7 @@ if simfail == 'overflow':
 while filedata:
     segment = filedata[:250]
     filedata = filedata[250:]
-    print("Sending segment")
+    print("Sending segment", file=sys.stderr)
     if simfail == 'timeout2':
         time.sleep(40)
     elif simfail == 'zero2':
@@ -110,21 +127,21 @@ while filedata:
         s.close()
         time.sleep(10)
 
-    print("Waiting for Ack")
+    print("Waiting for Ack", file=sys.stderr)
     if s.recv(1) != b'2':
-        print("Invalid payload Ack")
+        print("Invalid payload Ack", file=sys.stderr)
         sys.exit(1)
 
-print("Sending EOF segment")
+print("Sending EOF segment", file=sys.stderr)
 s.send(make_packet(2, b''))
-print("Waiting for Ack")
+print("Waiting for Ack", file=sys.stderr)
 if s.recv(1) != b'2':
-    bprint("Invalid Ack")
+    bprint("Invalid Ack", file=sys.stderr)
     sys.exit(1)
 
-print("Waiting for final Ack")
+print("Waiting for final Ack", file=sys.stderr)
 if s.recv(1) != b'3':
-    print("Invalid Ack")
+    print("Invalid Ack", file=sys.stderr)
     sys.exit(1)
 
-print("Done")
+print("Done", file=sys.stderr)

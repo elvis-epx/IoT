@@ -18,7 +18,7 @@ rm -f $TESTFILE
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 chmod 400 $TESTFILE
 [ ! -e $TEST_FOLDER/$TESTFILE ] || ( echo "File preexistant"; exit 1 )
-./otatool 127.0.0.1 $TESTFILE
+./otatool 127.0.0.1 send $TESTFILE
 while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
         sleep 1
 done
@@ -40,7 +40,7 @@ TESTFILE=otatest111.sim
 rm -f $TESTFILE
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ -f $TEST_FOLDER/$TESTFILE ] || ( echo "File not preexistant"; exit 1 )
-./otatool 127.0.0.1 $TESTFILE
+./otatool 127.0.0.1 send $TESTFILE
 while [ -f $TEST_FOLDER/tmppiggy ] || [ ! -f $TEST_FOLDER/$TESTFILE ]; do
     sleep 1
 done
@@ -61,7 +61,7 @@ rm -rf folder.sim
 mkdir -p folder.sim/folder.sim2
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ ! -e $TEST_FOLDER/folder.sim ] || ( echo "Target folder preexistant"; exit 1 )
-./otatool 127.0.0.1 $TESTFILE
+./otatool 127.0.0.1 send $TESTFILE
 while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
         sleep 1
 done
@@ -81,7 +81,7 @@ rm -rf folder.sim
 mkdir -p folder.sim/folder.sim2
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ -d $TEST_FOLDER/folder.sim/folder.sim2 ] || ( echo "Target folder not preexistant"; exit 1 )
-./otatool 127.0.0.1 $TESTFILE
+./otatool 127.0.0.1 send $TESTFILE
 while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
         sleep 1
 done
@@ -100,7 +100,7 @@ rm -rf folder.sim
 mkdir -p folder.sim/folder.sim2
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ -f $TEST_FOLDER/$TESTFILE ] || ( echo "Target file not preexistant"; exit 1 )
-./otatool 127.0.0.1 $TESTFILE
+./otatool 127.0.0.1 send $TESTFILE
 while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
         sleep 1
 done
@@ -111,6 +111,20 @@ if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     exit 1
 fi
 
+REMOTE_HASH=$(./otatool 127.0.0.1 hash $TESTFILE)
+LOCAL_HASH=$(sha1sum $TEST_FOLDER/$TESTFILE | cut -f 1 -d ' ')
+
+if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
+    echo "Hash wrong"
+    exit 1
+fi
+
+REMOTE_HASH=$(./otatool 127.0.0.1 hash foobar)
+
+if [ "$REMOTE_HASH" != "0000000000000000000000000000000000000000" ]; then
+    echo "Non-existent hash wrong"
+    exit 1
+fi
 
 # Top-folder zero-sized file
 
@@ -119,7 +133,7 @@ rm -f $TESTFILE
 touch $TESTFILE
 chmod 400 $TESTFILE
 [ ! -e $TEST_FOLDER/$TESTFILE ] || ( echo "File preexistant"; exit 1 )
-./otatool 127.0.0.1 $TESTFILE
+./otatool 127.0.0.1 send $TESTFILE
 while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
         sleep 1
 done
@@ -128,6 +142,13 @@ sleep 3
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     echo "Source and destination file different"
     chmod 644 $TESTFILE
+    exit 1
+fi
+
+REMOTE_HASH=$(./otatool 127.0.0.1 hash $TESTFILE)
+
+if [ "$REMOTE_HASH" != "da39a3ee5e6b4b0d3255bfef95601890afd80709" ]; then
+    echo "Empty file hash wrong"
     exit 1
 fi
 
