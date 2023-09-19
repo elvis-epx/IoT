@@ -8,6 +8,7 @@ import socket, sys, time, struct, binascii
 if len(sys.argv) < 4:
     print("Usage: %s <ip addr> send <local file> <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
     print("       %s <ip addr> hash <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
+    print("       %s <ip addr> rm <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
     sys.exit(1)
 
 addr, op = sys.argv[1], sys.argv[2]
@@ -19,6 +20,10 @@ if op == "send":
     if len(sys.argv) > 5:
         simfail = sys.argv[5]
 elif op == "hash":
+    remotefile = sys.argv[3]
+    if len(sys.argv) > 4:
+        simfail = sys.argv[4]
+elif op == "rm":
     remotefile = sys.argv[3]
     if len(sys.argv) > 4:
         simfail = sys.argv[4]
@@ -51,7 +56,7 @@ s.connect((addr, port))
 if op == "send":
     filedata = open(localfile, 'rb').read()
     header = bytes([len(filedata) // 256, len(filedata) % 256]) + remotefile.encode('ascii')
-elif op == "hash":
+elif op == "hash" or op == "rm":
     header = remotefile.encode('ascii')
 
 print("Sending header", file=sys.stderr)
@@ -68,8 +73,10 @@ elif simfail == 'rst':
 
 if op == "send":
     ptype = 1
-else:
+elif op == "hash":
     ptype = 5
+elif op == "rm":
+    ptype = 7
 
 if simfail == 'type1':
     ptype = 2
@@ -96,12 +103,18 @@ if simfail == 'rstw1':
 
 print("Waiting for header Ack", file=sys.stderr)
 
-if op != 'send':
+if op == 'hash':
     if s.recv(1) != b'6':
         print("Invalid header response", file=sys.stderr)
         sys.exit(1)
     h = s.recv(41)[0:40]
     print(h.decode('ascii'))
+    sys.exit(0)
+
+elif op == 'rm':
+    if s.recv(1) != b'8':
+        print("Invalid header response", file=sys.stderr)
+        sys.exit(1)
     sys.exit(0)
 
 if s.recv(1) != b'1':

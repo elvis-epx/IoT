@@ -152,9 +152,27 @@ if [ "$REMOTE_HASH" != "da39a3ee5e6b4b0d3255bfef95601890afd80709" ]; then
     exit 1
 fi
 
+if ! [ -f $TEST_FOLDER/$TESTFILE ]; then
+    echo "Empty file not in place"
+    exit 1
+fi
+
+./otatool 127.0.0.1 rm $TESTFILE
+
+if [ -f $TEST_FOLDER/$TESTFILE ]; then
+    echo "Empty file not removed"
+    exit 1
+fi
+
+./otatool 127.0.0.1 rm $TESTFILE
+
+if [ -f $TEST_FOLDER/$TESTFILE ]; then
+    echo "Empty file not removed II"
+    exit 1
+fi
+
 chmod 644 $TESTFILE
 rm -f $TESTFILE
-
 
 rm -rf folder.sim
 

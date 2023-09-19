@@ -112,14 +112,18 @@ class OTAHandler:
             return
 
         self.buf += data
-        res, ptype = self.parse_packet({1: 6, 5: 4})
+        res, ptype = self.parse_packet({1: 6, 5: 4, 7: 4})
         if res <= 0:
             return
 
         if ptype == 1:
             self.header_to_payload()
-        else:
+        elif ptype == 5:
             self.header_to_hash()
+        elif ptype == 7:
+            self.header_to_rm()
+        else:
+            self.sm.schedule_trans_now("connlost")
 
     def header_to_payload(self):
         self.filelen = self.buf[2] * 256 + self.buf[3]
@@ -168,6 +172,27 @@ class OTAHandler:
             self.connection.send(b'6' + h)
         except sockerror as e:
             print("Failure while answering hash")
+            self.sm.schedule_trans_now("connlost")
+            return
+
+        self.sm.schedule_trans_now("done")
+
+    def header_to_rm(self):
+        filename = self.buf[2:-1].decode('ascii')
+        self.buf = b''
+
+        if hasattr(machine, 'TEST_ENV'):
+            filename = machine.TEST_FOLDER + filename
+        try:
+            os.unlink(filename)
+            print("OTA file rm %s" % filename)
+        except OSError as e:
+            print("OTA file rm %s fail" % filename)
+
+        try:
+            self.connection.send(b'8')
+        except sockerror as e:
+            print("Failure while answering rm")
             self.sm.schedule_trans_now("connlost")
             return
 
