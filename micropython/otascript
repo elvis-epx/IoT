@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e
+
+DEVTYPE="$1"
+IP="$2"
+
+if ! [ -f ${DEVTYPE}.ota ]; then
+    echo "Error: device type has no .ota laundry list"
+    exit 1
+fi
+
+(while true; do
+
+    read a || break
+    localfile=$(echo $a | cut -f 1 -d ' ')  
+    remotefile=$(echo $a | cut -f 2 -d ' ')
+    if [ "$localfile" = "" ]; then
+        continue
+    fi
+    if ! [ -f "$localfile" ]; then
+        echo "Local file $localfile does not exist"
+        exit 1
+    fi
+    if [ "$remotefile" = "" ]; then
+        remotefile="$localfile"
+    fi
+    localhash=$(sha1sum $localfile | cut -f 1 -d ' ')
+    echo "Hash of local  $localfile: $localhash"
+    remotehash=$(./otatool "$IP" hash $remotefile 2>/dev/null)
+    echo "Hash of remote $remotefile: $remotehash"
+    if [ "$remotehash" != "$localhash" ]; then
+        echo "...Updating"
+        ./otatool "$IP" send $localfile $remotefile
+    fi
+
+done) < ${DEVTYPE}.ota
