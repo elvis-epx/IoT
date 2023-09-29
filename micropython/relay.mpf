@@ -27,4 +27,3 @@ put lib/relay/actuator.py /lib/relay/actuator.py
 
 put relay_boot.py boot.py
 put relay_main.py main.py
-put relay_config.txt config.txt

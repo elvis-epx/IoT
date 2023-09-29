@@ -30,4 +30,3 @@ put lib/switch/driver.py /lib/switch/driver.py
 
 put switch_boot.py boot.py
 put switch_main.py main.py
-put switch_config.txt config.txt

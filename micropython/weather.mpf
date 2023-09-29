@@ -28,4 +28,3 @@ put lib/weather/actuator.py /lib/weather/actuator.py
 
 put weather_boot.py boot.py
 put weather_main.py main.py
-put weather_config.txt config.txt

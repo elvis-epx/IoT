@@ -1,4 +1,4 @@
 #!/bin/bash
 
 SERIAL_PORT=`cat serial.txt`
-mpfshell -o $SERIAL_PORT -c "put $1_config.txt /config.txt" -n
+mpfshell -o $SERIAL_PORT -c "put $1 /config.txt" -n

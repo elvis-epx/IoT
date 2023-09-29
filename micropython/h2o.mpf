@@ -28,4 +28,3 @@ put lib/h2o/actuator.py /lib/h2o/actuator.py
 
 put h2o_boot.py boot.py
 put h2o_main.py main.py
-put h2o_config.txt config.txt
