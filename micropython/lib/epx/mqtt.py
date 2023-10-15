@@ -6,6 +6,7 @@ import ubinascii
 from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer
 from epx import loop
 
+ota_pub = None
 
 class MQTT:
     def __init__(self, cfg, net, watchdog):
@@ -39,7 +40,9 @@ class MQTT:
         if "mqttbroker" in self.cfg.data and "mqttname" in self.cfg.data:
             self.name = self.cfg.data['mqttname']
             self.sm.schedule_trans("start", 12 * SECONDS)
-            self.sub(TestSub())
+            global ota_pub
+            ota_pub = OTAPub(self.net)
+            self.pub(ota_pub)
             self.sub(OTASub())
             self.pub(Uptime())
 
@@ -200,13 +203,26 @@ class MQTTSub:
         pass # pragma: no cover
 
 
-class TestSub(MQTTSub):
-    def __init__(self):
-        MQTTSub.__init__(self, "cmnd/%s/test")
+class OTAPub(MQTTPub):
+    def __init__(self, net):
+        MQTTPub.__init__(self, "stat/%s/OTA", 10 * SECONDS, 24 * 60 * MINUTES, False)
+        self.enabled = False
+        self.counter = 0
+        self.net = net
 
-    def recv(self, topic, msg, retained, dup):
-        print("MQTT sub recv", topic, msg)
+    def start_bcast(self):
+        self.enabled = True
 
+    def gen_msg(self):
+        if not self.enabled:
+            return ''
+        self.counter += 1
+        addr = 'undef'
+        mac = self.net.macaddr() or 'undef'
+        netstatus, ifconfig = self.net.ifconfig()
+        if ifconfig and netstatus == 'connected':
+            addr = ifconfig[0]
+        return "netstatus %s addr %s mac %s count %d" % (netstatus, addr, mac, self.counter)
 
 class OTASub(MQTTSub):
     def __init__(self):
@@ -220,6 +236,7 @@ class OTASub(MQTTSub):
             print("Received MQTT OTA open cmd")
             from epx import ota
             ota.start()
+            ota_pub.start_bcast()
         else:
             print("Invalid MQTT OTA msg")
 

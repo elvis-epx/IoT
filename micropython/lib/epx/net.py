@@ -93,3 +93,9 @@ class Net:
 
     def ifconfig(self):
         return self.sm.state, (self.impl and self.impl.ifconfig() or None)
+
+    def macaddr(self):
+        if not self.impl:
+            return ''
+        mac = self.impl.config('mac')
+        return ':'.join([f"{b:02X}" for b in mac])
