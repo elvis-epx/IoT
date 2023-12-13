@@ -65,7 +65,7 @@ if under_test:
     LOWFLOW_RECOVER = 2.0 * 60
 
 PUMP_TIMEOUT = (1.5 * TANK_CAPACITY / EXPECTED_FLOW) * 60 # min -> sec
-PUMPTIMEOUT_RECOVER = 12.0 * 60 * 60 # h -> sec
+PUMPTIMEOUT_RECOVER = 24.0 * 60 * 60 # h -> sec
 if under_test:
     PUMP_TIMEOUT = 2.0 * 60
     PUMPTIMEOUT_RECOVER = 2.0 * 60
