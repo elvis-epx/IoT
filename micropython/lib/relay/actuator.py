@@ -8,9 +8,10 @@ ON = const(1)
 OFF = const(0)
 
 class Relay:
-    def __init__(self, number):
+    def __init__(self, number, max_timeout):
         self.name = "relay%d" % number
         self.number = number
+        self.max_timeout = max_timeout
         self.pin = machine.Pin(RELAY_PINS[number], machine.Pin.OUT)
         self.switch(OFF)
         self.auto_off = None
@@ -18,6 +19,9 @@ class Relay:
     def turn_on_with(self, timeout):
         if self.auto_off:
             self.auto_off.cancel()
+
+        if timeout > self.max_timeout:
+            timeout = self.max_timeout
 
         new_state = (timeout > 0) and ON or OFF
         self.switch(new_state)

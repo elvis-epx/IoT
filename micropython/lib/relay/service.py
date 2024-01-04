@@ -1,8 +1,6 @@
 from epx.mqtt import MQTTPub, MQTTSub
 from epx.loop import SECONDS, MINUTES
 
-MAX_TIMEOUT = 600 # civil seconds
-
 class RelayPub(MQTTPub):
     def __init__(self, number, actuator):
         sn = "%s" % number
@@ -28,6 +26,4 @@ class RelaySub(MQTTSub):
 
         if timeout < 0:
             timeout = 0
-        elif timeout > MAX_TIMEOUT:
-            timeout = MAX_TIMEOUT
         self.actuator.turn_on_with(timeout)

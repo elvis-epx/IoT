@@ -85,18 +85,18 @@ assert gpio 27 1
 assert gpio 33 1
 assert mqtt stat/RelayControl/1/State 0
 
-mqttsub cmnd/RelayControl/1/TurnOnWithTimeout 6000
+mqttsub cmnd/RelayControl/0/TurnOnWithTimeout 6000
 sleep 3
-assert gpio 25 1
-assert gpio 26 0
+assert gpio 25 0
+assert gpio 26 1
 assert gpio 27 1
 assert gpio 33 1
-assert mqtt stat/RelayControl/1/State 1
+assert mqtt stat/RelayControl/0/State 1
 
 advance $((10 * 60 * 1000))
 sleep 3
-assert gpio 26 1
-assert mqtt stat/RelayControl/1/State 0
+assert gpio 25 1
+assert mqtt stat/RelayControl/0/State 0
 
 ssd1306f
 
