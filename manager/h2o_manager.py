@@ -23,7 +23,7 @@ TOPICS = [('stat/%s/#' % H2O, 2), ('stat/%s/#' % RELAY, 2), ('cmnd/%s/#' % MY_MQ
 MQTT_CLIENT_ID = "%s" % MY_MQTT_PREFIX
 MQTT_MANUALOFF = "cmnd/%s/ManualOff" % MY_MQTT_PREFIX
 MQTT_MANUALON = "cmnd/%s/ManualOn" % MY_MQTT_PREFIX
-MQTT_STATE = "stat/%s/State" % MY_MQTT_PREFIX
+MQTT_SM_STATE = "stat/%s/State" % MY_MQTT_PREFIX
 MQTT_WARNING = "stat/%s/Warning" % MY_MQTT_PREFIX
 MQTT_UPTIME = "stat/%s/Uptime" % MY_MQTT_PREFIX
 
@@ -158,6 +158,12 @@ class WaterStateMachine(StateMachine):
 
         # FIXME generate graph and/or autotest for state machine
 
+    def publish_state(self, state_name):
+        def republish(task):
+            self.mqtt_client.publish(MQTT_SM_STATE, state_name)
+            task.reset(600)
+        self.timeout("publish_state", 0, republish)
+
     def pump_on(self):
         def keep_on(task):
             Log.info("Pump on")
@@ -170,7 +176,7 @@ class WaterStateMachine(StateMachine):
         Log.info("Pump off")
 
     def to_nomqtt(self):
-        self.mqtt_client.publish(MQTT_STATE, "Offline")
+        self.publish_state("Offline")
 
         def on_conn():
             Log.info("MQTT connected to controllers")
@@ -208,7 +214,7 @@ class WaterStateMachine(StateMachine):
         self.q.on_msg(self, "stat/%s/EstimatedLevelStr" % H2O, on_levelstr, True)
 
     def to_off(self):
-        self.mqtt_client.publish(MQTT_STATE, "Off")
+        self.publish_state("Off")
         self.pump_off()
 
         self.detect_nomqtt()
@@ -240,7 +246,7 @@ class WaterStateMachine(StateMachine):
         self.q.on_float(self, "stat/%s/CoarseLevelPct" % H2O, on_level, True)
 
     def to_on(self):
-        self.mqtt_client.publish(MQTT_STATE, "On")
+        self.publish_state("On")
         self.pump_on()
 
         self.detect_nomqtt()
@@ -374,7 +380,7 @@ class WaterStateMachine(StateMachine):
             self.almost_full_timer = self.timeout("almost_full", 15, timeout)
 
     def to_manualon(self):
-        self.mqtt_client.publish(MQTT_STATE, "ManualOn")
+        self.publish_state("ManualOn")
         self.pump_on()
 
         self.detect_nomqtt()
@@ -389,7 +395,7 @@ class WaterStateMachine(StateMachine):
         self.q.on_int(self, MQTT_MANUALON, on_msg, True)
 
     def to_manualoff(self):
-        self.mqtt_client.publish(MQTT_STATE, "ManualOff")
+        self.publish_state("ManualOff")
         self.pump_off()
         self.detect_nomqtt()
 
@@ -399,7 +405,7 @@ class WaterStateMachine(StateMachine):
         self.q.on_int(self, MQTT_MANUALOFF, on_msg, True)
 
     def to_rest(self):
-        self.mqtt_client.publish(MQTT_STATE, "Resting")
+        self.publish_state("Resting")
         self.pump_off()
 
         self.detect_manualon()
@@ -407,7 +413,7 @@ class WaterStateMachine(StateMachine):
         self.schedule_trans("off", RESTING_TIME)
 
     def to_lowflow(self):
-        self.mqtt_client.publish(MQTT_STATE, "LowFlowError")
+        self.publish_state("LowFlowError")
         self.mqtt_client.publish(MQTT_WARNING, "Low flow, stopping pump")
         self.pump_off()
 
@@ -416,7 +422,7 @@ class WaterStateMachine(StateMachine):
         self.schedule_trans("off", LOWFLOW_RECOVER)
 
     def to_timeout(self):
-        self.mqtt_client.publish(MQTT_STATE, "TimeoutError")
+        self.publish_state("TimeoutError")
         self.mqtt_client.publish(MQTT_WARNING, "Timeout, stopping pump")
         self.pump_off()
         
@@ -425,7 +431,7 @@ class WaterStateMachine(StateMachine):
         self.schedule_trans("off", PUMPTIMEOUT_RECOVER)
 
     def to_malfunction(self):
-        self.mqtt_client.publish(MQTT_STATE, "Malfunction")
+        self.publish_state("Malfunction")
         self.pump_off()
 
         self.detect_nomqtt()
