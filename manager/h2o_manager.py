@@ -26,6 +26,7 @@ MQTT_MANUALON = "cmnd/%s/ManualOn" % MY_MQTT_PREFIX
 MQTT_SM_STATE = "stat/%s/State" % MY_MQTT_PREFIX
 MQTT_WARNING = "stat/%s/Warning" % MY_MQTT_PREFIX
 MQTT_UPTIME = "stat/%s/Uptime" % MY_MQTT_PREFIX
+PERSIST_MANUALOFF = "manualoff.txt"
 
 MQTT_PUMP = "cmnd/%s/0/TurnOnWithTimeout" % RELAY
 
@@ -188,11 +189,28 @@ class WaterStateMachine(StateMachine):
             self.trans_now("nomqtt")
         self.mqttsm.observe(self, "a", "!connected", on_disconn)
 
+    def persist_manualoff(self):
+        open(PERSIST_MANUALOFF, "w").close()
+        print("Persisted manual-off state")
+
+    def unpersist_manualoff(self):
+        try:
+            os.unlink(PERSIST_MANUALOFF)
+            print("Unpersisted manual-off state")
+        except FileNotFoundError:
+            print("Did not need to unpersist manual-off state")
+
     def detect_manualoff(self):
         def on_msg(n):
             if n == 1:
                 self.trans_now("manualoff")
         self.q.on_int(self, MQTT_MANUALOFF, on_msg, True)
+
+        def check_manualoff_persist(_):
+            if os.path.exists(PERSIST_MANUALOFF):
+                print("Detected persisted manual-off state")
+                self.trans_now("manualoff")
+        self.timeout("check_manualoff_persist", 0, check_manualoff_persist)
 
     def detect_manualon(self):
         def on_msg(n):
@@ -395,12 +413,14 @@ class WaterStateMachine(StateMachine):
         self.q.on_int(self, MQTT_MANUALON, on_msg, True)
 
     def to_manualoff(self):
+        self.persist_manualoff()
         self.publish_state("ManualOff")
         self.pump_off()
         self.detect_nomqtt()
 
         def on_msg(n):
             if n != 1:
+                self.unpersist_manualoff()
                 self.trans_now("off")
         self.q.on_int(self, MQTT_MANUALOFF, on_msg, True)
 
