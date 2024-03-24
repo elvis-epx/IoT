@@ -24,6 +24,10 @@ class Direct4:
             bitmap += (pin.value() and 1 or 0) << i
         return ~bitmap
 
+    def start(self):
+        pass
+
+
 # DTWonder www.dingtian-tech.com
 
 class dtwonder2:
@@ -47,6 +51,10 @@ class dtwonder2:
             bitmap += (pin.value() and 1 or 0) << i
         return ~bitmap
 
+    def start(self):
+        pass
+
+
 class dtwonder4:
     def __init__(self):
         self.inputs = 4
@@ -67,6 +75,10 @@ class dtwonder4:
         for i, pin in enumerate(self.input_pins):
             bitmap += (pin.value() and 1 or 0) << i
         return ~bitmap
+
+    def start(self):
+        pass
+
 
 # PLC HF-006 Hofffer Automação https://hofferautomacao.com/
 
@@ -91,6 +103,10 @@ class hoffer6:
             bitmap += (pin.value() and 1 or 0) << i
         return bitmap
 
+    def start(self):
+        pass
+
+
 # Sonoff Mini R4 (yes, it can run MicroPython)
 
 class minir4:
@@ -114,6 +130,10 @@ class minir4:
             bitmap += (pin.value() and 1 or 0) << i
         return ~bitmap
 
+    def start(self):
+        pass
+
+
 # DTWonder www.dingtian-tech.com with 8 inputs and 8 outputs
 
 class dtwonder8:
@@ -130,19 +150,28 @@ class dtwonder8:
         self.bit_out = Pin(13, Pin.OUT)
 
         # disable all relays until first I/O is done
-        self.output_enable.value(1)
+        # (commented out to avoid flickering relays at warm restart)
+        # self.output_enable.value(1)
+
         # Rest values
         self.clock_inhibit.value(1)
         self.clock.value(0)
 
         self.output_bitmap = 0
-        self.do_io()
+        # Wait until all switches fill in their virtual pins to fill 74LS bitmap
+        # (prevents flickering relays at warm restart)
+        self.started = False
 
     def output_pin(self, pin, value):
         if value:
             self.output_bitmap |= (1 << pin)
         else:
             self.output_bitmap &= ~(1 << pin)
+        if self.started:
+            self.do_io()
+
+    def start(self):
+        self.started = True
         self.do_io()
 
     def input(self):

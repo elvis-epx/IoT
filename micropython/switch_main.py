@@ -28,5 +28,6 @@ led_inverse = driver.led_inverse
 
 switches = [ Switch(nvram, mqtt, driver, i) for i in range(0, driver.outputs) ]
 bridge = Manual(nvram, mqtt, driver, switches, poll, debounce, longpress)
+driver.start()
 
 loop.run(led, led_inverse)
