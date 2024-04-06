@@ -375,8 +375,9 @@ class WaterStateMachine(StateMachine):
                 # It was expected that tank was full by this time
                 Log.info("Pumped topping volume (estimated)")
                 self.never_full_events += 1
-                if self.never_full_events >= 3:
+                if self.never_full_events >= 5:
                     self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping (estimated) topping volume")
+                    self.never_full_events = 0
                 self.trans_now("rest")
  
             self.almost_full_timer = self.timeout("almost_full", TOPPING_TIME_ALAW - TOPPING_MINIMUM_TIME, timeout)
@@ -389,8 +390,9 @@ class WaterStateMachine(StateMachine):
                     # It was expected that level went 100% after so much volume pumped
                     Log.info("Pumped topping volume")
                     self.never_full_events += 1
-                    if self.never_full_events >= 3:
+                    if self.never_full_events >= 5:
                         self.mqtt_client.publish(MQTT_WARNING, "Stopped after pumping topping volume")
+                        self.never_full_events = 0
                     self.trans_now("rest")
                     return
                 task.restart()
