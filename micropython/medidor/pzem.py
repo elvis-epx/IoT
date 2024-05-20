@@ -277,6 +277,7 @@ class PZEM:
         # FIXME EPX falha se não houve comunicação. Tratar
         frame = list(self.rcvFrame)
 
+        # FIXME epx checagem de comprimento antes de tudo
         if (
             self.checkCRC16(frame)
             and self.checkResponse(frame)
