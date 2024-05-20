@@ -1,0 +1,3 @@
+#!/bin/bash -x
+
+mpfshell -o `cat serial.txt` -c "put $1 /$1" -n --reset
