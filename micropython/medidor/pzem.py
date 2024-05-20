@@ -262,6 +262,9 @@ class PZEM:
 
         # Send frame to the UART port
         self.uart.write(self.frame)
+
+        # FIXME EPX deslocar para framework, separar em 2 metades
+        # (afeta todas as outras funcoes)
         time.sleep(1)
 
         # Read the response, maximun 25 bytes
@@ -271,6 +274,7 @@ class PZEM:
         # Update reading time
         self.readingTime = time.ticks_ms() - tStart
 
+        # FIXME EPX falha se não houve comunicação. Tratar
         frame = list(self.rcvFrame)
 
         if (
