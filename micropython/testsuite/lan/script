@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 10
+wifi GOT_IP
+sleep 5
+if has_quit; then
+    break
+fi
+
+# fail & reconnection, 30-60s to reconnect
+wifi UNDEF_ERROR
+sleep 10
+advance 60000
+sleep 5
+wifi GOT_IP
+sleep 5
+
+# repeated failures until reboot
+eee=0
+while true; do
+    eee=$(($eee+1))
+    echo
+    echo "****** failure #$eee"
+    # waits up to 60s to reconnect
+    sleep 10
+    advance 50000
+    # reconnection tried, or bails out
+    sleep 10
+    if has_quit; then
+        break
+    fi
+    err=UNDEF_ERROR
+    wifi $err
+    sleep 10
+    # failed
+done
