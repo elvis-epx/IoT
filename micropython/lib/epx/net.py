@@ -7,8 +7,9 @@ class Net:
     def __init__(self, cfg):
         self.cfg = cfg
         self.impl = None
+        self.wired = False
 
-        sm = self.sm = StateMachine("wifi")
+        sm = self.sm = StateMachine("net")
         
         sm.add_state("start", self.on_start)
         sm.add_state("idle", self.on_idle)
@@ -24,18 +25,28 @@ class Net:
         sm.add_transition("connecting", "connlost")
         sm.add_transition("connlost", "idle")
 
-        if 'ssid' in self.cfg.data:
-            if 'password' not in self.cfg.data:
-                self.cfg.data['password'] = None
-            # Delay startup of WiFi to after the watchdog is active (10s)
-            startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
-            self.sm.schedule_trans("start", startup_time * SECONDS)
+        if 'ssid' not in self.cfg.data:
+            return
+        self.wired = self.cfg.data['ssid'] == '(wired)'
+        if 'password' not in self.cfg.data:
+            self.cfg.data['password'] = None
+
+        # Delay startup to after the watchdog is active (10s)
+        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
+        self.sm.schedule_trans("start", startup_time * SECONDS)
 
     def observe(self, name, state, cb):
         self.sm.observe(name, state, cb)
 
     def on_start(self):
-        self.impl = network.WLAN(network.STA_IF)
+        if self.wired:
+            # TODO support other ethernet boards
+            # Currently depends on custom-built MicroPython for the DTWonder hw
+            self.impl = network.LAN(mdc=machine.Pin(23), mdio=machine.Pin(18), power=machine.Pin(0), phy_addr=1,
+                        phy_type=network.PHY_JL1101, ref_clk=machine.Pin(17), ref_clk_mode=machine.Pin.OUT)
+        else:
+            self.impl = network.WLAN(network.STA_IF)
+
         self.impl.active(False)
         self.sm.schedule_trans("idle", 1 * SECONDS)
         self.last_connection = Shortcronometer()
@@ -43,51 +54,60 @@ class Net:
     def on_idle(self):
         self.impl.active(False)
         if self.last_connection.elapsed() > 10 * MINUTES:
-            print("WiFi repeated failures, trying device reboot")
+            print("Network repeated failures, trying device reboot")
             loop.reboot()
         self.sm.schedule_trans("connecting", 1 * SECONDS)
 
     def on_connecting(self):
         self.impl.active(True)
-        self.impl.connect(self.cfg.data['ssid'], self.cfg.data['password'])
+        # FIXME need to call ifconfig() on wired?
+        if not self.wired:
+            self.impl.connect(self.cfg.data['ssid'], self.cfg.data['password'])
         self.sm.schedule_trans("connlost", 60 * SECONDS)
-        self.sm.recurring_task("wifi_poll1", self.connecting_poll, 1 * SECONDS)
+        self.sm.recurring_task("net_poll1", self.connecting_poll, 1 * SECONDS)
 
     def connecting_poll(self, _):
         ws = self.impl.status()
 
-        if ws == network.STAT_CONNECTING:
-            pass
-        elif ws == network.STAT_GOT_IP:
-            self.sm.schedule_trans_now("connected")
-        elif ws == network.STAT_WRONG_PASSWORD:
-            print("WiFi wrong password")
-            self.sm.schedule_trans_now("connlost")
-        elif ws == network.STAT_NO_AP_FOUND:
-            print("WiFi no AP found")
-            self.sm.schedule_trans_now("connlost")
+        if self.wired:
+            if ws == network.ETH_GOT_IP:
+                self.sm.schedule_trans_now("connected")
+            # other states are not really errors; do nothing
         else:
-            # ESP32 and ESP8266 have dissimilar STAT_* values for lesser-common
-            # errors, so we need this catch-all
-            print("WiFi error", ws)
-            self.sm.schedule_trans_now("connlost")
+            if ws == network.STAT_CONNECTING:
+                pass
+            elif ws == network.STAT_GOT_IP:
+                self.sm.schedule_trans_now("connected")
+            elif ws == network.STAT_WRONG_PASSWORD:
+                print("WiFi wrong password")
+                self.sm.schedule_trans_now("connlost")
+            elif ws == network.STAT_NO_AP_FOUND:
+                print("WiFi no AP found")
+                self.sm.schedule_trans_now("connlost")
+            else:
+                # ESP32 and ESP8266 have dissimilar STAT_* values for lesser-common
+                # errors, so we need this catch-all
+                print("Network error", ws)
+                self.sm.schedule_trans_now("connlost")
 
     def on_connected(self):
-        print("WiFi connected", self.ifconfig()[1][0])
-        self.sm.recurring_task("wifi_poll2", self.connected_poll, 5 * SECONDS)
+        print("Network connected", self.ifconfig()[1][0])
+        self.sm.recurring_task("net_poll2", self.connected_poll, 5 * SECONDS)
 
     def connected_poll(self, _):
         ws = self.impl.status()
 
-        if ws == network.STAT_GOT_IP:
+        if not self.wired and ws == network.STAT_GOT_IP:
+            pass
+        elif self.wired and ws == network.ETH_GOT_IP:
             pass
         else:
-            print("WiFi error", ws)
+            print("Network error", ws)
             self.last_connection = Shortcronometer()
             self.sm.schedule_trans_now("connlost")
 
     def on_connlost(self):
-        print("WiFi connection lost")
+        print("Network connection lost")
         self.impl.active(False)
         self.sm.schedule_trans("idle", 30 * SECONDS, fudge=30 * SECONDS)
 
