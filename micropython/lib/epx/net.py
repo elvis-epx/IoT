@@ -60,7 +60,6 @@ class Net:
 
     def on_connecting(self):
         self.impl.active(True)
-        # FIXME need to call ifconfig() on wired?
         if not self.wired:
             self.impl.connect(self.cfg.data['ssid'], self.cfg.data['password'])
         self.sm.schedule_trans("connlost", 60 * SECONDS)
