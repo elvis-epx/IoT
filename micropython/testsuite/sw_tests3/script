@@ -1,0 +1,86 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+# Manuals
+gpio 26 1
+gpio 34 1
+gpio 33 1
+gpio 35 1
+# Program in NVRAM
+nvram b switch program "3:R:-0,-1,-2,-3/+0,+1,+2,+3/-0,+1,-2,-3/-0,-1,+2,-3/-0,-1,-2,+3"
+nvram i switch 0 1
+nvram i switch 1 0
+nvram i switch 2 1
+nvram i switch 3 0
+
+# Switch states in NVRAM
+
+runme
+sleep 5
+
+# Switches/relays
+# In R mode, manual switch trumps over NVRAM upon startup
+assert gpio 17 0
+assert gpio 16 0
+assert gpio 32 0
+assert gpio 12 0
+
+wifi GOT_IP
+sleep 5
+
+# Turn on Manual 3
+gpio 35 0
+sleep 1
+assert gpio 17 1
+assert gpio 16 1
+assert gpio 32 1
+assert gpio 12 1
+sleep 5
+# Turn off
+gpio 35 1
+sleep 1
+assert gpio 17 0
+assert gpio 16 0
+assert gpio 32 0
+assert gpio 12 0
+
+# Change 'phase' via MQTT
+mqttsub cmnd/Switch/1/State 0
+mqttsub cmnd/Switch/2/State 1
+sleep 1
+assert gpio 17 0
+assert gpio 16 0
+assert gpio 32 1
+assert gpio 12 0
+sleep 1
+
+# Turn on
+gpio 35 0
+sleep 1
+assert gpio 17 1
+assert gpio 16 1
+assert gpio 32 1
+assert gpio 12 1
+
+# Change 'phase' via MQTT
+mqttsub cmnd/Switch/1/State 0
+mqttsub cmnd/Switch/2/State 1
+sleep 1
+assert gpio 17 1
+assert gpio 16 0
+assert gpio 32 1
+assert gpio 12 1
+sleep 1
+
+# Turn off
+gpio 35 1
+sleep 1
+assert gpio 17 0
+assert gpio 16 0
+assert gpio 32 0
+assert gpio 12 0
+
+
+sleep 5
+quit
