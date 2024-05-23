@@ -12,6 +12,7 @@ class Manual:
         self.debounce_time = debounce_time
         self.longpress_time = longpress_time
 
+        self.handlers = {'P': self.eval_P, 'R': self.eval_R, 'T': self.eval_T}
         self.program_string = ""
         self.program_compilation_msg = ""
 
@@ -58,9 +59,13 @@ class Manual:
                 if self.debounce_crono[n].elapsed() < self.debounce_time:
                     # still within debounce time
                     pass
+                elif n not in self.program:
+                    print("No program for manual %d" % n)
+                    pass
                 else:
                     # commit change
-                    self.eval_in(n, self.input_current[n], self.input_next[n])
+                    kind = self.program[n]['kind']
+                    self.handlers[kind](n, self.input_current[n], self.input_next[n])
                     self.input_current[n] = self.input_next[n]
                     self.debounce_crono[n] = None
             else:
@@ -69,9 +74,8 @@ class Manual:
 
     # Process manual switches that changed state
 
-    def eval_in(self, n, old, new):
-        # Currently, only implementation is the pulse switch
-
+    # Pulse switch
+    def eval_P(self, n, old, new):
         # Cancel any ongoing longpress timeout
         if self.longpress_task[n] is not None:
             self.longpress_task[n].cancel()
@@ -93,19 +97,42 @@ class Manual:
 
             self.longpress_task[n] = Task(False, "longpress", cb, self.longpress_time)
 
+    # Regular manual switch, toggle mode
+    def eval_T(self, n, old, new):
+        # Remember that 'old' can be == -1 (undefined) at startup
+        if old == 0 and new == 1:
+            self.run_program(n)
+            self.input_pub_value[n] = "T+"
+            self.input_pub[n].forcepub()
+            self.input_pub_value[n] = ""
+        elif old == 1 and new == 0:
+            self.run_program(n)
+            self.input_pub_value[n] = "T-"
+            self.input_pub[n].forcepub()
+            self.input_pub_value[n] = ""
+
+    # Regular manual switch, follow switch state
+    def eval_R(self, n, old, new):
+        if new == 1:
+            self.run_program(n, phase=1)
+            self.input_pub_value[n] = "R+"
+            self.input_pub[n].forcepub()
+            self.input_pub_value[n] = ""
+        elif new == 0:
+            self.run_program(n, phase=0)
+            self.input_pub_value[n] = "R-"
+            self.input_pub[n].forcepub()
+            self.input_pub_value[n] = ""
+
     # Apply programs associated with manual
     # (generally, turning some lights on and others off)
 
     def run_program(self, n, phase=None):
-        if n not in self.program:
-            print("No program for manual %d" % n)
-            return
-
         program = self.program[n]
 
         if phase is None:
-            phase = self.detect_phase(program)
-            phase = (phase + 1) % len(program['phases'])
+            phase = self.detect_phase(program) + 1
+        phase = phase % len(program['phases'])
 
         for sw, st in program['phases'][phase]['switches']:
             self.switches[sw].switch(st)
@@ -170,7 +197,7 @@ class Manual:
             except ValueError:
                 return "Program manual# unexp: " + pms
 
-            if kind not in ('P', ):
+            if kind not in self.handlers:
                 return "Program kind unexp: " + pms
 
             print("\tManual %d kind %s" % (manual, kind))
@@ -262,20 +289,30 @@ class Manual:
 # Program "language"
 # a:X:+b,-c/-b,+c;
 # a = manual switch input pin (0..n)
-# X = program type. Currently, only P (pulsating switch) is implemented
+# X = program type. Currently, the following types are implemented:
+#     P: pulsating switch
+#     T: regular switch that changes the state when toggled
+#     R: regular on/off switch
 # b,c = relay output pins (0..n)
 # Programs separated by semicolon ;
 # Phases of a program separated by slash /
 # Relays affected in each phase separated by comma ,
 #
 # Example:
-# 0:P:-0/+0; 1:P:-1,-2/+1,+2/+1,-2/-1,+2; 2:P:+3/-3
+# 0:P:-0/+0; 1:P:-1,-2/+1,+2/+1,-2/-1,+2; 2:T:-3/+3
 #
 # Manual 0 is a pulsating switch that controls relay 0
 # Manual 1, pulsating, controls relays 1 and 2, in four phases
 #          (off+off, on+on, on+off, off+on)
-# Manual 2, pulsating, controls relay 3
+# Manual 2, regular switch used as toggler, controls relay 3
 # Manual 3 (if exists) unused
 #
 # In P type, long press goes to 1st phase, so it is best the first phase
 # turns all lights off.
+# The T type is very similar to the P type, except that it changes phase
+# when toggled instead of pulsed. T does not have the concept of long press.
+# An R program should have exactly two phases, "off" and "on" to work as
+# expected by users. 
+# For R switches, the respective lights may still be overridden by MQTT
+# commands, but if the module resets, the state of the manual switch
+# supersedes the last known state in NVRAM.
