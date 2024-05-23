@@ -1,5 +1,6 @@
 import machine
 import gc
+import os
 from uumqtt.simple2 import MQTTClient, MQTTException
 import ubinascii
 
@@ -7,6 +8,7 @@ from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot,
 from epx import loop
 
 ota_pub = None
+log_pub = None
 
 class MQTT:
     def __init__(self, cfg, net, watchdog):
@@ -40,11 +42,13 @@ class MQTT:
         if "mqttbroker" in self.cfg.data and "mqttname" in self.cfg.data:
             self.name = self.cfg.data['mqttname']
             self.sm.schedule_trans("start", 12 * SECONDS)
-            global ota_pub
+            global ota_pub, log_pub
             ota_pub = OTAPub(self.net)
             self.pub(ota_pub)
             self.sub(OTASub())
             self.pub(Uptime())
+            log_pub = Log()
+            self.pub(log_pub)
 
     def pub(self, pubobj):
         pubobj.adjust_topic(self.name)
@@ -74,8 +78,7 @@ class MQTT:
 
         self.disconn_backoff *= 2
         if self.disconn_backoff >= 10 * MINUTES:
-            print("Too much time w/o MQTT connection, rebooting")
-            loop.reboot()
+            loop.reboot("Too much time w/o MQTT connection, rebooting")
 
         self.sm.schedule_trans_now("connlost")
 
@@ -224,21 +227,50 @@ class OTAPub(MQTTPub):
             addr = ifconfig[0]
         return "netstatus %s addr %s mac %s count %d" % (netstatus, addr, mac, self.counter)
 
+class Log(MQTTPub):
+    def __init__(self):
+        MQTTPub.__init__(self, "stat/%s/Log", 0, 0, False)
+        self.logmsg = None
+
+    def gen_msg(self):
+        return self.logmsg
+
+    def dump(self, filename):
+        try:
+            f = open(filename, 'r')
+            self.logmsg = f.read()
+            f.close()
+        except OSError:
+            self.logmsg = '(%s not found)' % filename
+        self.forcepub()
+
 class OTASub(MQTTSub):
     def __init__(self):
         MQTTSub.__init__(self, "cmnd/%s/OTA")
 
     def recv(self, topic, msg, retained, dup):
         if msg == b'reboot':
-            print("Received MQTT reboot cmd")
-            loop.reboot()
+            loop.reboot("Received MQTT reboot cmd")
         elif msg == b'open':
             print("Received MQTT OTA open cmd")
             from epx import ota
             ota.start()
             ota_pub.start_bcast()
-        else:
-            print("Invalid MQTT OTA msg")
+        elif msg == b'msg_reboot':
+            log_pub.dump('reboot.txt')
+        elif msg == b'msg_exception':
+            log_pub.dump('exception.txt')
+        elif msg == b'test_exception':
+            raise Exception("Test exception")
+        elif msg == b'msg_rm':
+            try:
+                os.unlink('reboot.txt')
+            except OSError as e:
+                pass
+            try:
+                os.unlink('exception.txt')
+            except OSError as e:
+                pass
 
 
 class Uptime(MQTTPub):

@@ -2,6 +2,7 @@ import gc
 import time
 import random
 import machine
+import sys
 
 MILISSECONDS = const(1)
 SECONDS = const(1000 * MILISSECONDS)
@@ -181,24 +182,32 @@ def millis_add(a, b):
     return time.ticks_add(a, b)
 
 def run(led_pin=2, led_inverse=0):
-    gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
+    try:
+        gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
 
-    if led_pin > 0:
-        led = machine.Pin(led_pin, machine.Pin.OUT)
-    else:
-        led = None
+        if led_pin > 0:
+            led = machine.Pin(led_pin, machine.Pin.OUT)
+        else:
+            led = None
+    
+        if hasattr(machine, 'TEST_ENV'):
+            test_task = Task(True, "testh", machine.test_mock, 1 * SECONDS)
+    
+        while running:
+            task, t = next_task()
+            sleep(t)
+            if led:
+                led.value(not led_inverse)
+            task.run()
+            if led:
+                led.value(led_inverse)
+    except Exception as e:
+        with open("exception.txt", "w") as f:
+            sys.print_exception(e, f)
+        raise
 
-    if hasattr(machine, 'TEST_ENV'):
-        test_task = Task(True, "testh", machine.test_mock, 1 * SECONDS)
-
-    while running:
-        task, t = next_task()
-        sleep(t)
-        if led:
-            led.value(not led_inverse)
-        task.run()
-        if led:
-            led.value(led_inverse)
-
-def reboot():
+def reboot(reason=""):
+    print(reason)
+    with open("reboot.txt", "w") as f:
+        print(reason, file=f)
     machine.reset()

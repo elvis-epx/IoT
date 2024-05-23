@@ -54,8 +54,7 @@ class Net:
     def on_idle(self):
         self.impl.active(False)
         if self.last_connection.elapsed() > 10 * MINUTES:
-            print("Network repeated failures, trying device reboot")
-            loop.reboot()
+            loop.reboot("Network repeated failures, trying device reboot")
         self.sm.schedule_trans("connecting", 1 * SECONDS)
 
     def on_connecting(self):
