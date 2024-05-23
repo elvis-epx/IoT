@@ -45,32 +45,32 @@ class Manual:
     def eval_n(self, n, bit):
         if self.debounce_crono[n] is None:
             # initial state
-            if self.input_current[n] == bit:
-                # no change
-                pass
-            else:
+            if self.input_current[n] != bit:
                 # detected change, start debouncing time
                 self.input_next[n] = bit
                 self.debounce_crono[n] = Shortcronometer()
+            return
+
+        # within debouncing time
+
+        if bit != self.input_next[n]:
+            # new bit pattern is flaky; quit
+            self.debounce_crono[n] = None
+            return
+
+        # new bit pattern is holding
+        if self.debounce_crono[n].elapsed() < self.debounce_time:
+            # still within debounce time
+            return
+
+        # commit change
+        if n in self.program:
+            kind = self.program[n]['kind']
+            self.handlers[kind](n, self.input_current[n], self.input_next[n])
         else:
-            # debouncing time
-            if bit == self.input_next[n]:
-                # new bit pattern is holding
-                if self.debounce_crono[n].elapsed() < self.debounce_time:
-                    # still within debounce time
-                    pass
-                elif n not in self.program:
-                    print("No program for manual %d" % n)
-                    pass
-                else:
-                    # commit change
-                    kind = self.program[n]['kind']
-                    self.handlers[kind](n, self.input_current[n], self.input_next[n])
-                    self.input_current[n] = self.input_next[n]
-                    self.debounce_crono[n] = None
-            else:
-                # new bit pattern is flaky; quit
-                self.debounce_crono[n] = None
+            print("No program for manual %d" % n)
+        self.input_current[n] = self.input_next[n]
+        self.debounce_crono[n] = None
 
     # Process manual switches that changed state
 
