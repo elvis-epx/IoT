@@ -1,0 +1,6 @@
+Roadmap
+=======
+
+- MQTT with TLS
+- MQTT w/o blocking points
+- Remote mpy console, if possible
