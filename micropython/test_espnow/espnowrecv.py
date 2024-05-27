@@ -10,3 +10,4 @@ e.active(True)
 while True:
     if e.any():
         print(e.recv())
+        print(e.peers_table)

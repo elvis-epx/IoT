@@ -27,11 +27,18 @@ fi
     fi
     localhash=$(sha1sum $localfile | cut -f 1 -d ' ')
     echo "Hash of local  $localfile: $localhash"
-    remotehash=$(./otatool "$IP" hash $remotefile 2>/dev/null)
+    remotehash=$(./otatool "$IP" hash $remotefile 2>/dev/null || echo Error)
+    if [ "$remotehash" = "Error" ]; then
+        echo "Error getting remote hash"
+        exit 1
+    fi
     echo "Hash of remote $remotefile: $remotehash"
     if [ "$remotehash" != "$localhash" ]; then
         echo "...Updating"
-        ./otatool "$IP" send $localfile $remotefile
+        if ! ./otatool "$IP" send $localfile $remotefile; then
+            echo "Error sending file"
+            exit 1
+        fi
     fi
 
 done) < ${DEVTYPE}.ota
