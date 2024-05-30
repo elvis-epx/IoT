@@ -94,13 +94,17 @@ class MQTT:
             print("MQTT recv invalid topic", topic)
 
     def ping(self, _):
+        # size the opportunity to copy the data
+        log_pub.net_connlost_count = self.net.connlost_count
+
         self.watchdog.may_block()
         try:
             self.impl.ping()
             # print("MQTT ping")
         except (MQTTException, OSError):
-           print("MQTT conn fail at ping")
-           self.sm.schedule_trans_now("connlost")
+            print("MQTT conn fail at ping")
+            log_pub.mqtt_connlost_count += 1
+            self.sm.schedule_trans_now("connlost")
         finally:
             self.watchdog.may_block_exit()
 
@@ -113,6 +117,7 @@ class MQTT:
             self.impl.check_msg()
         except (MQTTException, OSError):
             print("MQTT conn fail at check_msg")
+            log_pub.mqtt_connlost_count += 1
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -125,6 +130,7 @@ class MQTT:
                     self.ping_task.restart()
                 except (MQTTException, OSError):
                     print("MQTT conn fail at pub")
+                    log_pub.mqtt_connlost_count += 1
                     self.sm.schedule_trans_now("connlost")
                 finally:
                     self.watchdog.may_block_exit()
@@ -227,10 +233,13 @@ class OTAPub(MQTTPub):
             addr = ifconfig[0]
         return "netstatus %s addr %s mac %s count %d" % (netstatus, addr, mac, self.counter)
 
+
 class Log(MQTTPub):
     def __init__(self):
         MQTTPub.__init__(self, "stat/%s/Log", 0, 0, False)
         self.logmsg = None
+        self.mqtt_connlost_count = 0
+        self.net_connlost_count = 0
 
     def gen_msg(self):
         return self.logmsg
@@ -243,6 +252,11 @@ class Log(MQTTPub):
         except OSError:
             self.logmsg = '(%s not found)' % filename
         self.forcepub()
+
+    def dumpstats(self):
+        self.logmsg = 'connlost events net %d mqtt %d' % (self.net_connlost_count, self.mqtt_connlost_count)
+        self.forcepub()
+
 
 class OTASub(MQTTSub):
     def __init__(self):
@@ -260,6 +274,8 @@ class OTASub(MQTTSub):
             log_pub.dump('reboot.txt')
         elif msg == b'msg_exception':
             log_pub.dump('exception.txt')
+        elif msg == b'stats':
+            log_pub.dumpstats()
         elif msg == b'test_exception':
             raise Exception("Test exception")
         elif msg == b'msg_rm':

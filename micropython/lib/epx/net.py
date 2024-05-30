@@ -8,6 +8,7 @@ class Net:
         self.cfg = cfg
         self.impl = None
         self.wired = False
+        self.connlost_count = 0
 
         sm = self.sm = StateMachine("net")
         
@@ -101,6 +102,7 @@ class Net:
             pass
         else:
             print("Network error", ws)
+            self.connlost_count += 1
             self.last_connection = Shortcronometer()
             self.sm.schedule_trans_now("connlost")
 
