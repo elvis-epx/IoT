@@ -1,0 +1,7 @@
+channel <Wi-Fi channel to be used by ESP-NOW>
+pmk <ESP-NOW PMK password>
+manager <ESP-NOW MAC addr of the manager>
+manager_lmk <ESP-NOW LMK password of the manager>
+watchdog <0|1>
+calibration_a <the "a" of ax+b scale function>
+calibration_b <the "b" of ax+b scale function>

@@ -211,3 +211,6 @@ def reboot(reason=""):
     with open("reboot.txt", "w") as f:
         print(reason, file=f)
     machine.reset()
+
+def hibernate(t):
+    machine.deepsleep(t)
