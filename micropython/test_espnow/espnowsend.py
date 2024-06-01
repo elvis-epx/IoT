@@ -8,10 +8,10 @@ sta.active(True)
 sta.config(channel=1) # after active(True)
 
 e.active(True)
-e.set_pmk("foobar7890123456") # must be after active(True)
+e.set_pmk("foobar7890123456") # must be after active(True) and must have 16 chars
 
 peer = bytes(int(x, 16) for x in "c4:dd:57:ea:90:e0".split(":"))
-e.add_peer(peer, "barfoo7890123456")
+e.add_peer(peer, "barfoo7890123456") # must have 16 chars
 counter = 0
 
 while True:
