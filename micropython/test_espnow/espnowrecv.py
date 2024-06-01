@@ -1,8 +1,8 @@
 import network, espnow, time
 
 sta = network.WLAN(network.STA_IF); sta.active(False)
-sta.config(channel=6)
 sta.active(True)
+sta.config(channel=1) # must be after active(true)
 
 e = espnow.ESPNow()
 e.active(True)
