@@ -1,13 +1,19 @@
-import network, machine, espnow
+import network, machine, espnow, errno
 
 from epx.loop import Task, SECONDS, MINUTES
 from epx import loop
 
 def macparse(s):
-    return bytes(int(x, 16) for x in mac.split(':'))
+    return bytes(int(x, 16) for x in s.split(':'))
 
 def macencode(mac):
     return ':'.join([f"{b:02X}" for b in mac])
+
+def sixteen(pwd):
+    if not pwd:
+        return pwd
+    pwd = pwd * (1 + 16 // len(pwd))
+    return pwd[0:16]
 
 class NetNowPeripheral:
     def __init__(self, cfg):
@@ -18,14 +24,17 @@ class NetNowPeripheral:
         self.manager = macparse(self.cfg.data['manager'])
         if 'pmk' not in self.cfg.data:
             self.cfg.data['pmk'] = None
+        self.cfg.data['pmk'] = sixteen(self.cfg.data['pmk'])
         if 'manager_lmk' not in self.cfg.data:
             self.cfg.data['manager_lmk'] = None
+        self.cfg.data['manager_lmk'] = sixteen(self.cfg.data['manager_lmk'])
 
         # Delay startup to after the watchdog is active (10s)
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
         task = Task(False, "start", self.start, startup_time * SECONDS)
 
-    def start(self):
+    def start(self, _):
+        print("NetNowPeripheral: start")
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
         self.implnet.active(True)
@@ -41,16 +50,31 @@ class NetNowPeripheral:
         # first byte: version
         # second byte: packet type 
         buf = b'\x01' + b'\x01' + payload
-        # return ESP-NOW inherent confirmation (retries up to 25ms)
-        return self.impl.send(self.manager, buf)
+        self.impl.send(self.manager, buf, False)
+
+    def send_data_confirmed(self, payload):
+        # first byte: version
+        # second byte: packet type 
+        buf = b'\x01' + b'\x01' + payload
+        try:
+            # return ESP-NOW inherent confirmation (retries up to 25ms)
+            res = self.impl.send(self.manager, buf, True)
+        except OSError as err:
+            if err.errno == errno.ETIMEDOUT:
+                # observed in tests
+                res = False
+            else:
+                # should not happen
+                raise
+        return res
 
 
 class NetNowManager:
     def __init__(self, cfg, net):
         self.cfg = cfg
         self.net = net
-        # FIXME need to recreate or can reuse?
         self.impl = espnow.ESPNow()
+        # FIXME needs to be remade?
         self.impl.irq(self.recv)
         self.active = False
         self.data_recv_observers = []
@@ -58,8 +82,10 @@ class NetNowManager:
         self.sensor = macparse(self.cfg.data['sensor'])
         if 'pmk' not in self.cfg.data:
             self.cfg.data['pmk'] = None
+        self.cfg.data['pmk'] = sixteen(self.cfg.data['pmk'])
         if 'sensor_lmk' not in self.cfg.data:
             self.cfg.data['sensor_lmk'] = None
+        self.cfg.data['sensor_lmk'] = sixteen(self.cfg.data['sensor_lmk'])
 
         self.net.observe("netnow", "connected", lambda: self.on_net_start())
 
@@ -69,6 +95,8 @@ class NetNowManager:
         self.active = True
         if self.cfg.data['pmk']:
             self.impl.set_pmk(self.cfg.data['pmk'])
+        # FIXME capture exception
+        self.impl.del_peer(self.sensor)
         self.impl.add_peer(self.sensor, self.cfg.data['sensor_lmk'])
 
         self.net.observe("netnow", "connlost", lambda: self.on_net_stop())

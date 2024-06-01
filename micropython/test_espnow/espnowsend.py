@@ -8,10 +8,10 @@ sta.active(True)
 sta.config(channel=1) # after active(True)
 
 e.active(True)
-e.set_pmk("foobar7890123456") # must be after active(True) and must have 16 chars
+e.set_pmk("foobarfoobarfoobar"[0:16]) # must be after active(True) and must have 16 chars
 
 peer = bytes(int(x, 16) for x in "c4:dd:57:ea:90:e0".split(":"))
-e.add_peer(peer, "barfoo7890123456") # must have 16 chars
+e.add_peer(peer, "barfoobarfoobarfoo"[0:16]) # must have 16 chars
 counter = 0
 
 while True:
@@ -27,10 +27,10 @@ while True:
         print("Restarting espnow")
         e.active(True)
         # still fails after here
-        e.set_pmk("foobar7890123456")
+        e.set_pmk("foobarfoobarfoobar"[0:16]) # must be after active(True) and must have 16 chars
         # needs del and add to properly restart (though add will fail saying it already exists)
         e.del_peer(peer)
-        e.add_peer(peer, "barfoo7890123456")
+        e.add_peer(peer, "barfoobarfoobarfoo"[0:16]) # must have 16 chars
 
     # possible ETIMEOUT if sync = True
     if e.send(peer, b'ping %d' % counter, False):

@@ -1,4 +1,5 @@
 from epx.loop import SECONDS, MINUTES, Task, hibernate
+import time
 
 class Service():
     def __init__(self, cfg, netnow, sensor):
@@ -8,9 +9,10 @@ class Service():
         self.task = Task(True, "eval", self.eval, 30 * SECONDS)
 
     def eval(self, tsk):
+        print("Service.eval")
         weight, malfunction = self.sensor.weight()
         if weight is None and malfunction is None:
-            # sensor not ready
+            print("sensor not ready")
             return
         tsk.cancel()
 
@@ -20,8 +22,12 @@ class Service():
             packet = "stat/LPScale/Malfunction\n%d" % malfunction
 
         print("Sending", packet)
-        if not netnow.send_data_unconfirmed(packet.encode()):
-            print("Failed to send")
+        self.netnow.send_data_unconfirmed(packet.encode())
+        Task(True, "stop", self.stop, 1 * SECONDS)
 
+    def stop(self, _):
+        print("Service.stop")
         self.sensor.disable()
-        hibernate(60 * MINUTES)
+        hibernate(30 * SECONDS)
+        print("Service hibernated (should not print this...)")
+        # FIXME test current consumption
