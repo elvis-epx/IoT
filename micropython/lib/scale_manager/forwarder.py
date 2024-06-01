@@ -12,7 +12,7 @@ class Forwarder():
         self._weight = None
         self._malfunction = None
 
-    def recv_data(self, data):
+    def recv_data(self, mac, data):
         try:
             data = data.decode()
         except UnicodeError:
