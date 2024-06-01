@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mpfshell -o ttyUSB0 -c "put espnowsend.py /main.py" -n

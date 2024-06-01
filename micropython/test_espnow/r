@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mpfshell -o ttyUSB1 -c "put espnowrecv.py /main.py" -n
