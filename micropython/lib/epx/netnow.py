@@ -1,6 +1,6 @@
 import network, machine, espnow, errno
 
-from epx.loop import Task, SECONDS, MINUTES
+from epx.loop import Task, SECONDS, MILISSECONDS
 from epx import loop
 
 def macparse(s):
@@ -100,12 +100,10 @@ class NetNowManager:
             pass
         # must re-add, otherwise fails silently
         self.impl.add_peer(self.sensor, self.cfg.data['sensor_lmk'])
-
-        # FIXME frequency?
-        self.poll_task = Task(True, "recv_poll", self.recv, 1 * SECONDS)
+        # did not use irq() since it interacted wierdly with our event loop
+        # and it does not stop when program is interrupted
+        self.poll_task = Task(True, "poll", self.recv, 100 * MILISSECONDS)
         self.net.observe("netnow", "connlost", lambda: self.on_net_stop())
-        # FIXME dupl?
-        # self.impl.irq(self.recv)
 
     def on_net_stop(self):
         print("NetNowManager: stop")
@@ -119,16 +117,11 @@ class NetNowManager:
             self.data_recv_observers.append(observer)
 
     def recv(self, _):
-        print("NetNowManager: recv")
         while self.impl.any():
+            print("NetNowManager: recv packet")
             mac, msg = self.impl.recv()
-            self.sched_delivery(mac, msg)
-    
-    def sched_delivery(self, mac, msg):
-        def deliver(_):
             self.handle_recv_packet(mac, msg)
-        task = Task(False, "deferred_recv", deliver, 0)
-
+    
     def handle_recv_packet(self, mac, msg):
         if mac != self.sensor:
             print("NetNowManager.handle_recv_packet: unknown peer")
