@@ -95,8 +95,12 @@ class NetNowManager:
         self.active = True
         if self.cfg.data['pmk']:
             self.impl.set_pmk(self.cfg.data['pmk'])
-        # FIXME capture exception
-        self.impl.del_peer(self.sensor)
+        try:
+            # must remove before re-adding
+            self.impl.del_peer(self.sensor)
+        except OSError:
+            pass
+        # must re-add, otherwise fails silently
         self.impl.add_peer(self.sensor, self.cfg.data['sensor_lmk'])
 
         self.net.observe("netnow", "connlost", lambda: self.on_net_stop())
