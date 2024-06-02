@@ -74,8 +74,6 @@ class NetNowManager:
         self.cfg = cfg
         self.net = net
         self.impl = espnow.ESPNow()
-        # FIXME needs to be remade?
-        self.impl.irq(self.recv)
         self.active = False
         self.data_recv_observers = []
 
@@ -103,10 +101,15 @@ class NetNowManager:
         # must re-add, otherwise fails silently
         self.impl.add_peer(self.sensor, self.cfg.data['sensor_lmk'])
 
+        # FIXME frequency?
+        self.poll_task = Task(True, "recv_poll", self.recv, 1 * SECONDS)
         self.net.observe("netnow", "connlost", lambda: self.on_net_stop())
+        # FIXME dupl?
+        # self.impl.irq(self.recv)
 
     def on_net_stop(self):
         print("NetNowManager: stop")
+        self.poll_task.cancel()
         self.impl.active(False)
         self.active = False
         self.net.observe("netnow", "connected", lambda: self.on_net_start())
@@ -115,30 +118,31 @@ class NetNowManager:
         if observer not in self.data_recv_observers:
             self.data_recv_observers.append(observer)
 
-    def recv(self, e):
-        while e.any():
-            mac, msg = e.recv()
+    def recv(self, _):
+        print("NetNowManager: recv")
+        while self.impl.any():
+            mac, msg = self.impl.recv()
             self.sched_delivery(mac, msg)
     
     def sched_delivery(self, mac, msg):
-        def deliver():
+        def deliver(_):
             self.handle_recv_packet(mac, msg)
-        task = Task(False, "recv", deliver, 0)
+        task = Task(False, "deferred_recv", deliver, 0)
 
     def handle_recv_packet(self, mac, msg):
         if mac != self.sensor:
-            print("recv_packet: unknown peer")
+            print("NetNowManager.handle_recv_packet: unknown peer")
             return
         if len(msg) < 2:
-            print("recv_packet: invalid len")
+            print("NetNowManager.handle_recv_packet: invalid len")
             return
         if msg[0] != 0x01:
-            print("recv_packet: unknown version")
+            print("NetNowManager.handle_recv_packet: unknown version")
             return
         if msg[1] == 0x01:
             self.handle_data_packet(macencode(mac), msg)
             return
-        print("recv_packet: unknown type")
+        print("NetNowManager.handle_recv_packet: unknown type")
 
     def handle_data_packet(self, smac, msg):
         for observer in self.data_recv_observers:
