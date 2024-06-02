@@ -16,7 +16,7 @@ password = '12345678'
 
 ap = network.WLAN(network.AP_IF)
 ap.active(True)
-ap.config(essid=ssid, authmode=network.AUTH_WPA_WPA2_PSK, password=password)
+ap.config(essid=ssid, authmode=network.AUTH_WPA_WPA2_PSK, password=password, channel=1)
 
 while ap.active() == False:
   pass
