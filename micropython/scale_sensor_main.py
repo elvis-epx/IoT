@@ -9,9 +9,9 @@ from scale_sensor.service import Service
 from machine import Pin
 
 config = Config()
-watchdog = Watchdog(config)
-netnow = NetNowPeripheral(config)
-sensor = Sensor(config)
-srv = Service(config, netnow, sensor)
+watchdog = Watchdog(config, True)
+netnow = NetNowPeripheral(config, watchdog)
+sensor = Sensor(config, watchdog)
+srv = Service(config, watchdog, netnow, sensor)
 
 loop.run()

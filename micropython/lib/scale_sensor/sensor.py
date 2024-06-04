@@ -1,20 +1,20 @@
 from epx.loop import Task, SECONDS
 
 class Sensor:
-    def __init__(self, cfg):
+    def __init__(self, cfg, watchdog):
         self.a = float(cfg.data['calibration_a'])
         self.b = float(cfg.data['calibration_b'])
         self._weight = None
         self._malfunction = None
 
-        # Give time for the sensors (and watchdog) to init
-        task = Task(False, "sensor", self.enable, 15 * SECONDS)
+        task = Task(False, "sensor", self.enable, (watchdog.grace_time() + 1) * SECONDS)
 
     def enable(self, _):
         print("Sensor.enable")
         # FIXME enable sensor pin
         # FIXME consider warm-up time?       
         task = Task(True, "sensor_read", self.eval, 10 * SECONDS)
+        task.advance()
 
     def eval(self, _):
         print("Sensor.eval")

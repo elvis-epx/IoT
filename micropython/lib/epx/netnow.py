@@ -16,10 +16,11 @@ def sixteen(pwd):
     return pwd[0:16]
 
 class NetNowPeripheral:
-    def __init__(self, cfg):
+    def __init__(self, cfg, watchdog):
         self.cfg = cfg
         self.implnet = None
         self.impl = None
+        self.active = False
 
         self.manager = macparse(self.cfg.data['manager'])
         if 'pmk' not in self.cfg.data:
@@ -29,8 +30,7 @@ class NetNowPeripheral:
             self.cfg.data['manager_lmk'] = None
         self.cfg.data['manager_lmk'] = sixteen(self.cfg.data['manager_lmk'])
 
-        # Delay startup to after the watchdog is active (10s)
-        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
+        startup_time = hasattr(machine, 'TEST_ENV') and 1 or (watchdog.grace_time() + 1)
         task = Task(False, "start", self.start, startup_time * SECONDS)
 
     def start(self, _):
@@ -45,6 +45,7 @@ class NetNowPeripheral:
         if self.cfg.data['pmk']:
             self.impl.set_pmk(self.cfg.data['pmk'])
         self.impl.add_peer(self.manager, self.cfg.data['manager_lmk'])
+        self.active = True
 
     def send_data_unconfirmed(self, payload):
         # first byte: version

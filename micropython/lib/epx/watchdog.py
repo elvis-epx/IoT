@@ -7,23 +7,32 @@ from epx.loop import Task, SECONDS
 from epx import loop
 
 class Watchdog:
-    def __init__(self, config):
+    def __init__(self, config, fast_dehibernate=False):
         self.cookies = 0
 
         if 'watchdog' not in config.data:
             config.data['watchdog'] = "0"
         self.disabled = config.data['watchdog'] == "0"
 
+        self.grace = 10
+
         if self.disabled:
             print("Watchdog off")
+            self.grace = 0
             return
 
-        print("Watchdog will be on in 10s")
+        if fast_dehibernate and machine.wake_reason() == machine.DEEPSLEEP:
+            self.grace = 1
+
+        print("Watchdog will be on in %ds" % self.grace)
         def bring_up(_):
             print("Watchdog on")
             Task(True, "watchdog", self.main_thread_feed, 1 * SECONDS)
             start_new_thread(self.wdt_thread, ())
-        Task(False, "watchdog_up", bring_up, 10 * SECONDS)
+        Task(False, "watchdog_up", bring_up, self.grace * SECONDS)
+
+    def grace_time(self):
+        return self.grace
 
     def main_thread_feed(self, _):
         # Called by main thread, which handles Tasks
