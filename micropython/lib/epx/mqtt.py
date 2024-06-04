@@ -289,6 +289,7 @@ class OTASub(MQTTSub):
                 pass
 
 
+# FIXME allow to decrease how often it is pinged
 class Uptime(MQTTPub):
     def __init__(self):
         MQTTPub.__init__(self, "stat/%s/Uptime", 60 * SECONDS, 30 * MINUTES, False)
