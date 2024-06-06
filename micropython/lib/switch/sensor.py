@@ -202,6 +202,8 @@ class Manual:
 
             print("\tManual %d kind %s" % (manual, kind))
 
+            # FIXME detect repeated manual
+
             program = {}
             program['kind'] = kind
             program['phases'] = []
@@ -246,8 +248,10 @@ class Manual:
                         return "Phase switch# unexp: " + phase
 
                     print("\t\t\tSwitch %d: %s" % (switch, newstate and "On" or "Off"))
+                    # FIXME detect repeated switch within the phase, or use a dict
                     switch_list.append((switch, newstate))
 
+            # FIXME detect repeated phase
             programs[manual] = program
 
         if not programs:
