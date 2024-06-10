@@ -177,8 +177,8 @@ class PZEM:
                 "A": self.Current,
                 "W": self.ActivePower,
                 "Wh": self.ActiveEnergy,
-                "f": self.Frequency,
-                "phi": self.PowerFactor}
+                "Hz": self.Frequency,
+                "pf": self.PowerFactor}
 
     # Default ModBus-16 CRC Table
     table = (
