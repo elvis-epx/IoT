@@ -1,0 +1,133 @@
+from epx.mqtt import MQTTPub, MQTTSub
+from epx.loop import SECONDS, MINUTES, Task, StateMachine
+
+class Voltage(MQTTPub):
+    def __init__(self, sensor):
+        MQTTPub.__init__(self, "stat/%s/V", 60 * SECONDS, 60 * SECONDS, False)
+        self.sensor = sensor
+
+    def gen_msg(self):
+        # as float
+        if self.sensor.voltage() is None:
+            return None
+        return "%.1f" % self.sensor.voltage()
+
+
+class Current(MQTTPub):
+    def __init__(self, sensor):
+        MQTTPub.__init__(self, "stat/%s/A", 60 * SECONDS, 60 * SECONDS, False)
+        self.sensor = sensor
+
+    def gen_msg(self):
+        # as float
+        if self.sensor.current() is None:
+            return None
+        return "%.1f" % self.sensor.current()
+
+
+class PowerFactor(MQTTPub):
+    def __init__(self, sensor):
+        MQTTPub.__init__(self, "stat/%s/PowerFactor", 60 * SECONDS, 60 * SECONDS, False)
+        self.sensor = sensor
+
+    def gen_msg(self):
+        # as float
+        if self.sensor.powerfactor() is None:
+            return None
+        return "%.2f" % self.sensor.powerfactor()
+
+
+class Energy(MQTTPub):
+    def __init__(self, sensor):
+        MQTTPub.__init__(self, "stat/%s/kWh", 0, 0, False)
+        # published when sensor says so
+        self.sensor = sensor
+        sensor.register_energy_observer(self)
+
+    def please_publish(self):
+        # called by sensor at the end of energy accumulation time
+        self.forcepub()
+
+    def gen_msg(self):
+        # as float
+        if self.sensor.energy_kwh() is None:
+            return None
+        return "%.3f" % self.sensor.energy_kwh()
+
+
+class Malfunction(MQTTPub):
+    def __init__(self, sensor):
+        # as integer (bitmap)
+        MQTTPub.__init__(self, "stat/%s/Malfunction", 60 * SECONDS, 30 * MINUTES, False)
+        self.sensor = sensor
+
+    def gen_msg(self):
+        return "%d" % self.sensor.malfunction()
+
+
+import usocket as socket
+sockerror = (OSError,)
+
+def setuplistener(s):
+    pass
+
+class Ticker:
+    def __init__(self, sensor):
+        self.sensor = sensor
+
+        self.sock = socket.socket()
+        self.sock.setblocking(False)
+        setuplistener(self.sock)
+        self.sock.bind(('0.0.0.0', 1338))
+        self.sock.listen(1)
+
+        sm = self.sm = StateMachine("ticker")
+
+        sm.add_state("listen", self.on_listen)
+        sm.add_state("connected", self.on_connected)
+        sm.add_state("senddata", self.on_senddata)
+        sm.add_state("connlost", self.on_connlost)
+
+        sm.add_transition("initial", "listen")
+        sm.add_transition("listen", "connected")
+        sm.add_transition("connected", "send_data")
+        sm.add_transition("send_data", "connected")
+        sm.add_transition("send_data", "connlost")
+        sm.add_transition("connlost", "listen")
+        
+        self.connection = None
+
+        self.sm.schedule_trans("listen", 1 * SECONDS)
+
+    def on_listen(self):
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+        self.sm.recurring_task("ticker_listen", self.listen_poll, 500 * MILISSECONDS)
+
+    def listen_poll(self, _):
+        try:
+            self.connection, _ = self.sock.accept()
+        except sockerror as e:
+            # could be EAGAIN or not, either case, can't do anything about
+            return
+        self.connection.setblocking(False)
+        self.sm.schedule_trans_now("connected")
+
+    def on_connected(self):
+        self.sm.schedule_trans("senddata", 2 * SECONDS)
+
+    def on_senddata(self):
+        s = self.sensor.jsonish().encode()
+        try:
+            n = self.connection.send(s)
+            if n <= 0:
+                self.sm.schedule_trans_now("connlost")
+                return
+        except sockerror as e:
+            self.sm.schedule_trans_now("connlost")
+            return
+        self.sm.schedule_trans_now("connected")
+
+    def on_connlost(self):
+        self.sm.schedule_trans_now("listen")

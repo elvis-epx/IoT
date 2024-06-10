@@ -1,0 +1,26 @@
+md /lib
+md /lib/epx
+put lib/epx/__init__.py /lib/epx/__init__.py
+put lib/epx/config.py /lib/epx/config.py
+put lib/epx/mqtt.py /lib/epx/mqtt.py
+put lib/epx/net.py /lib/epx/net.py
+put lib/epx/watchdog.py /lib/epx/watchdog.py
+put lib/epx/loop.py /lib/epx/loop.py
+put lib/epx/ota.py /lib/epx/ota.py
+
+md /lib/uumqtt
+put lib/uumqtt/__init__.py  /lib/uumqtt/__init__.py 
+put lib/uumqtt/simple2.py  /lib/uumqtt/simple2.py 
+put lib/uumqtt/errno.py /lib/uumqtt/errno.py
+
+md /lib/third
+put lib/third/__init__.py /lib/third/__init__.py
+put lib/third/pzem.py /lib/third/pzem.py
+
+md /lib/energy
+put lib/energy/__init__.py /lib/energy/__init__.py
+put lib/energy/service.py /lib/energy/service.py
+put lib/energy/sensor.py /lib/energy/sensor.py
+
+put energy_boot.py boot.py
+put energy_main.py main.py
