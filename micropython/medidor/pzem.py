@@ -101,6 +101,7 @@ class PZEM:
 
         # Check the connection by reading the address and update
         # the default address
+        # FIXME EPX pode provocar excecao, possui sleep, incompativel com outras modifs
         if self.readAddress():
             self.status = True
         else:
