@@ -2,7 +2,7 @@
 
 import sys
 sys.path.insert(0, 'lib')
-sys.path.insert(0, 'test')
+sys.path.insert(0, 'testmock')
 
 import builtins
 builtins.const = lambda x: x
