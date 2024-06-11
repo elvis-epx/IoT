@@ -3,9 +3,10 @@ import machine
 import os
 import os.path
 
-singleton = None
+failsim = 0
 
 def test_mock():
+    global failsim
     f = machine.TEST_FOLDER + "pzem.sim"
     if not os.path.exists(f):
         return False
@@ -13,20 +14,19 @@ def test_mock():
     data = open(f).read().strip()
     os.remove(f)
     if data == 'fail1':
-        singleton.fail = 1
+        failsim = 1
     elif data == 'fail2':
-        singleton.fail = 2
+        failsim = 2
     elif data == 'fail4':
-        singleton.fail = 4
+        failsim = 4
     else:
-        singleton.fail = 0
+        failsim = 0
     return True
 
 class PZEM:
     def __init__(self, uart, addr=0xF8):
         global singleton
         singleton = self
-        self.fail = 0
         self.res = True
         pass
 
@@ -34,13 +34,16 @@ class PZEM:
         self.read_addr_start()
 
     def read_addr_start(self):
-        self.res = self.fail != 1
+        global failsim
+        self.res = failsim != 1
 
     def read_energy_start(self):
-        self.res = self.fail != 4
+        global failsim
+        self.res = failsim != 4
 
     def reset_energy_start(self):
-        self.res = self.fail != 2
+        global failsim
+        self.res = failsim != 2
 
     def complete_trans(self):
         return self.res

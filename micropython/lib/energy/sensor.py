@@ -65,7 +65,6 @@ class Sensor:
             self.sm.schedule_trans_now("failure")
             return
 
-        self.data['Malfunction'] = 0
         self.sm.schedule_trans_now("resetenergy")
 
     def on_resetenergy(self):
@@ -93,6 +92,7 @@ class Sensor:
             self.sm.schedule_trans_now("failure")
             return
 
+        self.data['Malfunction'] = 0
         self.data.update(self.impl.get_data())
         self.sm.schedule_trans_now("idle")
 
