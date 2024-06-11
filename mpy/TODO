@@ -1,14 +1,6 @@
 Roadmap
 =======
 
-- espnow
-    - Configure channel
-    - .active(True) vs regular WiFi.active(True) - dependent or independent?
-    - Use encryption password the same as wifi
-    - bidirectional communication
-        - confirmation
-    - "SN-MQTT"
-
 - OTA commit all or nothing
 - MQTT with TLS
 - MQTT w/o blocking points
