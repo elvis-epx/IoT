@@ -2,14 +2,22 @@ import machine
 from third.pzem import PZEM
 from epx.loop import Task, SECONDS, MINUTES, StateMachine, Shortcronometer
 
-READ_EVERY = 10 * SECONDS
-ENERGY_PUB_TIMEOUT = 3 * MINUTES  # FIXME change to 60 minutes
-STARTUP_TIMEOUT = 20 * SECONDS
-RESPONSE_TIMEOUT = 1 * SECONDS
-FAILURE_TIMEOUT = 1 * MINUTES # FIXME change to 30 minutes
+if hasattr(machine, 'TEST_ENV'):
+    READ_EVERY = 1 * SECONDS
+    ENERGY_PUB_TIMEOUT = 1 * MINUTES
+    STARTUP_TIMEOUT = 1 * SECONDS
+    RESPONSE_TIMEOUT = 1 * SECONDS
+    FAILURE_TIMEOUT = 1 * MINUTES
+else:
+    READ_EVERY = 20 * SECONDS
+    ENERGY_PUB_TIMEOUT = 60 * MINUTES
+    STARTUP_TIMEOUT = 20 * SECONDS
+    RESPONSE_TIMEOUT = 1 * SECONDS
+    FAILURE_TIMEOUT = 30 * MINUTES
+
 
 class Sensor:
-    def __init__(self, i2c):
+    def __init__(self):
         self.data = {"V": None, "A": None, "Wh": None, "pf": None, "Malfunction": 0}
         self.energy_observer = None
         self.energy_timer = None
@@ -46,12 +54,12 @@ class Sensor:
         self.energy_observer = observer
 
     def on_start(self):
-        self.impl = PZEM(uart=uart)
+        self.impl = PZEM(uart=self.uart)
         self.impl.check_addr_start()
         self.sm.schedule_trans("startcompletion", RESPONSE_TIMEOUT)
 
     def on_startcompletion(self):
-        if not self.impl.completion_trans():
+        if not self.impl.complete_trans():
             print("Error while starting pzem")
             self.data['Malfunction'] = 1
             self.sm.schedule_trans_now("failure")
@@ -64,8 +72,8 @@ class Sensor:
         self.impl.reset_energy_start()
         self.sm.schedule_trans("resetenergycompletion", RESPONSE_TIMEOUT)
 
-    def on_resetenergycompletion(self);
-        if not self.impl.completion_trans():
+    def on_resetenergycompletion(self):
+        if not self.impl.complete_trans():
             print("Error while resetting energy") 
             self.data['Malfunction'] = 2
             self.sm.schedule_trans_now("failure")
@@ -79,7 +87,7 @@ class Sensor:
         self.sm.schedule_trans("readcompletion", RESPONSE_TIMEOUT)
 
     def on_readcompletion(self):
-        if not self.impl.completion_trans():
+        if not self.impl.complete_trans():
             print("Error while reading energy") 
             self.data['Malfunction'] = 4 
             self.sm.schedule_trans_now("failure")
@@ -125,5 +133,5 @@ class Sensor:
     def malfunction(self):
         return self.data['Malfunction']
 
-    def jsonish(self)
+    def jsonish(self):
         return str(self.data) + "\r\n"

@@ -1,5 +1,7 @@
+import machine
 from epx.mqtt import MQTTPub, MQTTSub
-from epx.loop import SECONDS, MINUTES, Task, StateMachine
+from epx.loop import MILISSECONDS, SECONDS, MINUTES, Task, StateMachine
+
 
 class Voltage(MQTTPub):
     def __init__(self, sensor):
@@ -65,8 +67,21 @@ class Malfunction(MQTTPub):
         return "%d" % self.sensor.malfunction()
 
 
-import usocket as socket
-sockerror = (OSError,)
+if hasattr(machine, 'TEST_ENV'):
+    import socket
+    sockerror = (IOError,)
+    def eagain(e):
+        return isinstance(e, BlockingIOError)
+    def setuplistener(s):
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+else: # pragma: no cover
+    import usocket as socket
+    sockerror = (OSError,)
+    def eagain(e):
+        return e.value == 11
+    def setuplistener(s):
+        pass
 
 def setuplistener(s):
     pass
@@ -97,7 +112,7 @@ class Ticker:
         
         self.connection = None
 
-        self.sm.schedule_trans("listen", 1 * SECONDS)
+        self.sm.schedule_trans("listen", 30 * SECONDS)
 
     def on_listen(self):
         if self.connection:
