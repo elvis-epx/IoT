@@ -4,17 +4,16 @@ from epx.loop import Task, SECONDS, MINUTES, StateMachine, Shortcronometer
 
 if hasattr(machine, 'TEST_ENV'):
     READ_EVERY = 1 * SECONDS
-    ENERGY_PUB_TIMEOUT = 1 * MINUTES
+    ENERGY_PUB_TIMEOUT = 60 * SECONDS
     STARTUP_TIMEOUT = 1 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
-    FAILURE_TIMEOUT = 1 * MINUTES
-else:
+    FAILURE_TIMEOUT = 20 * SECONDS
+else: # pragma: no cover
     READ_EVERY = 20 * SECONDS
     ENERGY_PUB_TIMEOUT = 60 * MINUTES
     STARTUP_TIMEOUT = 20 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 30 * MINUTES
-
 
 class Sensor:
     def __init__(self):
@@ -47,6 +46,7 @@ class Sensor:
         sm.add_transition("idle", "read")
         sm.add_transition("idle", "pubenergy")
         sm.add_transition("pubenergy", "resetenergy")
+        sm.add_transition("failure", "start")
 
         self.sm.schedule_trans("start", STARTUP_TIMEOUT)
 
@@ -127,6 +127,8 @@ class Sensor:
 
     def energy_kwh(self):
         if self.data['Malfunction']:
+            return None
+        elif self.data['Wh'] is None:
             return None
         return self.data['Wh'] / 1000.0
 

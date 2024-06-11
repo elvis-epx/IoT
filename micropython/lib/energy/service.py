@@ -60,7 +60,7 @@ class Energy(MQTTPub):
 class Malfunction(MQTTPub):
     def __init__(self, sensor):
         # as integer (bitmap)
-        MQTTPub.__init__(self, "stat/%s/Malfunction", 60 * SECONDS, 30 * MINUTES, False)
+        MQTTPub.__init__(self, "stat/%s/Malfunction", 5 * SECONDS, 30 * MINUTES, False)
         self.sensor = sensor
 
     def gen_msg(self):

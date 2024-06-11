@@ -12,6 +12,31 @@ assert mqtt stat/Energy/V 222.1
 assert mqtt stat/Energy/A 4.8
 assert mqtt stat/Energy/PowerFactor 0.70
 assert mqtt stat/Energy/kWh 0.150
+assert mqtt stat/Energy/Malfunction 0
+
+pzemf fail4 # read energy failure 
+
+sleep 15
+
+assert mqtt stat/Energy/Malfunction 4
+
+pzemf fail1 # init failure
+
+sleep 15
+
+assert mqtt stat/Energy/Malfunction 1
+
+pzemf fail2 # reset energy failure
+
+sleep 15
+
+assert mqtt stat/Energy/Malfunction 2
+
+pzemf 0
+
+sleep 15
+
+assert mqtt stat/Energy/Malfunction 0
 
 sleep 5
 quit

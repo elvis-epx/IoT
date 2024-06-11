@@ -67,6 +67,10 @@ function mcp23017nf () {
     echo good > ${TEST_FOLDER}/mcp23017.sim
 }
 
+function pzemf () {
+    echo $1 > ${TEST_FOLDER}/pzem.sim
+}
+
 function pulse () {
     echo $2 > ${TEST_FOLDER}/pulse$1.sim
     while [ -e ${TEST_FOLDER}/pulse$1.sim ]; do
