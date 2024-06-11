@@ -61,7 +61,10 @@ class Pin:
                 self.irq_cb(None)
             return True
         return False
-        
+
+class UART:
+    def __init__(self, n, baudrate):
+        pass
 
 class I2C:
     def __init__(self, n, scl, sda):

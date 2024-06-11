@@ -1,0 +1,17 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+
+wifi GOT_IP
+sleep 60
+
+assert mqtt stat/Energy/V 222.1
+assert mqtt stat/Energy/A 4.8
+assert mqtt stat/Energy/PowerFactor 0.70
+assert mqtt stat/Energy/kWh 0.150
+
+sleep 5
+quit
