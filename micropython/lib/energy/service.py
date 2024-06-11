@@ -27,6 +27,19 @@ class Current(MQTTPub):
         return "%.1f" % self.sensor.current()
 
 
+class Power(MQTTPub):
+    def __init__(self, sensor):
+        MQTTPub.__init__(self, "stat/%s/W", 60 * SECONDS, 60 * SECONDS, False)
+        self.sensor = sensor
+
+    def gen_msg(self):
+        # as float
+        if self.sensor.current() is None:
+            return None
+        return "%.1f" % self.sensor.power()
+
+
+
 class PowerFactor(MQTTPub):
     def __init__(self, sensor):
         MQTTPub.__init__(self, "stat/%s/PowerFactor", 60 * SECONDS, 60 * SECONDS, False)
@@ -41,7 +54,7 @@ class PowerFactor(MQTTPub):
 
 class Energy(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/kWh", 0, 0, False)
+        MQTTPub.__init__(self, "stat/%s/Wh", 0, 0, False)
         # published when sensor says so
         self.sensor = sensor
         sensor.register_energy_observer(self)
@@ -51,10 +64,10 @@ class Energy(MQTTPub):
         self.forcepub()
 
     def gen_msg(self):
-        # as float
-        if self.sensor.energy_kwh() is None:
+        # as float, though PZEM supplies Wh as integer
+        if self.sensor.energy() is None:
             return None
-        return "%.3f" % self.sensor.energy_kwh()
+        return "%.1f" % self.sensor.energy()
 
 
 class Malfunction(MQTTPub):
@@ -105,9 +118,9 @@ class Ticker:
 
         sm.add_transition("initial", "listen")
         sm.add_transition("listen", "connected")
-        sm.add_transition("connected", "send_data")
-        sm.add_transition("send_data", "connected")
-        sm.add_transition("send_data", "connlost")
+        sm.add_transition("connected", "senddata")
+        sm.add_transition("senddata", "connected")
+        sm.add_transition("senddata", "connlost")
         sm.add_transition("connlost", "listen")
         
         self.connection = None

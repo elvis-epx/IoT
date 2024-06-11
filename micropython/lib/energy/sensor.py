@@ -9,15 +9,15 @@ if hasattr(machine, 'TEST_ENV'):
     RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 20 * SECONDS
 else: # pragma: no cover
-    READ_EVERY = 20 * SECONDS
+    READ_EVERY = 1 * SECONDS
     ENERGY_PUB_TIMEOUT = 60 * MINUTES
     STARTUP_TIMEOUT = 20 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
-    FAILURE_TIMEOUT = 30 * MINUTES
+    FAILURE_TIMEOUT = 10 * MINUTES
 
 class Sensor:
     def __init__(self):
-        self.data = {"V": None, "A": None, "Wh": None, "pf": None, "Malfunction": 0}
+        self.data = {"V": None, "A": None, "W": None, "Wh": None, "pf": None, "t": None, "Malfunction": 0}
         self.energy_observer = None
         self.energy_timer = None
         self.uart = machine.UART(2, baudrate=9600)
@@ -94,6 +94,7 @@ class Sensor:
 
         self.data['Malfunction'] = 0
         self.data.update(self.impl.get_data())
+        self.data['t'] = int(self.energy_timer.elapsed() / 1000)
         self.sm.schedule_trans_now("idle")
 
     def on_idle(self):
@@ -120,17 +121,22 @@ class Sensor:
             return None
         return self.data['A']
 
+    def power(self):
+        if self.data['Malfunction']:
+            return None
+        return self.data['W']
+
     def powerfactor(self):
         if self.data['Malfunction']:
             return None
         return self.data['pf']
 
-    def energy_kwh(self):
+    def energy(self):
         if self.data['Malfunction']:
             return None
         elif self.data['Wh'] is None:
             return None
-        return self.data['Wh'] / 1000.0
+        return self.data['Wh'] + 0.0
 
     def malfunction(self):
         return self.data['Malfunction']
