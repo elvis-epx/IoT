@@ -51,5 +51,8 @@ The following files are present in basically every profile:
 - lib/epx/mqtt.py: handles the MQTT messaging. Uses the uumqtt module
 - lib/epx/ota.py: implements an OTA scheme, as well as some remote debugging resources.
 - lib/epx/nvram.py: interface to NVRAM for persistent data storage.
+- lib/uumqtt/\*.py: modified version of the umqtt module, with some improvements related to blocking and exception handling in order to make the whole system more reliable.
 
-- lib/uumqtt/\*.py: modified version of the umqtt module, with some improvements related to blocking and exception handling.
+Each profile may also add any number of files from lib/third/ folder. These modules are third-party modules,
+generally device drivers, that are included in the source code for convenience, but we generally tweak these
+modules to make them more reliable and to fit better in our event-loop-based framework.
