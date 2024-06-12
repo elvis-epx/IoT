@@ -36,6 +36,12 @@ The following files are optional, but generally they exist:
 - energy\_stage.py is used by testing and coverage framework.
 - lib/energy/\*.py are the profile-specific modules
 
+The profile-specific modules tend to follow a pattern:
+
+- lib/profile/sensor.py contains interfaces with hardware sensors. Some modules talk directly with the hardware, some do it through third-party modules found at lib/third/.
+- lib/profile/actuator.py contains interfaces with hardware actuators.
+- lib/profile/service.py contains classes that represent MQTT topics (published and subscribed).
+
 So, to create a new profile, you would probably take the most similar profile that already exists, and copy all
 these files using the new profile name as prefix.
 
@@ -43,12 +49,11 @@ these files using the new profile name as prefix.
 
 The following files are included in in basically every profile's manifest:
 
-- lib/epx: base modules
 - lib/epx/loop.py: implements basic elements like the event loop, state machine, and other bits and pieces.
 - lib/epx/config.py: deals with the configuration file config.txt
-- lib/epx/watchdog.py: implements a watchdog
-- lib/epx/net.py: handles the network (WiFi and LAN). Interfaces with native network APIs.
-- lib/epx/mqtt.py: handles the MQTT messaging. Uses the uumqtt module
+- lib/epx/watchdog.py: implements a watchdog, very necessary for reliability (software may freeze, MCUs may freeze as well).
+- lib/epx/net.py: handles the network (WiFi and LAN). Interfaces with native network APIs. There are many provisions to ensure the network communication is reliable, including resetting the MCU when the network keeps failing (the radio may go comatose, which is rare but does happen, and a good automation appliance must recover from that).
+- lib/epx/mqtt.py: handles the MQTT messaging and supplies interfaces for easy interaction with MQTT. Uses the uumqtt module. Also has provisions to ensure reliability, including resetting the MCU when MQTT can't be reached for too long.
 - lib/epx/ota.py: implements an OTA scheme, as well as some remote debugging resources.
 - lib/epx/nvram.py: interface to NVRAM for persistent data storage.
 - lib/uumqtt/\*.py: modified version of the umqtt module, with some improvements related to blocking and exception handling in order to make the whole system more reliable. Using our own MQTT library allows us not to be affected by breaking changes in the umqtt bundled with MicroPython image.
