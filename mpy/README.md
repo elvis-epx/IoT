@@ -39,4 +39,17 @@ The following files are optional, but generally they exist:
 So, to create a new profile, you would probably take the most similar profile that already exists, and copy all
 these files using the new profile name as prefix.
 
+## Anatomy of the common modules
 
+The following files are present in basically every profile:
+
+- lib/epx: base modules
+- lib/epx/loop.py: implements basic elements like the event loop, state machine, and other bits and pieces.
+- lib/epx/config.py: deals with the configuration file config.txt
+- lib/epx/watchdog.py: implements a watchdog
+- lib/epx/net.py: handles the network (WiFi and LAN). Interfaces with native network APIs.
+- lib/epx/mqtt.py: handles the MQTT messaging. Uses the uumqtt module
+- lib/epx/ota.py: implements an OTA scheme, as well as some remote debugging resources.
+- lib/epx/nvram.py: interface to NVRAM for persistent data storage.
+
+- lib/uumqtt/\*.py: modified version of the umqtt module, with some improvements related to blocking and exception handling.
