@@ -85,3 +85,6 @@ polling. We may use asyncio in the future, and some hardware interfacing could u
 The event loop does call time.sleep() when idle, but this won't put the ESP32 MCU to sleep. MicroPython
 currently does not use the "automatic light sleep" feature available in ESP-IDF, but it may use it in the
 future, and then our framework will enable significant energy savings.
+
+Still about energy, we use the profile\_boot.py to set the MCU frequency. In all our profiles, we 
+set it to 80Mhz, which allows the ESP32 to run cooler and we don't see the need of more performance.
