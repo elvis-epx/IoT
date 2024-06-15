@@ -3,4 +3,4 @@ source = ./
 concurrency = thread,multiprocessing
 
 [report]
-omit = ./test/*,./lib/third/*,./lib/uumqtt/*,test.py
+omit = ./testmock/*,./lib/third/*,./lib/uumqtt/*,test.py
