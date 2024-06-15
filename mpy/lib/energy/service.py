@@ -83,21 +83,14 @@ class Malfunction(MQTTPub):
 if hasattr(machine, 'TEST_ENV'):
     import socket
     sockerror = (IOError,)
-    def eagain(e):
-        return isinstance(e, BlockingIOError)
     def setuplistener(s):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 else: # pragma: no cover
     import usocket as socket
     sockerror = (OSError,)
-    def eagain(e):
-        return e.value == 11
     def setuplistener(s):
         pass
-
-def setuplistener(s):
-    pass
 
 class Ticker:
     def __init__(self, sensor):
