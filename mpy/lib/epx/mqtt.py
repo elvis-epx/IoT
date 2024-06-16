@@ -94,7 +94,7 @@ class MQTT:
             print("MQTT recv invalid topic", topic)
 
     def ping(self, _):
-        # size the opportunity to copy the data
+        # seize the opportunity to copy the data
         log_pub.net_connlost_count = self.net.connlost_count
 
         self.watchdog.may_block()
@@ -211,6 +211,8 @@ class MQTTSub:
     def recv(self, topic, msg, retained, dup): # override
         pass # pragma: no cover
 
+
+# TODO move OTAPub/OTASub etc. to ota.py and reduce coupling
 
 class OTAPub(MQTTPub):
     def __init__(self, net):
