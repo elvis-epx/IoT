@@ -2,6 +2,8 @@ Roadmap
 =======
 
 - OTA commit all or nothing
+- MicroPython OTA
 - MQTT with TLS
-- MQTT w/o blocking points
+- MQTT w/o blocking points (move poll() into event loop)
+- Replace polling by IRQs, callbacks, etc.
 - Remote mpy console, if possible
