@@ -1,5 +1,5 @@
 from epx.loop import Task, SECONDS
-from epx.third.hx711 import HX711, HX711Exception
+from third.hx711 import HX711, HX711Exception
 
 class Sensor:
     def __init__(self, cfg, watchdog):
@@ -14,6 +14,7 @@ class Sensor:
         self._malfunction = None
         task = Task(False, "sensor", self.enable, (watchdog.grace_time() + 1) * SECONDS)
         self.impl = None
+        self.sampling_task = None
 
     def enable(self, _):
         print("Sensor.enable")
@@ -21,32 +22,27 @@ class Sensor:
         self._weight = None
         self._malfunction = None
 
-        if not self.impl:
-            try:
-                self.impl = HX711(d_out=5, pd_sck=4)
-            except HX711Exception:
-                self._malfunction = 1
-                return
-        else:
-            try:
-                self.impl.power_on()
-            except HX711Exception:
-                self._malfunction = 2
-                return
+        try:
+            self.impl = HX711(d_out=5, pd_sck=4)
+        except HX711Exception:
+            print("Could not connect with hx711")
+            self._malfunction = 1
+            return False
 
-        self.reset_sampling()
-        # warmup
-        task = Task(True, "sensor_sample", self.take_sample, 10 * SECONDS)
-
-    def reset_sampling(self):
         self.samples = []
         self.retries = 0
+        # warmup
+        self.sampling_task = Task(False, "sensor_sample", self.take_sample, 10 * SECONDS)
+        return True
 
     def take_sample(self, _):
         print("Sensor.take_sample")
+        self.sampling_task = None
+
         try:
             reading = self.impl.read()
         except HX711Exception:
+            print("Could not read from hx711")
             self._malfunction = 4
             return
 
@@ -54,15 +50,16 @@ class Sensor:
             self._malfunction = 8
             return
 
-        task = Task(True, "sensor_sample", self.take_sample, 1 * SECONDS)
+        self.sampling_task = Task(False, "sensor_sample", self.take_sample, 1 * SECONDS)
 
     def eval_sample(self, reading):
         weight = (reading + self.b) / self.a
         self.samples.append(weight)
-        print(weight)
+        print(reading, weight)
 
         # Take a number of samples then calculate the mean to find weight
         if len(self.samples) < self.max_samples:
+            print("Need more samples")
             return True
 
         # Provisional mean to filter out aberrant samples 
@@ -71,18 +68,20 @@ class Sensor:
 
         if len(self.samples) < self.min_samples:
             # Too many aberrant readings
-            self.reset_sampling()
+            self.samples = []
             self.retries += 1
             if self.retries > self.max_retries:
-                # Quit
+                print("Too many retries, quit")
                 return False
-            # Retry
+            print("Too much deviation, retry")
             return True
 
         self._weight = sum(self.samples) / len(self.samples)
+        print("Mean weight", self._weight)
 
         # Start over
-        self.reset_sampling()
+        self.samples = []
+        self.retries = 0
         return True
 
     def weight(self):
@@ -90,4 +89,14 @@ class Sensor:
 
     def disable(self):
         print("Sensor.disable")
-        self.impl.power_off()
+        if self.sampling_task:
+            self.sampling_task.cancel()
+            self.sampling_task = None
+        if self.impl:
+            try:
+                self.impl.power_off()
+            except HX711Exception:
+                print("Could not power hx711 off")
+                pass
+        self.impl = None
+

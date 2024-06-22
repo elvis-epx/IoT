@@ -9,21 +9,22 @@ class Service():
         Task(False, "eval", self.eval, (watchdog.grace_time() + 2) * SECONDS)
 
     def eval(self, _):
-        print("Service.eval")
+        # print("Service.eval")
 
         if not self.netnow.active:
-            print("network not ready")
+            # print("network not ready")
             Task(False, "eval", self.eval, 1 * SECONDS)
             return
 
         weight, malfunction = self.sensor.weight()
         if weight is None and malfunction is None:
-            print("sensor not ready")
+            # print("sensor not ready")
             Task(False, "eval", self.eval, 1 * SECONDS)
             return
 
+        self.sensor.disable()
         if weight is not None:
-            packet = "stat/LPScale/Weight\n%.3f" % weight
+            packet = "stat/LPScale/Weight\n%.1f" % weight
         else:
             packet = "stat/LPScale/Malfunction\n%d" % malfunction
 
@@ -33,6 +34,5 @@ class Service():
 
     def stop(self, _):
         print("Service.stop")
-        self.sensor.disable()
         hibernate(60 * MINUTES)
         print("Service hibernated (should not print this...)")
