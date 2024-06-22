@@ -6,9 +6,8 @@ lib/epx/netnow.py
 lib/epx/watchdog.py
 lib/epx/loop.py
 
-
 lib/third/__init__.py
-
+lib/third/hx711.py
 
 lib/scale_sensor/__init__.py
 lib/scale_sensor/service.py

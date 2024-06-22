@@ -1,4 +1,4 @@
-from hx711 import HX711
+from hx711 import HX711, HX711Exception
 import time
 
 b = HX711(d_out=5, pd_sck=4)
