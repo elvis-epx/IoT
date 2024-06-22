@@ -7,7 +7,7 @@ class Sensor:
         self.b = float(cfg.data['calibration_b'])
         self.max_samples = 12
         self.min_samples = 8
-        self.max_deviation = 200
+        self.max_deviation = 0.050 # kg
         self.max_retries = 3
 
         self._weight = None
@@ -57,7 +57,9 @@ class Sensor:
         task = Task(True, "sensor_sample", self.take_sample, 1 * SECONDS)
 
     def eval_sample(self, reading):
-        self.samples.append(reading)
+        weight = (reading + self.b) / self.a
+        self.samples.append(weight)
+        print(weight)
 
         # Take a number of samples then calculate the mean to find weight
         if len(self.samples) < self.max_samples:
@@ -77,9 +79,7 @@ class Sensor:
             # Retry
             return True
 
-        # Final mean and interpolation
-        mean = sum(self.samples) / len(self.samples)
-        self._weight = mean * self.a + self.b
+        self._weight = sum(self.samples) / len(self.samples)
 
         # Start over
         self.reset_sampling()
