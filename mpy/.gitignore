@@ -10,4 +10,4 @@ htmlcov/
 *.key
 tmppiggy
 log
-serial.txt
+serial*.txt
