@@ -1,6 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import Task, SECONDS, MILISSECONDS
+from epx.loop import Task, MINUTES, SECONDS, MILISSECONDS
 from epx import loop
 
 broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
@@ -60,7 +60,7 @@ class NetNowPeripheral:
             self.paired = False
             self.manager = None
             self.channel = 0
-            self.scan_task = Task(True, "scan", self.scan_channel, 1 * SECONDS)
+            self.scan_task = Task(True, "scan", self.scan_channel, 5 * SECONDS)
             self.scan_task.advance()
             return
 
@@ -178,18 +178,50 @@ class NetNowManager:
         self.impl.add_peer(broadcast_mac)
         # did not use irq() since it interacted wierdly with our event loop
         # and it does not stop when program is interrupted
+
         self.poll_task = Task(True, "poll", self.recv, 100 * MILISSECONDS)
-        # TODO run this task in open mode only
-        self.announce_task = Task(True, "announce", self.announce, 250 * MILISSECONDS)
+        self.pair_task = None
+        self.announce_task = None
+
         self.net.observe("netnow", "connlost", lambda: self.on_net_stop())
 
     def on_net_stop(self):
         print("NetNowManager: stop")
+
         self.poll_task.cancel()
-        self.announce_task.cancel()
+        if self.pair_task:
+            self.pair_task.cancel()
+            self.pair_task = None
+        if self.announce_task:
+            self.announce_task.cancel()
+            self.announce_task = None
+
         self.impl.active(False)
         self.active = False
         self.net.observe("netnow", "connected", lambda: self.on_net_start())
+
+    # Called e.g. when relevant MQTT topic is pinged
+    def opentopair(self):
+        if not self.active:
+            return
+
+        print("NetNowManager: open to pair")
+
+        if self.pair_task:
+            self.pair_task.cancel()
+        if self.announce_task:
+            self.announce_task.cancel()
+
+        self.pair_task = Task(False, "pair", self.opentopair_end, 5 * MINUTES)
+        self.announce_task = Task(True, "announce", self.announce, 500 * MILISSECONDS)
+        # TODO close as soon as someone pairs
+
+    def opentopair_end(self, _):
+        print("NetNowManager: pair closed")
+        if self.announce_task:
+            self.announce_task.cancel()
+            self.announce_task = None
+        self.pair_task = None
 
     def announce(self, _):
         print("NetNowManager: announce")
