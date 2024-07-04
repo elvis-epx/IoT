@@ -5,14 +5,14 @@ from epx import loop
 
 broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
 version = 0x02
-data_code = 0x01
-announce_code = 0x02
+type_data = 0x01
+type_announce = 0x02
 signature = b'moo'
 
-def macparse(s):
+def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
 
-def macencode(mac):
+def mac_b2s(mac):
     return ':'.join([f"{b:02X}" for b in mac])
 
 class NetNowPeripheral:
@@ -38,12 +38,18 @@ class NetNowPeripheral:
         self.impl.active(True)
         self.active = True
 
-        if os.path.exists("pair.txt"):
+        try:
+            f = open("pair.txt")
             print("NetNowPeripheral: forced re-pairing")
             self.nvram.set_str('manager', '')
-            os.remove("pair.txt")
+            f.close()
+            os.unlink("pair.txt")
+        except OSError:
+            pass
 
         self.poll_task = Task(True, "poll", self.recv, 100 * MILISSECONDS)
+        self.scan_task = None
+
         self.check_pairing()
 
     def check_pairing(self):
@@ -63,7 +69,7 @@ class NetNowPeripheral:
             self.scan_task = None
 
         self.paired = True
-        self.manager = macencode(manager)
+        self.manager = mac_s2b(manager)
         self.channel = self.nvram.get_int('channel')
         self.impl.add_peer(self.manager)
         self.implnet.config(channel=self.channel)
@@ -90,7 +96,7 @@ class NetNowPeripheral:
             print("NetNowPeripheral.handle_recv_packet: unknown version", version)
             return
         if msg[1] == type_announce:
-            self.handle_announce_packet(macencode(mac), msg)
+            self.handle_announce_packet(mac_b2s(mac), msg[2:])
             return
         print("NetNowPeripheral.handle_recv_packet: unknown type", msg[1])
 
@@ -106,7 +112,7 @@ class NetNowPeripheral:
             print("...invalid signature")
             return
         msg = msg[len(signature):]
-        if msg != group:
+        if msg != self.group:
             print("...not my group")
             return
         self.pair_with_manager(mac)
@@ -211,10 +217,10 @@ class NetNowManager:
             print("NetNowManager.handle_recv_packet: unknown version", version)
             return
         if msg[1] == type_data:
-            self.handle_data_packet(macencode(mac), msg)
+            self.handle_data_packet(mac_b2s(mac), msg[2:])
             return
         print("NetNowManager.handle_recv_packet: unknown type", msg[1])
 
     def handle_data_packet(self, smac, msg):
         for observer in self.data_recv_observers:
-            observer.recv_data(smac, msg[2:])
+            observer.recv_data(smac, msg)
