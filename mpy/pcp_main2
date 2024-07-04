@@ -1,0 +1,4 @@
+#!/bin/bash
+
+SERIAL_PORT=`cat serial2.txt`
+mpfshell -o $SERIAL_PORT -c "put $1 /main.py" -n

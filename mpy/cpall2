@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mpfshell -o `cat serial2.txt` -s $1.mpf
