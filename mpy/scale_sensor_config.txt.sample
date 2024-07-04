@@ -1,7 +1,5 @@
-channel <Wi-Fi channel to be used by ESP-NOW>
-pmk <ESP-NOW PMK password>
-manager <ESP-NOW MAC addr of the manager>
-manager_lmk <ESP-NOW LMK password of the manager>
+espnowpsk <ESP-NOW pre-shared key>
+espnowgroup <ESP-NOW group of the manager>
 watchdog <0|1>
 calibration_a <the "a" of (x+b)/a scale function i.e. when (x+b)=a, weigth is 1kg >
 calibration_b <the "b" of (x+b)/a scale function i.e. when x+b=0, weight is zero>

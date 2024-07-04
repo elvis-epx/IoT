@@ -1,10 +1,9 @@
 ssid <SSID>
 password <password or None>
-channel <Wi-Fi channel to be used by ESP-NOW>
+channel <optional fixed Wi-Fi channel to be used by ESP-NOW>
 mqttbroker <address or DNS name>
 mqttname LPScale
-
-pmk <ESP-NOW PMK password>
-sensor <ESP-NOW MAC addr of the remote sensor>
-sensor_lmk <ESP-NOW LMK password of the sensor>
 watchdog <0|1>
+
+espnowgroup <ESP-NOW group with 1 manager and n sensors>
+espnowpsk <ESP-NOW pre-shared key>

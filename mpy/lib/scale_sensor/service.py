@@ -11,7 +11,7 @@ class Service():
     def eval(self, _):
         # print("Service.eval")
 
-        if not self.netnow.active:
+        if not self.netnow.active or not self.netnow.paired:
             # print("network not ready")
             Task(False, "eval", self.eval, 1 * SECONDS)
             return
