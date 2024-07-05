@@ -14,7 +14,7 @@ class WeightPub(MQTTPub):
 class MalfunctionPub(MQTTPub):
     def __init__(self, sensor):
         # client must call forcepub() manually
-        MQTTPub.__init__(self, "stat/%s/Weight", 0, 0, False)
+        MQTTPub.__init__(self, "stat/%s/Malfunction", 0, 0, False)
         self.sensor = sensor
 
     def gen_msg(self):

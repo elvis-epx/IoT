@@ -34,7 +34,7 @@ class Forwarder():
             self.wpub.forcepub()
             return
 
-        if data[1] == "stat/LPScale/Malfunction":
+        if data[0] == "stat/LPScale/Malfunction":
             try:
                 self._malfunction = int(data[1], 10)
             except ValueError:
