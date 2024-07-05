@@ -1,3 +1,15 @@
+ESP-NOW protocol
+
+- secure simple pair
+    - generate/exchange keys
+    - encrypt using psk
+- psk, pair keys, cryptography, random iv
+- replay attack protection
+
+- confirmation by central
+- communication initiated by central
+- documentation
+
 Roadmap
 =======
 

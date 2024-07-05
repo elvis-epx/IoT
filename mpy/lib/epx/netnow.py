@@ -153,7 +153,7 @@ class NetNowPeripheral:
         return res
 
 
-class NetNowManager:
+class NetNowCentral:
     def __init__(self, cfg, nvram, net):
         self.cfg = cfg
         self.nvram = nvram
@@ -166,7 +166,7 @@ class NetNowManager:
         self.net.observe("netnow", "connected", lambda: self.on_net_start())
 
     def on_net_start(self):
-        print("NetNowManager: start")
+        print("NetNowCentral: start")
         self.impl.active(True)
         self.active = True
         try:
@@ -186,7 +186,7 @@ class NetNowManager:
         self.net.observe("netnow", "connlost", lambda: self.on_net_stop())
 
     def on_net_stop(self):
-        print("NetNowManager: stop")
+        print("NetNowCentral: stop")
 
         self.poll_task.cancel()
         if self.pair_task:
@@ -205,7 +205,7 @@ class NetNowManager:
         if not self.active:
             return
 
-        print("NetNowManager: open to pair")
+        print("NetNowCentral: open to pair")
 
         if self.pair_task:
             self.pair_task.cancel()
@@ -217,14 +217,14 @@ class NetNowManager:
         # TODO close as soon as someone pairs
 
     def opentopair_end(self, _):
-        print("NetNowManager: pair closed")
+        print("NetNowCentral: pair closed")
         if self.announce_task:
             self.announce_task.cancel()
             self.announce_task = None
         self.pair_task = None
 
     def announce(self, _):
-        print("NetNowManager: announce")
+        print("NetNowCentral: announce")
         # TODO payload: nonce and psk
         buf = bytearray([version, type_announce]) + signature + self.group
         self.impl.send(broadcast_mac, buf, False)
@@ -235,7 +235,7 @@ class NetNowManager:
 
     def recv(self, _):
         while self.impl.any():
-            print("NetNowManager: recv packet")
+            print("NetNowCentral: recv packet")
             mac, msg = self.impl.recv()
             self.handle_recv_packet(mac, msg)
     
@@ -243,15 +243,15 @@ class NetNowManager:
         # TODO check whether mac is paired sensor saved in NVRAM
         # TODO maximum number of paired sensors
         if len(msg) < 2:
-            print("NetNowManager.handle_recv_packet: invalid len")
+            print("NetNowCentral.handle_recv_packet: invalid len")
             return
         if msg[0] != version:
-            print("NetNowManager.handle_recv_packet: unknown version", version)
+            print("NetNowCentral.handle_recv_packet: unknown version", version)
             return
         if msg[1] == type_data:
             self.handle_data_packet(mac_b2s(mac), msg[2:])
             return
-        print("NetNowManager.handle_recv_packet: unknown type", msg[1])
+        print("NetNowCentral.handle_recv_packet: unknown type", msg[1])
 
     def handle_data_packet(self, smac, msg):
         for observer in self.data_recv_observers:
