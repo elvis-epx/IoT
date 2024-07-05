@@ -4,10 +4,14 @@ from epx.loop import Task, MINUTES, SECONDS, MILISSECONDS
 from epx import loop
 
 broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
-version = 0x02
-type_data = 0x01
-type_announce = 0x02
-signature = b'moo'
+version = const(0x02)
+type_data = const(0x01)
+type_announce = const(0x02)
+type_pairreq = const(0x03)
+type_pairaccept = const(0x04)
+type_pairconfirm = const(0x05)
+type_nonce = const(0x06)
+signature = const(b'moo')
 
 def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
