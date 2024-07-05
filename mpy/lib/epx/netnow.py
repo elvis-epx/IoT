@@ -1,4 +1,5 @@
 import network, machine, espnow, errno, os
+from hashlib import sha256
 
 from epx.loop import Task, MINUTES, SECONDS, MILISSECONDS
 from epx import loop
@@ -11,13 +12,31 @@ type_pairreq = const(0x03)
 type_pairaccept = const(0x04)
 type_pairconfirm = const(0x05)
 type_nonce = const(0x06)
-signature = const(b'moo')
 
 def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
 
 def mac_b2s(mac):
     return ':'.join([f"{b:02X}" for b in mac])
+
+def gen_nonce():
+    return os.urandom(16)
+
+def hash(data):
+    h = sha256()
+    h.update(data)
+    return h.digest()
+
+def xor(a, b):
+    if len(a) > len(b):
+        a, b = b, a
+    return bytes(x ^ y for x, y in zip(a, b)) + b[len(a):]
+
+def hmac(key, data):
+    return hash(xor(key, hash(xor(key, data))))
+
+def check_hmac(key, data):
+    return hmac(key, data[:-16]) == data[-16:]
 
 class NetNowPeripheral:
     def __init__(self, cfg, nvram, watchdog):
@@ -28,6 +47,7 @@ class NetNowPeripheral:
         self.active = False
 
         self.group = self.cfg.data['espnowgroup'].encode()
+        self.psk = self.cfg.data['espnowpsk'].encode()
 
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or (watchdog.grace_time() + 1)
         task = Task(False, "start", self.start, startup_time * SECONDS)
@@ -93,12 +113,16 @@ class NetNowPeripheral:
             self.handle_recv_packet(mac, msg)
     
     def handle_recv_packet(self, mac, msg):
-        if len(msg) < 2:
+        if len(msg) < 18:
             print("NetNowPeripheral.handle_recv_packet: invalid len")
             return
         if msg[0] != version:
             print("NetNowPeripheral.handle_recv_packet: unknown version", version)
             return
+        if not check_hmac(self.psk, msg):
+            print("NetNowCentral.handle_recv_packet: bad hmac")
+            return
+        msg = msg[:-16]
         if msg[1] == type_announce:
             self.handle_announce_packet(mac_b2s(mac), msg[2:])
             return
@@ -109,14 +133,9 @@ class NetNowPeripheral:
         if self.paired:
             print("...ignoring")
             return
-        if len(msg) <= len(signature):
-            print("...too short")
-            return
-        if msg[0:len(signature)] != signature:
-            print("...invalid signature")
-            return
-        msg = msg[len(signature):]
-        if msg != self.group:
+        nonce, group = msg[:16], msg[16:]
+        # TODO use nonce
+        if group != self.group:
             print("...not my group")
             return
         self.pair_with_manager(mac)
@@ -134,6 +153,7 @@ class NetNowPeripheral:
         # first byte: version
         # second byte: packet type 
         buf = bytearray([version, type_data]) + payload
+        buf += hmac(self.psk, buf)
         self.impl.send(self.manager, buf, False)
         return True
 
@@ -144,6 +164,7 @@ class NetNowPeripheral:
         # first byte: version
         # second byte: packet type 
         buf = bytearray([version, type_data]) + payload
+        buf += hmac(self.psk, buf)
         try:
             # return ESP-NOW inherent confirmation (retries up to 25ms)
             res = self.impl.send(self.manager, buf, True)
@@ -165,7 +186,9 @@ class NetNowCentral:
         self.impl = espnow.ESPNow()
         self.active = False
         self.data_recv_observers = []
+
         self.group = self.cfg.data['espnowgroup'].encode()
+        self.psk = self.cfg.data['espnowpsk'].encode()
 
         self.net.observe("netnow", "connected", lambda: self.on_net_start())
 
@@ -218,6 +241,7 @@ class NetNowCentral:
 
         self.pair_task = Task(False, "pair", self.opentopair_end, 5 * MINUTES)
         self.announce_task = Task(True, "announce", self.announce, 500 * MILISSECONDS)
+        self.pair_nonces = []
         # TODO close as soon as someone pairs
 
     def opentopair_end(self, _):
@@ -229,8 +253,12 @@ class NetNowCentral:
 
     def announce(self, _):
         print("NetNowCentral: announce")
-        # TODO payload: nonce and psk
-        buf = bytearray([version, type_announce]) + signature + self.group
+        new_nonce = gen_nonce()
+        self.pair_nonces = [ new_once ] + self.pair_nonces
+        # Accept last 3 pair nonces announces
+        self.pair_nonces = self.pair_nonces[:3]
+        buf = bytearray([version, type_announce]) + new_nonce + self.group
+        buf += hmac(self.psk, buf)
         self.impl.send(broadcast_mac, buf, False)
 
     def register_recv_data(self, observer):
@@ -246,12 +274,16 @@ class NetNowCentral:
     def handle_recv_packet(self, mac, msg):
         # TODO check whether mac is paired sensor saved in NVRAM
         # TODO maximum number of paired sensors
-        if len(msg) < 2:
+        if len(msg) < 18:
             print("NetNowCentral.handle_recv_packet: invalid len")
             return
         if msg[0] != version:
             print("NetNowCentral.handle_recv_packet: unknown version", version)
             return
+        if not check_hmac(self.psk, msg):
+            print("NetNowCentral.handle_recv_packet: bad hmac")
+            return
+        msg = msg[:-16]
         if msg[1] == type_data:
             self.handle_data_packet(mac_b2s(mac), msg[2:])
             return
