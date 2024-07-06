@@ -73,7 +73,6 @@ class NetNowPeripheral:
         return self.sm.state == 'paired'
 
     def on_start(self):
-        print("NetNowPeripheral: start")
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
         self.implnet.active(True)
@@ -100,7 +99,6 @@ class NetNowPeripheral:
         self.sm.recurring_task("netnowp_poll", self.recv, 100 * MILISSECONDS)
 
     def on_unpaired(self):
-        print("NetNowPeripheral: not paired")
         self.channel = 0
         tsk = self.sm.recurring_task("netnowp_scan", self.scan_channel, 5 * SECONDS)
         tsk.advance()
@@ -236,7 +234,6 @@ class NetNowCentral:
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
     def on_active(self):
-        print("NetNowCentral: active")
         self.impl.active(True)
         try:
             # must remove before re-adding
@@ -250,7 +247,6 @@ class NetNowCentral:
         self.active_tasks()
 
     def on_inactive(self):
-        print("NetNowCentral: inactive")
         self.impl.active(False)
         self.sm.schedule_trans_now("idle")
 
@@ -259,14 +255,12 @@ class NetNowCentral:
         self.sm.schedule_trans_now("open")
         
     def on_open(self):
-        print("NetNowCentral: open to pair")
         self.active_tasks()
         self.pair_nonces = []
         self.sm.schedule_trans("close", 5 * MINUTES)
         self.sm.recurring_task("announce", self.announce, 500 * MILISSECONDS)
 
     def announce(self, _):
-        print("NetNowCentral: announce")
         new_nonce = gen_nonce()
         self.pair_nonces = [ new_nonce ] + self.pair_nonces
         # Accept last 3 pair nonces announces
