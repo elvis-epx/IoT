@@ -65,10 +65,10 @@ class NetNowPeripheral:
         self.sm.schedule_trans("start", startup_time * SECONDS)
 
     def is_active(self):
-        return self.sm.state() == 'active' or self.sm.state() == 'paired'
+        return self.sm.state == 'active' or self.sm.state == 'paired'
 
     def is_paired(self):
-        return self.sm.state() == 'paired'
+        return self.sm.state == 'paired'
 
     def on_start(self):
         print("NetNowPeripheral: start")
@@ -221,10 +221,10 @@ class NetNowCentral:
         self.sm.schedule_trans_now("idle")
 
     def is_active(self):
-        return self.sm.state() == 'active' or self.sm.state() == 'open'
+        return self.sm.state == 'active' or self.sm.state == 'open'
 
     def is_open(self):
-        return self.sm.state() == 'open'
+        return self.sm.state == 'open'
 
     def on_idle(self):
         self.net.observe("netnow", "connected", lambda: self.sm.schedule_trans_now("active"))
@@ -268,7 +268,7 @@ class NetNowCentral:
     def announce(self, _):
         print("NetNowCentral: announce")
         new_nonce = gen_nonce()
-        self.pair_nonces = [ new_once ] + self.pair_nonces
+        self.pair_nonces = [ new_nonce ] + self.pair_nonces
         # Accept last 3 pair nonces announces
         self.pair_nonces = self.pair_nonces[:3]
         buf = bytearray([version, type_announce]) + new_nonce + self.group
