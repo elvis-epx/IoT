@@ -19,13 +19,15 @@ def mac_s2b(s):
 def mac_b2s(mac):
     return ':'.join([f"{b:02X}" for b in mac])
 
+hash_size = const(12)
+
 def gen_nonce():
-    return os.urandom(16)
+    return os.urandom(hash_size)
 
 def hash(data):
     h = sha256()
     h.update(data)
-    return h.digest()
+    return h.digest()[:hash_size]
 
 def xor(a, b):
     if len(a) > len(b):
@@ -36,7 +38,7 @@ def hmac(key, data):
     return hash(xor(key, hash(xor(key, data))))
 
 def check_hmac(key, data):
-    return hmac(key, data[:-16]) == data[-16:]
+    return hmac(key, data[:-hash_size]) == data[-hash_size:]
 
 
 class NetNowPeripheral:
@@ -136,7 +138,7 @@ class NetNowPeripheral:
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
-        msg = msg[:-16]
+        msg = msg[:-hash_size]
         if msg[1] == type_announce:
             self.handle_announce_packet(mac_b2s(mac), msg[2:])
             return
@@ -147,7 +149,7 @@ class NetNowPeripheral:
         if self.is_paired():
             print("...ignoring")
             return
-        nonce, group = msg[:16], msg[16:]
+        nonce, group = msg[:hash_size], msg[hash_size:]
         # TODO use nonce
         if group != self.group:
             print("...not my group")
@@ -260,10 +262,8 @@ class NetNowCentral:
         print("NetNowCentral: open to pair")
         self.active_tasks()
         self.pair_nonces = []
-        self.sm.onetime_task("close", lambda: self.sm.schedule_trans_now("active"), 5 * MINUTES)
+        self.sm.schedule_trans("close", 5 * MINUTES)
         self.sm.recurring_task("announce", self.announce, 500 * MILISSECONDS)
-        # TODO close as soon as someone pairs
-        # TODO accept pair requests only when open to pair
 
     def announce(self, _):
         print("NetNowCentral: announce")
@@ -288,6 +288,8 @@ class NetNowCentral:
     def handle_recv_packet(self, mac, msg):
         # TODO check whether mac is paired sensor saved in NVRAM
         # TODO maximum number of paired sensors
+        # TODO accept pair requests only when open to pair
+        # TODO close as soon as someone pairs
         if len(msg) < 18:
             print("NetNowCentral.handle_recv_packet: invalid len")
             return
@@ -297,7 +299,7 @@ class NetNowCentral:
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
-        msg = msg[:-16]
+        msg = msg[:-hash_size]
         if msg[1] == type_data:
             self.handle_data_packet(mac_b2s(mac), msg[2:])
             return
