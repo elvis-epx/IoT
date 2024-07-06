@@ -257,7 +257,7 @@ class NetNowCentral:
     def on_open(self):
         self.active_tasks()
         self.pair_nonces = []
-        self.sm.schedule_trans("close", 5 * MINUTES)
+        self.sm.schedule_trans("active", 5 * MINUTES)
         self.sm.recurring_task("announce", self.announce, 500 * MILISSECONDS)
 
     def announce(self, _):
