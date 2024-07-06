@@ -1,7 +1,7 @@
 import network, machine, espnow, errno, os
 from hashlib import sha256
 
-from epx.loop import Task, MINUTES, SECONDS, MILISSECONDS
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine
 from epx import loop
 
 broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
@@ -38,21 +38,39 @@ def hmac(key, data):
 def check_hmac(key, data):
     return hmac(key, data[:-16]) == data[-16:]
 
+
 class NetNowPeripheral:
     def __init__(self, cfg, nvram, watchdog):
         self.cfg = cfg
         self.nvram = nvram
         self.implnet = None
         self.impl = None
-        self.active = False
 
         self.group = self.cfg.data['espnowgroup'].encode()
         self.psk = self.cfg.data['espnowpsk'].encode()
 
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or (watchdog.grace_time() + 1)
-        task = Task(False, "start", self.start, startup_time * SECONDS)
 
-    def start(self, _):
+        sm = self.sm = StateMachine("netnowp")
+
+        sm.add_state("start", self.on_start)
+        sm.add_state("unpaired", self.on_unpaired)
+        sm.add_state("paired", self.on_paired)
+
+        sm.add_transition("initial", "start")
+        sm.add_transition("start", "unpaired")
+        sm.add_transition("start", "paired")
+        sm.add_transition("unpaired", "paired")
+
+        self.sm.schedule_trans("start", startup_time * SECONDS)
+
+    def is_active(self):
+        return self.sm.state() == 'active' or self.sm.state() == 'paired'
+
+    def is_paired(self):
+        return self.sm.state() == 'paired'
+
+    def on_start(self):
         print("NetNowPeripheral: start")
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
@@ -60,7 +78,6 @@ class NetNowPeripheral:
 
         self.impl = espnow.ESPNow()
         self.impl.active(True)
-        self.active = True
 
         try:
             f = open("pair.txt")
@@ -71,33 +88,30 @@ class NetNowPeripheral:
         except OSError:
             pass
 
-        self.poll_task = Task(True, "poll", self.recv, 100 * MILISSECONDS)
-        self.scan_task = None
-
-        self.check_pairing()
-
-    def check_pairing(self):
         manager = self.nvram.get_str('manager') or ""
+        if bool(manager):
+            self.sm.schedule_trans_now("paired")
+        else:
+            self.sm.schedule_trans_now("unpaired")
 
-        if not manager:
-            print("NetNowPeripheral: not paired")
-            self.paired = False
-            self.manager = None
-            self.channel = 0
-            self.scan_task = Task(True, "scan", self.scan_channel, 5 * SECONDS)
-            self.scan_task.advance()
-            return
+    def active_tasks(self):
+        self.sm.recurring_task("netnowp_poll", self.recv, 100 * MILISSECONDS)
 
-        if self.scan_task:
-            self.scan_task.cancel()
-            self.scan_task = None
+    def on_unpaired(self):
+        print("NetNowPeripheral: not paired")
+        self.channel = 0
+        tsk = self.sm.recurring_task("netnowp_scan", self.scan_channel, 5 * SECONDS)
+        tsk.advance()
+        self.active_tasks()
 
-        self.paired = True
+    def on_paired(self):
+        manager = self.nvram.get_str('manager') or ""
         self.manager = mac_s2b(manager)
         self.channel = self.nvram.get_int('channel')
         self.impl.add_peer(self.manager)
         self.implnet.config(channel=self.channel)
         print("NetNowPeripheral: paired w/", manager, "channel", self.channel)
+        self.active_tasks()
 
     def scan_channel(self, _):
         self.channel += 1
@@ -130,7 +144,7 @@ class NetNowPeripheral:
 
     def handle_announce_packet(self, mac, msg):
         print("NetNowPeripheral: manager announced")
-        if self.paired:
+        if self.is_paired():
             print("...ignoring")
             return
         nonce, group = msg[:16], msg[16:]
@@ -144,10 +158,10 @@ class NetNowPeripheral:
         print("NetworkPeripheral: pairing with", mac, "channel", self.channel)
         self.nvram.set_str('manager', mac)
         self.nvram.set_int('channel', self.channel)
-        self.check_pairing()
+        self.sm.schedule_trans_now('paired')
 
     def send_data_unconfirmed(self, payload):
-        if not self.manager:
+        if not self.is_paired():
             return False
 
         # first byte: version
@@ -158,7 +172,7 @@ class NetNowPeripheral:
         return True
 
     def send_data_confirmed(self, payload):
-        if not self.manager:
+        if not self.is_paired():
             return False
 
         # first byte: version
@@ -184,18 +198,44 @@ class NetNowCentral:
         self.nvram = nvram
         self.net = net
         self.impl = espnow.ESPNow()
-        self.active = False
         self.data_recv_observers = []
 
         self.group = self.cfg.data['espnowgroup'].encode()
         self.psk = self.cfg.data['espnowpsk'].encode()
 
-        self.net.observe("netnow", "connected", lambda: self.on_net_start())
+        sm = self.sm = StateMachine("netnowc")
 
-    def on_net_start(self):
-        print("NetNowCentral: start")
+        sm.add_state("idle", self.on_idle)
+        sm.add_state("active", self.on_active)
+        sm.add_state("open", self.on_open)
+        sm.add_state("inactive", self.on_inactive)
+
+        sm.add_transition("initial", "idle")
+        sm.add_transition("idle", "active")
+        sm.add_transition("active", "open")
+        sm.add_transition("open", "active")
+        sm.add_transition("open", "inactive")
+        sm.add_transition("active", "inactive")
+        sm.add_transition("inactive", "idle")
+
+        self.sm.schedule_trans_now("idle")
+
+    def is_active(self):
+        return self.sm.state() == 'active' or self.sm.state() == 'open'
+
+    def is_open(self):
+        return self.sm.state() == 'open'
+
+    def on_idle(self):
+        self.net.observe("netnow", "connected", lambda: self.sm.schedule_trans_now("active"))
+
+    def active_tasks(self):
+        self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
+        self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
+
+    def on_active(self):
+        print("NetNowCentral: active")
         self.impl.active(True)
-        self.active = True
         try:
             # must remove before re-adding
             self.impl.del_peer(broadcast_mac)
@@ -205,51 +245,25 @@ class NetNowCentral:
         self.impl.add_peer(broadcast_mac)
         # did not use irq() since it interacted wierdly with our event loop
         # and it does not stop when program is interrupted
+        self.active_tasks()
 
-        self.poll_task = Task(True, "poll", self.recv, 100 * MILISSECONDS)
-        self.pair_task = None
-        self.announce_task = None
-
-        self.net.observe("netnow", "connlost", lambda: self.on_net_stop())
-
-    def on_net_stop(self):
-        print("NetNowCentral: stop")
-
-        self.poll_task.cancel()
-        if self.pair_task:
-            self.pair_task.cancel()
-            self.pair_task = None
-        if self.announce_task:
-            self.announce_task.cancel()
-            self.announce_task = None
-
+    def on_inactive(self):
+        print("NetNowCentral: inactive")
         self.impl.active(False)
-        self.active = False
-        self.net.observe("netnow", "connected", lambda: self.on_net_start())
+        self.sm.schedule_trans_now("idle")
 
     # Called e.g. when relevant MQTT topic is pinged
     def opentopair(self):
-        if not self.active:
-            return
-
+        self.sm.schedule_trans_now("open")
+        
+    def on_open(self):
         print("NetNowCentral: open to pair")
-
-        if self.pair_task:
-            self.pair_task.cancel()
-        if self.announce_task:
-            self.announce_task.cancel()
-
-        self.pair_task = Task(False, "pair", self.opentopair_end, 5 * MINUTES)
-        self.announce_task = Task(True, "announce", self.announce, 500 * MILISSECONDS)
+        self.active_tasks()
         self.pair_nonces = []
+        self.sm.onetime_task("close", lambda: self.sm.schedule_trans_now("active"), 5 * MINUTES)
+        self.sm.recurring_task("announce", self.announce, 500 * MILISSECONDS)
         # TODO close as soon as someone pairs
-
-    def opentopair_end(self, _):
-        print("NetNowCentral: pair closed")
-        if self.announce_task:
-            self.announce_task.cancel()
-            self.announce_task = None
-        self.pair_task = None
+        # TODO accept pair requests only when open to pair
 
     def announce(self, _):
         print("NetNowCentral: announce")
