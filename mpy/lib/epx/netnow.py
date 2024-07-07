@@ -179,7 +179,8 @@ class NetNowPeripheral:
             if len(msg) != (group_size+1+hmac_size+hmac_size):
                 print("... invalid confirm len")
                 return
-            nettime = msg[group_size+1+hmac_size:]
+            tid = msg[group_size+1+hmac_size:]
+            print("confirm", b2s(tid))
             # TODO use nettime_confirm
             return
 
@@ -200,6 +201,7 @@ class NetNowPeripheral:
         buf += payload
         buf += hmac(self.psk, buf)
         self.impl.send(self.manager, buf, False)
+        print("sent tid", b2s(tid))
         return True
 
     def send_data_confirmed(self, payload):
@@ -215,6 +217,7 @@ class NetNowPeripheral:
         try:
             # return ESP-NOW inherent confirmation (retries up to 25ms)
             res = self.impl.send(self.manager, buf, True)
+            print("sent tid", b2s(tid))
         except OSError as err:
             if err.errno == errno.ETIMEDOUT:
                 # observed in tests
@@ -280,7 +283,7 @@ class NetNowCentral:
         self.tid_history = {}
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
         tsk = self.sm.recurring_task("netnowc_nettime", \
-                lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS)
+                lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS, 10 * SECONDS)
         tsk.advance()
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
@@ -296,21 +299,18 @@ class NetNowCentral:
         self.sm.schedule_trans("closed", 5 * MINUTES)
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
         self.sm.recurring_task("netnowc_nettime", \
-                lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS)
-        self.sm.recurring_task("netnowc_nettime", \
                 lambda _: self.advance_nettime(nettime_subtype_open), 500 * MILISSECONDS)
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
-    def advance_nettime(self, subtype):
+    def advance_nettime(self, subtype, tid=None):
         # TODO support to confirm tid
-        if subtype == nettime_subtype_default or not self.nettime_history:
-            nettime = gen_nonce()
-            self.nettime_history = [ nettime ] + self.nettime_history
-            self.nettime_history = self.nettime_history[:4] # 2 minutes, sync with check_tid
-        else:
-            nettime = self.nettime_history[0]
+        nettime = gen_nonce()
+        self.nettime_history = [ nettime ] + self.nettime_history
+        self.nettime_history = self.nettime_history[:4] # ~2 minutes max, sync with check_tid
 
         buf = bytearray([version, type_nettime, subtype]) + self.group + nettime
+        if subtype == nettime_subtype_confirm:
+            buf += tid
         buf += hmac(self.psk, buf)
         self.impl.send(broadcast_mac, buf, False)
 
@@ -362,6 +362,9 @@ class NetNowCentral:
         if pkttype == type_data:
             # TODO send confirmation
             self.handle_data_packet(mac_b2s(mac), payload)
+            self.sm.onetime_task("netnowc_conf", \
+                    lambda _: self.advance_nettime(nettime_subtype_confirm, tid), \
+                    0 * SECONDS)
             return
 
         print("NetNowCentral.handle_recv_packet: unknown type", pkttype)
