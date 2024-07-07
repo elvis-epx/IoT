@@ -111,6 +111,10 @@ class NetNowPeripheral:
         except OSError:
             pass
 
+        # clean rx buffer
+        while self.impl.any():
+            self.impl.recv()
+
         manager = self.nvram.get_str('manager') or ""
         if bool(manager):
             self.sm.schedule_trans_now("paired")
