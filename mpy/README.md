@@ -96,16 +96,19 @@ protocol that can be found in lib/epx/netnow.py, and is currently used by the sc
 (scale\_sensor and scale\_manager).
 
 The NetNowPeripheral class is for peripheral devices that only use ESP-NOW, not the regular Wi-Fi.
-The communicate only with their paired manager/forwarder.
+The communicate only with their paired manager/forwarder, and generally take the initiative of
+communication. These devices may sleep to save power.
 
 The NetNowCentral class is for central devices that use both ESP-NOW and regular Wi-Fi, and can forward
-data between the two realms.
+data between the two realms. These devices are expected to stay on all the time.
 
-In the ESP-NOW realm, central devices receive packets from all paired peripherals, but only send back
-broadcast packets (which can be directed to a particular peripheral) since in ESP-NOW you need to peer
-with a device to send data to it, but you can receive from anyone. Sending to broadcast removes this
-limitation for the central device. (The peripheral device is supposed to communicate only with its
-central, so it only peers with the central, and the peer count limitation is not an issue.)
+In ESP-NOW, you need to register a peer to sent data to that peer, and the number of registered peers
+is limited. On the other hand, you can receive from anyone, as long as you don't use the ESP-NOW 
+cryptography.
+
+Given this quirk, in our implementation the peripheral device registers the central device as a peer
+and sends packets directly to it, while the central device only sends broadcast packets (even if it is
+actually addressing a particular peripheral). This elides the peer count limit.
 
 ### Wi-Fi channels
 
@@ -113,10 +116,10 @@ Since the ESP-NOW does not need an access point, the peers must agree somehow on
 to use.
 
 In our implementation, the ESP-NOW of the central device passively uses the channel set by regular
-Wi-Fi (which can be configured, or will be the channel configured at the nearest access point).
+Wi-Fi (which can be set in config.txt, or will be the channel configured at the nearest access point).
 
-The ESP-NOW of the peripheral device stores the channel in NVRAM when it pairs to a central device.
-In unpaired state, it keeps changing channels to find the central.
+The peripheral device stores the channel in NVRAM when it pairs with a central device. In unpaired state,
+it keeps changing channels to find the central.
 
 ### Group and password
 
@@ -134,16 +137,16 @@ Currently, the PSK is not used to encrypt the payloads.
 Replay attacks are repelled by two tokens of information present in every packet: net time and
 transaction ID (tid).
 
-The net time ("nettime") is a random value, something between a timestamp and a nonce. It is generated and
-broadcast by the central. Legit peripherals send packets with the latest observed nettime. The central
-accepts nettimes 1 or 2 versions old in case the peripheral missed the last broadcast.
+The net time ("nettime") starts with a random value, is incremented and broadcast by the central.
+Legit peripherals send packets with the latest nettime. The central accepts slightly outdated
+nettimes, just in case the peripheral has missed the last broadcast.
 
 A new nettime is broadcast by the central at least twice per minute, AND every time a packet is
 confirmed. Also, the pace is increased to twice per second when central is in "Pair" mode.
 
 The nettime deflects replay attacks that reuse packets older than 2 or 3 minutes.
 
-The transaction ID (tid) is a random value attached to every packet, both from central and
+The transaction ID (tid) is a random nonce attached to every packet, both from central and
 peripherals. In the current implementation, the central caches the tids received in the last
 few minutes, and drops packets with repeated tids.
 
