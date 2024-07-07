@@ -1,17 +1,20 @@
 import network, machine, espnow, errno, os
 from hashlib import sha256
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
 from epx import loop
 
 broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
 version = const(0x02)
 type_data = const(0x01)
-type_announce = const(0x02)
+type_nettime = const(0x02)
+nettime_subtype_default = const(0x00)
+nettime_subtype_open = const(0x01)
+nettime_subtype_confirm = const(0x02)
+
 type_pairreq = const(0x03)
 type_pairaccept = const(0x04)
 type_pairconfirm = const(0x05)
-type_nonce = const(0x06)
 
 def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
@@ -19,15 +22,22 @@ def mac_s2b(s):
 def mac_b2s(mac):
     return ':'.join([f"{b:02X}" for b in mac])
 
-hash_size = const(12)
+def b2s(data):
+    return ':'.join([f"{b:02X}" for b in data])
+
+group_size = const(8)
+hmac_size = const(12)
 
 def gen_nonce():
-    return os.urandom(hash_size)
+    return os.urandom(hmac_size)
 
 def hash(data):
     h = sha256()
     h.update(data)
-    return h.digest()[:hash_size]
+    return h.digest()
+
+def group_hash(group):
+    return hash(group)[0:group_size]
 
 def xor(a, b):
     if len(a) > len(b):
@@ -35,10 +45,10 @@ def xor(a, b):
     return bytes(x ^ y for x, y in zip(a, b)) + b[len(a):]
 
 def hmac(key, data):
-    return hash(xor(key, hash(xor(key, data))))
+    return hash(xor(key, hash(xor(key, data))))[:hmac_size]
 
 def check_hmac(key, data):
-    return hmac(key, data[:-hash_size]) == data[-hash_size:]
+    return hmac(key, data[:-hmac_size]) == data[-hmac_size:]
 
 
 class NetNowPeripheral:
@@ -47,8 +57,9 @@ class NetNowPeripheral:
         self.nvram = nvram
         self.implnet = None
         self.impl = None
+        self.current_nettime = None
 
-        self.group = self.cfg.data['espnowgroup'].encode()
+        self.group = group_hash(self.cfg.data['espnowgroup'].encode())
         self.psk = self.cfg.data['espnowpsk'].encode()
 
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or (watchdog.grace_time() + 1)
@@ -72,6 +83,9 @@ class NetNowPeripheral:
     def is_paired(self):
         return self.sm.state == 'paired'
 
+    def is_ready(self):
+        return self.is_paired() and self.current_nettime is not None
+
     def on_start(self):
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
@@ -79,6 +93,7 @@ class NetNowPeripheral:
 
         self.impl = espnow.ESPNow()
         self.impl.active(True)
+        self.current_nettime = None
 
         try:
             f = open("pair.txt")
@@ -95,14 +110,11 @@ class NetNowPeripheral:
         else:
             self.sm.schedule_trans_now("unpaired")
 
-    def active_tasks(self):
-        self.sm.recurring_task("netnowp_poll", self.recv, 100 * MILISSECONDS)
-
     def on_unpaired(self):
         self.channel = 0
         tsk = self.sm.recurring_task("netnowp_scan", self.scan_channel, 5 * SECONDS)
         tsk.advance()
-        self.active_tasks()
+        self.sm.recurring_task("netnowp_poll", self.recv, 100 * MILISSECONDS)
 
     def on_paired(self):
         manager = self.nvram.get_str('manager') or ""
@@ -111,7 +123,7 @@ class NetNowPeripheral:
         self.impl.add_peer(self.manager)
         self.implnet.config(channel=self.channel)
         print("NetNowPeripheral: paired w/", manager, "channel", self.channel)
-        self.active_tasks()
+        self.sm.recurring_task("netnowp_poll", self.recv, 100 * MILISSECONDS)
 
     def scan_channel(self, _):
         self.channel += 1
@@ -127,7 +139,7 @@ class NetNowPeripheral:
             self.handle_recv_packet(mac, msg)
     
     def handle_recv_packet(self, mac, msg):
-        if len(msg) < 18:
+        if len(msg) < 2 + hmac_size:
             print("NetNowPeripheral.handle_recv_packet: invalid len")
             return
         if msg[0] != version:
@@ -136,23 +148,40 @@ class NetNowPeripheral:
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
-        msg = msg[:-hash_size]
-        if msg[1] == type_announce:
-            self.handle_announce_packet(mac_b2s(mac), msg[2:])
+        pkttype = msg[1]
+        msg = msg[2:-hmac_size]
+        if pkttype == type_nettime:
+            self.handle_nettime(mac_b2s(mac), msg)
             return
-        print("NetNowPeripheral.handle_recv_packet: unknown type", msg[1])
+        print("NetNowPeripheral.handle_recv_packet: unknown type", pkttype)
 
-    def handle_announce_packet(self, mac, msg):
-        print("NetNowPeripheral: manager announced")
-        if self.is_paired():
-            print("...ignoring")
+    def handle_nettime(self, mac, msg):
+        print("NetNowPeripheral: nettime")
+        if len(msg) < (group_size+1+hmac_size):
+            print("... invalid len")
             return
-        nonce, group = msg[:hash_size], msg[hash_size:]
-        # TODO use nonce
+
+        subtype = msg[0]
+        group = msg[1:group_size+1]
         if group != self.group:
             print("...not my group")
             return
-        self.pair_with_manager(mac)
+
+        nettime = msg[group_size+1:group_size+1+hmac_size]
+        self.current_nettime = nettime
+
+        if subtype == nettime_subtype_open:
+            if not self.is_paired():
+                self.pair_with_manager(mac)
+            return
+
+        if subtype == nettime_subtype_confirm:
+            if len(msg) != (group_size+1+hmac_size+hmac_size):
+                print("... invalid confirm len")
+                return
+            nettime = msg[group_size+1+hmac_size:]
+            # TODO use nettime_confirm
+            return
 
     def pair_with_manager(self, mac):
         print("NetworkPeripheral: pairing with", mac, "channel", self.channel)
@@ -161,23 +190,27 @@ class NetNowPeripheral:
         self.sm.schedule_trans_now('paired')
 
     def send_data_unconfirmed(self, payload):
-        if not self.is_paired():
+        if not self.is_ready():
             return False
 
-        # first byte: version
-        # second byte: packet type 
-        buf = bytearray([version, type_data]) + payload
+        tid = gen_nonce()
+        buf = bytearray([version, type_data])
+        buf += self.current_nettime 
+        buf += tid
+        buf += payload
         buf += hmac(self.psk, buf)
         self.impl.send(self.manager, buf, False)
         return True
 
     def send_data_confirmed(self, payload):
-        if not self.is_paired():
+        if not self.is_ready():
             return False
 
-        # first byte: version
-        # second byte: packet type 
-        buf = bytearray([version, type_data]) + payload
+        tid = gen_nonce()
+        buf = bytearray([version, type_data])
+        buf += self.current_nettime 
+        buf += tid
+        buf += payload
         buf += hmac(self.psk, buf)
         try:
             # return ESP-NOW inherent confirmation (retries up to 25ms)
@@ -200,38 +233,36 @@ class NetNowCentral:
         self.impl = espnow.ESPNow()
         self.data_recv_observers = []
 
-        self.group = self.cfg.data['espnowgroup'].encode()
+        self.group = group_hash(self.cfg.data['espnowgroup'].encode())
         self.psk = self.cfg.data['espnowpsk'].encode()
 
         sm = self.sm = StateMachine("netnowc")
 
         sm.add_state("idle", self.on_idle)
         sm.add_state("active", self.on_active)
+        sm.add_state("closed", self.on_closed)
         sm.add_state("open", self.on_open)
         sm.add_state("inactive", self.on_inactive)
 
         sm.add_transition("initial", "idle")
         sm.add_transition("idle", "active")
-        sm.add_transition("active", "open")
-        sm.add_transition("open", "active")
+        sm.add_transition("active", "closed")
+        sm.add_transition("closed", "open")
+        sm.add_transition("closed", "inactive")
+        sm.add_transition("open", "closed")
         sm.add_transition("open", "inactive")
-        sm.add_transition("active", "inactive")
         sm.add_transition("inactive", "idle")
 
         self.sm.schedule_trans_now("idle")
 
     def is_active(self):
-        return self.sm.state == 'active' or self.sm.state == 'open'
+        return self.sm.state == 'closed' or self.sm.state == 'open'
 
     def is_open(self):
         return self.sm.state == 'open'
 
     def on_idle(self):
         self.net.observe("netnow", "connected", lambda: self.sm.schedule_trans_now("active"))
-
-    def active_tasks(self):
-        self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
-        self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
     def on_active(self):
         self.impl.active(True)
@@ -242,9 +273,16 @@ class NetNowCentral:
             pass
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
-        # did not use irq() since it interacted wierdly with our event loop
-        # and it does not stop when program is interrupted
-        self.active_tasks()
+        self.sm.schedule_trans_now("closed")
+
+    def on_closed(self):
+        self.nettime_history = []
+        self.tid_history = {}
+        self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
+        tsk = self.sm.recurring_task("netnowc_nettime", \
+                lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS)
+        tsk.advance()
+        self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
     def on_inactive(self):
         self.impl.active(False)
@@ -255,19 +293,36 @@ class NetNowCentral:
         self.sm.schedule_trans_now("open")
         
     def on_open(self):
-        self.active_tasks()
-        self.pair_nonces = []
-        self.sm.schedule_trans("active", 5 * MINUTES)
-        self.sm.recurring_task("announce", self.announce, 500 * MILISSECONDS)
+        self.sm.schedule_trans("closed", 5 * MINUTES)
+        self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
+        self.sm.recurring_task("netnowc_nettime", \
+                lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS)
+        self.sm.recurring_task("netnowc_nettime", \
+                lambda _: self.advance_nettime(nettime_subtype_open), 500 * MILISSECONDS)
+        self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
-    def announce(self, _):
-        new_nonce = gen_nonce()
-        self.pair_nonces = [ new_nonce ] + self.pair_nonces
-        # Accept last 3 pair nonces announces
-        self.pair_nonces = self.pair_nonces[:3]
-        buf = bytearray([version, type_announce]) + new_nonce + self.group
+    def advance_nettime(self, subtype):
+        # TODO support to confirm tid
+        if subtype == nettime_subtype_default or not self.nettime_history:
+            nettime = gen_nonce()
+            self.nettime_history = [ nettime ] + self.nettime_history
+            self.nettime_history = self.nettime_history[:4] # 2 minutes, sync with check_tid
+        else:
+            nettime = self.nettime_history[0]
+
+        buf = bytearray([version, type_nettime, subtype]) + self.group + nettime
         buf += hmac(self.psk, buf)
         self.impl.send(broadcast_mac, buf, False)
+
+    def check_tid(self, tid):
+        if tid in self.tid_history:
+            return False
+        self.tid_history[tid] = Shortcronometer()
+        for tid in list(self.tid_history.keys()):
+            if self.tid_history[tid].elapsed() > 3 * MINUTES:
+                del self.tid_history[tid]
+        # TODO memory cap using LRU
+        return True
 
     def register_recv_data(self, observer):
         if observer not in self.data_recv_observers:
@@ -284,7 +339,7 @@ class NetNowCentral:
         # TODO maximum number of paired sensors
         # TODO accept pair requests only when open to pair
         # TODO close as soon as someone pairs
-        if len(msg) < 18:
+        if len(msg) < (2 + hmac_size * 2):
             print("NetNowCentral.handle_recv_packet: invalid len")
             return
         if msg[0] != version:
@@ -293,11 +348,23 @@ class NetNowCentral:
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
-        msg = msg[:-hash_size]
-        if msg[1] == type_data:
-            self.handle_data_packet(mac_b2s(mac), msg[2:])
+        pkttype = msg[1]
+        nettime = msg[2:hmac_size+2]
+        if nettime not in self.nettime_history:
+            print("NetNowCentral.handle_recv_packet: bad nettime")
             return
-        print("NetNowCentral.handle_recv_packet: unknown type", msg[1])
+        tid = msg[hmac_size+2:hmac_size*2+2]
+        if not self.check_tid(tid):
+            print("NetNowCentral.handle_recv_packet: replayed tid")
+            return
+        payload = msg[hmac_size*2+2:-hmac_size]
+
+        if pkttype == type_data:
+            # TODO send confirmation
+            self.handle_data_packet(mac_b2s(mac), payload)
+            return
+
+        print("NetNowCentral.handle_recv_packet: unknown type", pkttype)
 
     def handle_data_packet(self, smac, msg):
         for observer in self.data_recv_observers:
