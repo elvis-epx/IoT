@@ -1,13 +1,14 @@
 import network, machine, espnow, errno, os
 from hashlib import sha256
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, Longcronometer
 from epx import loop
 
 broadcast_mac = b'\xff\xff\xff\xff\xff\xff'
 version = const(0x02)
 
 type_data = const(0x01)
+type_pairreq = const(0x03)
 
 type_nettime = const(0x02)
 nettime_subtype_default = const(0x00)
@@ -124,6 +125,7 @@ class NetNowPeripheral:
         self.channel = 0
         tsk = self.sm.recurring_task("netnowp_scan", self.scan_channel, 5 * SECONDS)
         tsk.advance()
+        self.sm.recurring_task("netnowp_pairreq", self.send_pair_request, 1 * SECONDS)
         self.common_tasks()
 
     def on_paired(self):
@@ -220,6 +222,17 @@ class NetNowPeripheral:
         self.tids[tid] = {"crono": Shortcronometer(), "timeout": timeout, "cb": cb}
         self.tid_cleanup()
 
+    def send_pair_request(self, _):
+        tid = gen_tid()
+        buf = bytearray([version, type_pairreq])
+        buf += self.group
+        buf += self.current_nettime 
+        buf += tid
+        buf += hmac(self.psk, buf)
+
+        self.impl.send(self.manager, buf, False)
+        print("sent pair req", b2s(tid))
+
     # TODO refactor to use on_tid_confirm
 
     def send_data_unconfirmed(self, payload):
@@ -279,17 +292,11 @@ class NetNowCentral:
 
         sm.add_state("idle", self.on_idle)
         sm.add_state("active", self.on_active)
-        sm.add_state("closed", self.on_closed)
-        sm.add_state("open", self.on_open)
         sm.add_state("inactive", self.on_inactive)
 
         sm.add_transition("initial", "idle")
         sm.add_transition("idle", "active")
-        sm.add_transition("active", "closed")
-        sm.add_transition("closed", "open")
-        sm.add_transition("closed", "inactive")
-        sm.add_transition("open", "closed")
-        sm.add_transition("open", "inactive")
+        sm.add_transition("active", "inactive")
         sm.add_transition("inactive", "idle")
 
         self.sm.schedule_trans_now("idle")
@@ -300,6 +307,7 @@ class NetNowCentral:
     def on_active(self):
         self.nettime_history = []
         self.tid_history = {}
+        self.last_pairreq = Longcronometer()
         self.impl.active(True)
         try:
             # must remove before re-adding
@@ -308,9 +316,7 @@ class NetNowCentral:
             pass
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
-        self.sm.schedule_trans_now("closed")
 
-    def on_closed(self):
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
         tsk = self.sm.recurring_task("netnowc_nettime", \
                 lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS, 10 * SECONDS)
@@ -320,18 +326,6 @@ class NetNowCentral:
     def on_inactive(self):
         self.impl.active(False)
         self.sm.schedule_trans_now("idle")
-
-    # Called e.g. when relevant MQTT topic is pinged
-    def opentopair(self):
-        self.sm.schedule_trans_now("open")
-
-    def on_open(self):
-        self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
-        self.sm.recurring_task("netnowc_nettime", \
-                lambda _: self.advance_nettime(nettime_subtype_default), 500 * MILISSECONDS)
-        self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
-
-        self.sm.schedule_trans("closed", 5 * MINUTES)
 
     def advance_nettime(self, subtype, tid=None):
         nettime = gen_nettime()
@@ -414,6 +408,10 @@ class NetNowCentral:
             self.handle_data_packet(mac_b2s(mac), tid, msg)
             return
 
+        if pkttype == type_pairreq:
+            self.handle_pairreq_packet(mac_b2s(mac), tid, msg)
+            return
+
         print("NetNowCentral.handle_recv_packet: unknown type", pkttype)
 
     def handle_data_packet(self, smac, tid, msg):
@@ -423,3 +421,12 @@ class NetNowCentral:
 
         for observer in self.data_recv_observers:
             observer.recv_data(smac, msg)
+
+    def handle_pairreq_packet(self, smac, tid, msg):
+        if self.last_pairreq.elapsed() < 500 * MILISSECONDS:
+            return
+
+        self.last_pairreq = Longcronometer()
+        self.sm.onetime_task("netnowc_pairreq", \
+                lambda _: self.advance_nettime(nettime_subtype_default), \
+                0 * SECONDS)
