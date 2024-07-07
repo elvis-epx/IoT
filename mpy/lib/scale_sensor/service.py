@@ -7,6 +7,8 @@ class Service():
         self.netnow = netnow
         self.sensor = sensor
         Task(False, "eval", self.eval, (watchdog.grace_time() + 2) * SECONDS)
+        # maximum time to wait for sensor and network
+        Task(False, "stop", self.stop, 5 * MINUTES)
 
     def eval(self, _):
         # print("Service.eval")

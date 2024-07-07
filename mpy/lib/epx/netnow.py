@@ -4,7 +4,7 @@ from hashlib import sha256
 from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
 from epx import loop
 
-broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
+broadcast_mac = b'\xff\xff\xff\xff\xff\xff'
 version = const(0x02)
 
 type_data = const(0x01)
@@ -45,7 +45,7 @@ def group_hash(group):
 
 def prepare_key(key):
     if len(key) <= hash_size:
-        return key + [ 0x00 for _ in range(len(key), hash_size)]
+        return key + bytearray([ 0x00 for _ in range(len(key), hash_size)])
     return hash(key)
 
 def xor(a, b):
@@ -57,7 +57,7 @@ ipad = bytearray( 0x36 for _ in range(0, hash_size))
 opad = bytearray( 0x5c for _ in range(0, hash_size))
 
 def hmac(key, data):
-    return hash(xor(xor(key, opad), hash(xor(xor(key, data))))[:hmac_size]
+    return hash(xor(key, opad) + hash(xor(key, ipad) + data))[:hmac_size]
 
 def check_hmac(key, data):
     return hmac(key, data[:-hmac_size]) == data[-hmac_size:]
@@ -225,7 +225,7 @@ class NetNowPeripheral:
         if not self.is_ready():
             return False
 
-        tid = gen_nonce()
+        tid = gen_tid()
         buf = bytearray([version, type_data])
         buf += self.group
         buf += self.current_nettime 
@@ -241,7 +241,7 @@ class NetNowPeripheral:
         if not self.is_ready():
             return False
 
-        tid = gen_nonce()
+        tid = gen_tid()
         buf = bytearray([version, type_data])
         buf += self.group
         buf += self.current_nettime 
@@ -333,7 +333,7 @@ class NetNowCentral:
         self.sm.schedule_trans("closed", 5 * MINUTES)
 
     def advance_nettime(self, subtype, tid=None):
-        nettime = gen_nonce()
+        nettime = gen_nettime()
         self.nettime_history = [ nettime ] + self.nettime_history
         self.nettime_history = self.nettime_history[:4] # ~2 minutes max, sync with replay_attack
 
@@ -392,21 +392,21 @@ class NetNowCentral:
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
 
-        msg = [2+group_size:-hmac_size]
+        msg = msg[2+group_size:-hmac_size]
         nettime = msg[0:nettime_size]
 
         if nettime not in self.nettime_history:
             print("NetNowCentral.handle_recv_packet: bad nettime")
             return
         
-        msg = [nettime_size:]
+        msg = msg[nettime_size:]
         tid = msg[0:tid_size]
 
         if self.is_tid_repeated(tid):
             print("NetNowCentral.handle_recv_packet: replayed tid")
             return
 
-        msg = [tid_size:]
+        msg = msg[tid_size:]
 
         if pkttype == type_data:
             self.handle_data_packet(mac_b2s(mac), tid, msg)
