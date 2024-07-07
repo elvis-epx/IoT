@@ -11,10 +11,7 @@ type_data = const(0x01)
 
 type_nettime = const(0x02)
 nettime_subtype_default = const(0x00)
-nettime_subtype_open = const(0x01)
-nettime_subtype_confirm = const(0x02)
-
-type_pair = const(0x03)
+nettime_subtype_confirm = const(0x01)
 
 def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
@@ -27,9 +24,16 @@ def b2s(data):
 
 group_size = const(8)
 hmac_size = const(12)
+tid_size = const(12)
+nettime_size = const(12)
 
-def gen_nonce():
-    return os.urandom(hmac_size)
+def gen_nettime():
+    return os.urandom(nettime_size)
+
+def gen_tid():
+    return os.urandom(tid_size)
+
+hash_size = 32
 
 def hash(data):
     h = sha256()
@@ -39,13 +43,21 @@ def hash(data):
 def group_hash(group):
     return hash(group)[0:group_size]
 
+def prepare_key(key):
+    if len(key) <= hash_size:
+        return key + [ 0x00 for _ in range(len(key), hash_size)]
+    return hash(key)
+
 def xor(a, b):
     if len(a) > len(b):
         a, b = b, a
     return bytes(x ^ y for x, y in zip(a, b)) + b[len(a):]
 
+ipad = bytearray( 0x36 for _ in range(0, hash_size))
+opad = bytearray( 0x5c for _ in range(0, hash_size))
+
 def hmac(key, data):
-    return hash(xor(key, hash(xor(key, data))))[:hmac_size]
+    return hash(xor(xor(key, opad), hash(xor(xor(key, data))))[:hmac_size]
 
 def check_hmac(key, data):
     return hmac(key, data[:-hmac_size]) == data[-hmac_size:]
@@ -61,7 +73,7 @@ class NetNowPeripheral:
         self.tids = {}
 
         self.group = group_hash(self.cfg.data['espnowgroup'].encode())
-        self.psk = self.cfg.data['espnowpsk'].encode()
+        self.psk = prepare_key(self.cfg.data['espnowpsk'].encode())
 
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or (watchdog.grace_time() + 1)
 
@@ -69,15 +81,12 @@ class NetNowPeripheral:
 
         sm.add_state("start", self.on_start)
         sm.add_state("unpaired", self.on_unpaired)
-        sm.add_state("pairing", self.on_pairing)
         sm.add_state("paired", self.on_paired)
 
         sm.add_transition("initial", "start")
         sm.add_transition("start", "unpaired")
         sm.add_transition("start", "paired")
-        sm.add_transition("unpaired", "pairing")
-        sm.add_transition("pairing", "paired")
-        sm.add_transition("pairing", "unpaired")
+        sm.add_transition("unpaired", "paired")
 
         self.sm.schedule_trans("start", startup_time * SECONDS)
 
@@ -117,13 +126,6 @@ class NetNowPeripheral:
         tsk.advance()
         self.common_tasks()
 
-    def on_pairing(self):
-        print("NetworkPeripheral: pairing with", mac_b2s(self.manager), "channel", self.channel)
-        self.sm.schedule_trans("unpaired", 5 * MINUTES)
-        tsk = self.sm.recurring_task("netnowp_reqpair", self.send_pairreq, 5 * SECONDS)
-        tsk.advance()
-        self.common_tasks()
-
     def on_paired(self):
         manager = self.nvram.get_str('manager') or ""
         self.manager = mac_s2b(manager)
@@ -147,49 +149,57 @@ class NetNowPeripheral:
             self.handle_recv_packet(mac, msg)
     
     def handle_recv_packet(self, mac, msg):
-        if len(msg) < 2 + hmac_size:
+        if len(msg) < 2 + group_size + hmac_size:
             print("NetNowPeripheral.handle_recv_packet: invalid len")
             return
+
         if msg[0] != version:
             print("NetNowPeripheral.handle_recv_packet: unknown version", version)
             return
+
+        pkttype = msg[1]
+        group = msg[2:2+group_size]
+
+        if group != self.group:
+            print("NetNowCentral.handle_recv_packet: not my group", group)
+            return
+
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
-        pkttype = msg[1]
-        msg = msg[2:-hmac_size]
+
+        msg = msg[2+group_size:-hmac_size]
+
         if pkttype == type_nettime:
             self.handle_nettime(mac_b2s(mac), msg)
             return
+
         print("NetNowPeripheral.handle_recv_packet: unknown type", pkttype)
 
     def handle_nettime(self, mac, msg):
         print("NetNowPeripheral: nettime")
-        if len(msg) < (group_size+1+hmac_size):
+
+        if len(msg) < (1 + nettime_size):
             print("... invalid len")
             return
 
         subtype = msg[0]
-        group = msg[1:group_size+1]
-
-        if group != self.group:
-            print("...not my group")
-            return
-
-        nettime = msg[group_size+1:group_size+1+hmac_size]
+        nettime = msg[1:1+nettime_size]
         self.current_nettime = nettime
 
-        if subtype == nettime_subtype_open:
-            if self.sm.state == 'unpaired':
-                self.manager = mac_s2b(mac)
-                self.sm.schedule_trans_now("pairing")
+        if self.sm.state == 'unpaired':
+            # Adopt this central host as my manager
+            self.manager = mac_s2b(mac)
+            self.nvram.set_str('manager', mac_b2s(self.manager))
+            self.nvram.set_int('channel', self.channel)
+            self.sm.schedule_trans_now('paired')
             return
 
         if subtype == nettime_subtype_confirm:
-            if len(msg) != (group_size+1+hmac_size+hmac_size):
+            if len(msg) != (1 + nettime_size + tid_size):
                 print("... invalid confirm len")
                 return
-            tid = msg[group_size+1+hmac_size:]
+            tid = msg[1+tid_size:]
             self.tid_confirm(tid)
             return
 
@@ -209,22 +219,6 @@ class NetNowPeripheral:
         self.tids[tid] = {"crono": Shortcronometer(), "timeout": timeout, "cb": cb}
         self.tid_cleanup()
 
-    def send_pairreq(self):
-        tid = gen_nonce()
-        buf = bytearray([version, type_pair])
-        buf += self.current_nettime 
-        buf += tid
-        buf += hmac(self.psk, buf)
-        self.impl.send(self.manager, buf, False)
-        print("sent pair tid", b2s(tid))
-
-        def pairreq_confirmed():
-            self.nvram.set_str('manager', mac_b2s(self.manager))
-            self.nvram.set_int('channel', self.channel)
-            self.sm.schedule_trans_now('paired')
-
-        self.on_tid_confirm(5 * SECONDS, tid, pairreq_confirmed)
-
     # TODO refactor to use on_tid_confirm
 
     def send_data_unconfirmed(self, payload):
@@ -233,10 +227,12 @@ class NetNowPeripheral:
 
         tid = gen_nonce()
         buf = bytearray([version, type_data])
+        buf += self.group
         buf += self.current_nettime 
         buf += tid
         buf += payload
         buf += hmac(self.psk, buf)
+
         self.impl.send(self.manager, buf, False)
         print("sent tid", b2s(tid))
         return True
@@ -247,10 +243,12 @@ class NetNowPeripheral:
 
         tid = gen_nonce()
         buf = bytearray([version, type_data])
+        buf += self.group
         buf += self.current_nettime 
         buf += tid
         buf += payload
         buf += hmac(self.psk, buf)
+
         try:
             # return ESP-NOW inherent confirmation (retries up to 25ms)
             res = self.impl.send(self.manager, buf, True)
@@ -274,7 +272,7 @@ class NetNowCentral:
         self.data_recv_observers = []
 
         self.group = group_hash(self.cfg.data['espnowgroup'].encode())
-        self.psk = self.cfg.data['espnowpsk'].encode()
+        self.psk = prepare_key(self.cfg.data['espnowpsk'].encode())
 
         sm = self.sm = StateMachine("netnowc")
 
@@ -312,7 +310,6 @@ class NetNowCentral:
         self.sm.schedule_trans_now("closed")
 
     def on_closed(self):
-        self.load_peripherals()
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
         tsk = self.sm.recurring_task("netnowc_nettime", \
                 lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS, 10 * SECONDS)
@@ -326,23 +323,28 @@ class NetNowCentral:
     # Called e.g. when relevant MQTT topic is pinged
     def opentopair(self):
         self.sm.schedule_trans_now("open")
-        
+
     def on_open(self):
-        self.sm.schedule_trans("closed", 5 * MINUTES)
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
         self.sm.recurring_task("netnowc_nettime", \
                 lambda _: self.advance_nettime(nettime_subtype_open), 500 * MILISSECONDS)
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
+
+        self.sm.schedule_trans("closed", 5 * MINUTES)
 
     def advance_nettime(self, subtype, tid=None):
         nettime = gen_nonce()
         self.nettime_history = [ nettime ] + self.nettime_history
         self.nettime_history = self.nettime_history[:4] # ~2 minutes max, sync with replay_attack
 
-        buf = bytearray([version, type_nettime, subtype]) + self.group + nettime
+        buf = bytearray([version, type_nettime])
+        buf += self.group
+        buf += bytearray([subtype])
+        buf += nettime
         if subtype == nettime_subtype_confirm:
             buf += tid
         buf += hmac(self.psk, buf)
+
         self.impl.send(broadcast_mac, buf, False)
 
     # Protection against replay attacks
@@ -371,80 +373,51 @@ class NetNowCentral:
             self.handle_recv_packet(mac, msg)
     
     def handle_recv_packet(self, mac, msg):
-        if len(msg) < (2 + hmac_size * 2):
-            print("NetNowCentral.handle_recv_packet: invalid len")
+        if len(msg) < (2 + group_size + nettime_size + tid_size + hmac_size):
+            print("NetNowCentral.handle_recv_packet: too short")
             return
+
         if msg[0] != version:
             print("NetNowCentral.handle_recv_packet: unknown version", version)
             return
-        # TODO add group to every packet to allow early filtering at this point?
+
+        pkttype = msg[1]
+        group = msg[2:2+group_size]
+
+        if group != self.group:
+            print("NetNowCentral.handle_recv_packet: not my group")
+            return
+
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
-        pkttype = msg[1]
-        nettime = msg[2:hmac_size+2]
+
+        msg = [2+group_size:-hmac_size]
+        nettime = msg[0:nettime_size]
+
         if nettime not in self.nettime_history:
             print("NetNowCentral.handle_recv_packet: bad nettime")
             return
-        tid = msg[hmac_size+2:hmac_size*2+2]
+        
+        msg = [nettime_size:]
+        tid = msg[0:tid_size]
+
         if self.is_tid_repeated(tid):
             print("NetNowCentral.handle_recv_packet: replayed tid")
             return
-        payload = msg[hmac_size*2+2:-hmac_size]
+
+        msg = [tid_size:]
 
         if pkttype == type_data:
-            self.handle_data_packet(mac_b2s(mac), tid, payload)
-            return
-
-        if pkttype == type_pair:
-            self.handle_pair_packet(mac_b2s(mac), tid, payload)
+            self.handle_data_packet(mac_b2s(mac), tid, msg)
             return
 
         print("NetNowCentral.handle_recv_packet: unknown type", pkttype)
 
     def handle_data_packet(self, smac, tid, msg):
-        if not self.known_peripheral(smac):
-            print("NetNowCentral.handle_data_packet: unpaired peripheral", smac)
-            return
-
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.advance_nettime(nettime_subtype_confirm, tid), \
                 0 * SECONDS)
 
         for observer in self.data_recv_observers:
             observer.recv_data(smac, msg)
-
-    def handle_pair_packet(self, smac, tid, msg):
-        if self.sm.state != 'open':
-            return
-
-        if not self.add_peripheral(smac):
-            print("NetNowCentral.handle_pair_packet: reject peripheral", smac)
-            return
-
-        self.sm.onetime_task("netnowc_conf", \
-                lambda _: self.advance_nettime(nettime_subtype_confirm, tid), \
-                0 * SECONDS)
-
-    # TODO delegate decision of accepting new peripheral to profile
-    # TODO support multiple paired peripherals
-    # TODO perhaps even delegate storage of peripheral MACs
-
-    def load_peripherals(self):
-        try:
-            f = open("pair.txt")
-            print("NetNowCentral: forced re-pairing")
-            self.nvram.set_str('peripheral', '')
-            f.close()
-            os.unlink("pair.txt")
-        except OSError:
-            pass
-        self.peripheral = self.nvram.get_str('peripheral') or ""
-
-    def known_peripheral(self, smac):
-        return smac == self.peripheral
-
-    def add_peripheral(self, smac):
-        self.peripheral = smac
-        self.nvram.set_str('peripheral', smac)
-        return True
