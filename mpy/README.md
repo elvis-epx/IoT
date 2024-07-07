@@ -155,7 +155,7 @@ send data. This does not work well for peripherals that a) sleep and b) are expe
 as fast as possible e.g. a coin cell remote control. Some other mechanism must be implemented to
 accomodate this use case.
 
-# Pairing
+### Pairing
 
 There is no special protocol for pairing. It is based on coincidence of PSK and group.
 
