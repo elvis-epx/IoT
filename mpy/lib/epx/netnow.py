@@ -6,7 +6,9 @@ from epx import loop
 
 broadcast_mac = const(b'\xff\xff\xff\xff\xff\xff')
 version = const(0x02)
+
 type_data = const(0x01)
+
 type_nettime = const(0x02)
 nettime_subtype_default = const(0x00)
 nettime_subtype_open = const(0x01)
@@ -303,7 +305,6 @@ class NetNowCentral:
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
     def advance_nettime(self, subtype, tid=None):
-        # TODO support to confirm tid
         nettime = gen_nonce()
         self.nettime_history = [ nettime ] + self.nettime_history
         self.nettime_history = self.nettime_history[:4] # ~2 minutes max, sync with check_tid
@@ -360,7 +361,6 @@ class NetNowCentral:
         payload = msg[hmac_size*2+2:-hmac_size]
 
         if pkttype == type_data:
-            # TODO send confirmation
             self.handle_data_packet(mac_b2s(mac), payload)
             self.sm.onetime_task("netnowc_conf", \
                     lambda _: self.advance_nettime(nettime_subtype_confirm, tid), \
