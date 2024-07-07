@@ -161,11 +161,12 @@ class NetNowPeripheral:
         group = msg[2:2+group_size]
 
         if group != self.group:
-            print("NetNowCentral.handle_recv_packet: not my group", group)
+            print("NetNowPeripheral.handle_recv_packet: not my group", group)
             return
 
+        print("NetNowPeripheral.handle_recv_packet: hmac", b2s(msg[-hmac_size:]))
         if not check_hmac(self.psk, msg):
-            print("NetNowCentral.handle_recv_packet: bad hmac")
+            print("NetNowPeripheral.handle_recv_packet: bad hmac")
             return
 
         msg = msg[2+group_size:-hmac_size]
@@ -327,7 +328,7 @@ class NetNowCentral:
     def on_open(self):
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
         self.sm.recurring_task("netnowc_nettime", \
-                lambda _: self.advance_nettime(nettime_subtype_open), 500 * MILISSECONDS)
+                lambda _: self.advance_nettime(nettime_subtype_default), 500 * MILISSECONDS)
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
         self.sm.schedule_trans("closed", 5 * MINUTES)
@@ -388,6 +389,7 @@ class NetNowCentral:
             print("NetNowCentral.handle_recv_packet: not my group")
             return
 
+        print("NetNowCentral.handle_recv_packet: hmac", b2s(msg[-hmac_size:]))
         if not check_hmac(self.psk, msg):
             print("NetNowCentral.handle_recv_packet: bad hmac")
             return
