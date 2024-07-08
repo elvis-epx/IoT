@@ -114,7 +114,7 @@ class NetNowPeripheral:
 
         try:
             f = open("pair.txt")
-            print("NetNowPeripheral: forced re-pairing")
+            print("netnow: forced re-pairing")
             self.nvram.set_str('manager', '')
             f.close()
             os.unlink("pair.txt")
@@ -146,7 +146,7 @@ class NetNowPeripheral:
         self.channel = self.nvram.get_int('channel')
         self.impl.add_peer(self.manager)
         self.implnet.config(channel=self.channel)
-        print("NetNowPeripheral: paired w/", manager, "channel", self.channel)
+        print("netnow: paired w/", manager, "channel", self.channel)
         self.common_tasks()
 
     def scan_channel(self, _):
@@ -154,33 +154,33 @@ class NetNowPeripheral:
         if self.channel > 13:
             self.channel = 1
         self.implnet.config(channel=self.channel)
-        print("NetNowPeripheral: now scanning channel",  self.channel)
+        print("netnow: now scanning channel",  self.channel)
 
     def recv(self, _):
         while self.impl.any():
-            print("NetNowPeripheral: recv packet")
+            print("netnow: recv packet")
             mac, msg = self.impl.recv()
             self.handle_recv_packet(mac, msg)
     
     def handle_recv_packet(self, mac, msg):
         if len(msg) < 2 + group_size + hmac_size:
-            print("NetNowPeripheral.handle_recv_packet: invalid len")
+            print("netnow.handle_recv_packet: invalid len")
             return
 
         if msg[0] != version:
-            print("NetNowPeripheral.handle_recv_packet: unknown version", version)
+            print("netnow.handle_recv_packet: unknown version", version)
             return
 
         pkttype = msg[1]
         group = msg[2:2+group_size]
 
         if group != self.group:
-            print("NetNowPeripheral.handle_recv_packet: not my group", group)
+            print("netnow.handle_recv_packet: not my group", group)
             return
 
-        print("NetNowPeripheral.handle_recv_packet: hmac", b2s(msg[-hmac_size:]))
+        print("netnow.handle_recv_packet: hmac", b2s(msg[-hmac_size:]))
         if not check_hmac(self.psk, msg):
-            print("NetNowPeripheral.handle_recv_packet: bad hmac")
+            print("netnow.handle_recv_packet: bad hmac")
             return
 
         msg = msg[2+group_size:-hmac_size]
@@ -189,10 +189,10 @@ class NetNowPeripheral:
             self.handle_timestamp(mac_b2s(mac), msg)
             return
 
-        print("NetNowPeripheral.handle_recv_packet: unknown type", pkttype)
+        print("netnow.handle_recv_packet: unknown type", pkttype)
 
     def handle_timestamp(self, mac, msg):
-        print("NetNowPeripheral: timestamp")
+        print("netnow: timestamp")
 
         if len(msg) < (1 + timestamp_size):
             print("... invalid len")
@@ -226,12 +226,14 @@ class NetNowPeripheral:
 
             if self.sm.state == 'unpaired':
                 # trust right away
+                print("...timestamp trusted bc unpaired")
                 self.current_timestamp = timestamp
                 self.last_ping = None
                 return True
 
             if subtype == timestamp_subtype_default:
                 # send ping to confirm it is legit
+                print("...timestamp untrusted")
                 self.send_ping(timestamp)
                 # (TID confirmation callback will fill current_timestamp)
                 return False
@@ -282,7 +284,7 @@ class NetNowPeripheral:
 
     def send_ping(self, putative_timestamp):
         if (self.last_ping is not None) and self.last_ping.elapsed() < 10 * SECONDS:
-            print("ping still in flight")
+            print("ping still in flight, not sending another")
             return
         self.last_ping = Shortcronometer()
 
@@ -294,10 +296,10 @@ class NetNowPeripheral:
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
-        print("sent ping", b2s(tid), "for timestamp", putative_timestamp)
+        print("sent ping tid", b2s(tid), "for timestamp", putative_timestamp % 100000)
 
         def confirm(timestamp):
-            print("timestamp confirmed:", timestamp)
+            print("timestamp confirmed:", timestamp % 100000)
             self.current_timestamp = timestamp
             self.last_ping = None
         self.on_tid_confirm(5 * SECONDS, tid, confirm)
@@ -319,7 +321,7 @@ class NetNowPeripheral:
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
-        print("sent tid", b2s(tid))
+        print("sent data tid", b2s(tid))
         return True
 
     def send_data_confirmed(self, payload):
@@ -337,7 +339,7 @@ class NetNowPeripheral:
         try:
             # return ESP-NOW inherent confirmation (retries up to 25ms)
             res = self.impl.send(self.manager, buf, True)
-            print("sent tid", b2s(tid))
+            print("sent data tid", b2s(tid))
         except OSError as err:
             if err.errno == errno.ETIMEDOUT:
                 # observed in tests
@@ -420,6 +422,7 @@ class NetNowCentral:
 
     def advance_timestamp(self, subtype, tid=None):
         self.timestamp += 1
+        print("Timestamp", self.timestamp % 100000)
 
         buf = bytearray([version, type_timestamp])
         buf += self.group
@@ -427,6 +430,7 @@ class NetNowCentral:
         buf += encode_timestamp(self.timestamp)
         if subtype == timestamp_subtype_confirm:
             buf += tid
+            print("   and confirming tid", b2s(tid))
         buf += hmac(self.psk, buf)
 
         self.impl.send(broadcast_mac, buf, False)
@@ -507,6 +511,7 @@ class NetNowCentral:
         print("NetNowCentral.handle_recv_packet: unknown type", pkttype)
 
     def handle_data_packet(self, smac, tid, msg):
+        print("NetNowCentral.handle_data_packet")
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.advance_timestamp(timestamp_subtype_confirm, tid), \
                 0 * SECONDS)
