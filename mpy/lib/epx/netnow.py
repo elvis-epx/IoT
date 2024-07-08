@@ -9,9 +9,11 @@ version = const(0x02)
 
 type_data = const(0x01)
 
-type_nettime = const(0x02)
-nettime_subtype_default = const(0x00)
-nettime_subtype_confirm = const(0x01)
+type_timestamp = const(0x02)
+timestamp_subtype_default = const(0x00)
+timestamp_subtype_confirm = const(0x01)
+
+type_ping = const(0x03)
 
 def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
@@ -25,10 +27,18 @@ def b2s(data):
 group_size = const(8)
 hmac_size = const(12)
 tid_size = const(12)
-nettime_size = const(12)
+timestamp_size = const(12)
 
-def gen_nettime():
-    return os.urandom(nettime_size)
+def decode_timestamp(b):
+    return int.from_bytes(b, 'big')
+
+def gen_initial_timestamp():
+    b = os.urandom(timestamp_size)
+    b[0] &= 0x80
+    return decode_timestamp(b)
+
+def encode_timestamp(n):
+    return n.to_bytes(timestamp_size, 'big')
 
 def gen_tid():
     return os.urandom(tid_size)
@@ -69,7 +79,8 @@ class NetNowPeripheral:
         self.nvram = nvram
         self.implnet = None
         self.impl = None
-        self.current_nettime = None
+        self.current_timestamp = None
+        self.last_ping = None
         self.tids = {}
 
         self.group = group_hash(self.cfg.data['espnowgroup'].encode())
@@ -91,7 +102,7 @@ class NetNowPeripheral:
         self.sm.schedule_trans("start", startup_time * SECONDS)
 
     def is_ready(self):
-        return self.sm.state == 'paired' and self.current_nettime is not None
+        return self.sm.state == 'paired' and self.current_timestamp is not None
 
     def on_start(self):
         self.implnet = network.WLAN(network.STA_IF)
@@ -100,7 +111,6 @@ class NetNowPeripheral:
 
         self.impl = espnow.ESPNow()
         self.impl.active(True)
-        self.current_nettime = None
 
         try:
             f = open("pair.txt")
@@ -175,22 +185,24 @@ class NetNowPeripheral:
 
         msg = msg[2+group_size:-hmac_size]
 
-        if pkttype == type_nettime:
-            self.handle_nettime(mac_b2s(mac), msg)
+        if pkttype == type_timestamp:
+            self.handle_timestamp(mac_b2s(mac), msg)
             return
 
         print("NetNowPeripheral.handle_recv_packet: unknown type", pkttype)
 
-    def handle_nettime(self, mac, msg):
-        print("NetNowPeripheral: nettime")
+    def handle_timestamp(self, mac, msg):
+        print("NetNowPeripheral: timestamp")
 
-        if len(msg) < (1 + nettime_size):
+        if len(msg) < (1 + timestamp_size):
             print("... invalid len")
             return
 
         subtype = msg[0]
-        nettime = msg[1:1+nettime_size]
-        self.current_nettime = nettime
+        timestamp = decode_timestamp(msg[1:1+timestamp_size])
+
+        if not self.trust_timestamp(subtype, timestamp):
+            return
 
         if self.sm.state == 'unpaired':
             # Adopt this central host as my manager
@@ -200,29 +212,97 @@ class NetNowPeripheral:
             self.sm.schedule_trans_now('paired')
             return
 
-        if subtype == nettime_subtype_confirm:
-            if len(msg) != (1 + nettime_size + tid_size):
+        if subtype == timestamp_subtype_confirm:
+            if len(msg) != (1 + timestamp_size + tid_size):
                 print("... invalid confirm len")
                 return
             tid = msg[1+tid_size:]
-            self.tid_confirm(tid)
+            self.tid_confirm(tid, timestamp)
             return
+
+    def trust_timestamp(self, subtype, timestamp):
+        if self.current_timestamp is None:
+            # timestamp unknown (device just started up)
+
+            if self.sm.state == 'unpaired':
+                # trust right away
+                self.current_timestamp = timestamp
+                self.last_ping = None
+                return True
+
+            if subtype == timestamp_subtype_default:
+                # send ping to confirm it is legit
+                self.send_ping(timestamp)
+                # (TID confirmation callback will fill current_timestamp)
+                return False
+
+            # ping confirm comes through here
+            return True
+
+        # timestamp already known
+        diff = timestamp - self.current_timestamp
+        if diff > 0 and diff < 100:
+            # Legit timestamp advancement
+            self.current_timestamp = timestamp
+            self.last_ping = None
+            return True
+
+        if diff == 0:
+            # replay attack
+            print("...timestamp replayed")
+            return False
+
+        # replay attack, or central may have rebooted
+        # keep current timestamp and ping to confirm new one
+
+        if subtype == timestamp_subtype_default:
+            print("...timestamp jump")
+            self.send_ping(timestamp)
+            # (TID confirmation callback will fill current_timestamp)
+            return False
+
+        # ping confirm comes through here
+        return True
 
     def tid_cleanup(self):
         for tid in list(self.tids.keys()):
             if self.tids[tid]["crono"].elapsed() > self.tids[tid]["timeout"]:
                 del self.tids[tid]
 
-    def tid_confirm(self, tid):
+    def tid_confirm(self, timestamp, tid, timestamp):
         if tid in self.tids:
             print("confirm", b2s(tid))
-            self.tids[tid]["cb"]()
+            self.tids[tid]["cb"](timestamp)
             del self.tids[tid]
         self.tid_cleanup()
 
     def on_tid_confirm(self, timeout, tid, cb):
         self.tids[tid] = {"crono": Shortcronometer(), "timeout": timeout, "cb": cb}
         self.tid_cleanup()
+
+    def send_ping(self, putative_timestamp):
+        if (self.last_ping is not None) and self.last_ping.elapsed() < 10 * SECONDS:
+            print("ping still in flight")
+            return
+        self.last_ping = Shortcronometer()
+
+        tid = gen_tid()
+        buf = bytearray([version, type_ping])
+        buf += self.group
+        buf += encode_timestamp(putative_timestamp)
+        buf += tid
+        buf += hmac(self.psk, buf)
+
+        self.impl.send(self.manager, buf, False)
+        print("sent ping", b2s(tid), "for timestamp", putative_timestamp)
+
+        def confirm(timestamp):
+            print("timestamp confirmed:", timestamp)
+            self.current_timestamp = timestamp
+            self.last_ping = None
+        self.on_tid_confirm(5 * SECONDS, tid, confirm)
+
+        return True
 
     # TODO refactor to use on_tid_confirm
 
@@ -233,7 +313,7 @@ class NetNowPeripheral:
         tid = gen_tid()
         buf = bytearray([version, type_data])
         buf += self.group
-        buf += self.current_nettime 
+        buf += encode_timestamp(self.current_timestamp)
         buf += tid
         buf += payload
         buf += hmac(self.psk, buf)
@@ -249,7 +329,7 @@ class NetNowPeripheral:
         tid = gen_tid()
         buf = bytearray([version, type_data])
         buf += self.group
-        buf += self.current_nettime 
+        buf += encode_timestamp(self.current_timestamp)
         buf += tid
         buf += payload
         buf += hmac(self.psk, buf)
@@ -296,13 +376,14 @@ class NetNowCentral:
         sm.add_transition("open", "inactive")
         sm.add_transition("inactive", "idle")
 
+        self.timestamp = gen_initial_timestamp()
+
         self.sm.schedule_trans_now("idle")
 
     def on_idle(self):
         self.net.observe("netnow", "connected", lambda: self.sm.schedule_trans_now("active"))
 
     def on_active(self):
-        self.nettime_history = []
         self.tid_history = {}
         self.impl.active(True)
         try:
@@ -316,8 +397,8 @@ class NetNowCentral:
 
     def on_closed(self):
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
-        tsk = self.sm.recurring_task("netnowc_nettime", \
-                lambda _: self.advance_nettime(nettime_subtype_default), 30 * SECONDS, 10 * SECONDS)
+        tsk = self.sm.recurring_task("netnowc_timestamp", \
+                lambda _: self.advance_timestamp(timestamp_subtype_default), 30 * SECONDS, 10 * SECONDS)
         tsk.advance()
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
@@ -331,22 +412,20 @@ class NetNowCentral:
 
     def on_open(self):
         self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
-        self.sm.recurring_task("netnowc_nettime", \
-                lambda _: self.advance_nettime(nettime_subtype_default), 500 * MILISSECONDS)
+        self.sm.recurring_task("netnowc_timestamp", \
+                lambda _: self.advance_timestamp(timestamp_subtype_default), 500 * MILISSECONDS)
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
         self.sm.schedule_trans("closed", 5 * MINUTES)
 
-    def advance_nettime(self, subtype, tid=None):
-        nettime = gen_nettime()
-        self.nettime_history = [ nettime ] + self.nettime_history
-        self.nettime_history = self.nettime_history[:4] # ~2 minutes max, sync with replay_attack
+    def advance_timestamp(self, subtype, tid=None):
+        self.timestamp += 1
 
-        buf = bytearray([version, type_nettime])
+        buf = bytearray([version, type_timestamp])
         buf += self.group
         buf += bytearray([subtype])
-        buf += nettime
-        if subtype == nettime_subtype_confirm:
+        buf += encode_timestamp(self.timestamp)
+        if subtype == timestamp_subtype_confirm:
             buf += tid
         buf += hmac(self.psk, buf)
 
@@ -378,7 +457,7 @@ class NetNowCentral:
             self.handle_recv_packet(mac, msg)
     
     def handle_recv_packet(self, mac, msg):
-        if len(msg) < (2 + group_size + nettime_size + tid_size + hmac_size):
+        if len(msg) < (2 + group_size + timestamp_size + tid_size + hmac_size):
             print("NetNowCentral.handle_recv_packet: too short")
             return
 
@@ -399,13 +478,16 @@ class NetNowCentral:
             return
 
         msg = msg[2+group_size:-hmac_size]
-        nettime = msg[0:nettime_size]
+        timestamp = decode_timestamp(msg[0:timestamp_size])
 
-        if nettime not in self.nettime_history:
-            print("NetNowCentral.handle_recv_packet: bad nettime")
+        if timestamp > self.timestamp:
+            print("NetNowCentral.handle_recv_packet: future timestamp")
+            return
+        if timestamp < (self.timestamp - 4):
+            print("NetNowCentral.handle_recv_packet: past timestamp")
             return
         
-        msg = msg[nettime_size:]
+        msg = msg[timestamp_size:]
         tid = msg[0:tid_size]
 
         if self.is_tid_repeated(tid):
@@ -418,12 +500,21 @@ class NetNowCentral:
             self.handle_data_packet(mac_b2s(mac), tid, msg)
             return
 
+        if pkttype == type_ping:
+            self.handle_ping_packet(mac_b2s(mac), tid)
+            return
+
         print("NetNowCentral.handle_recv_packet: unknown type", pkttype)
 
     def handle_data_packet(self, smac, tid, msg):
         self.sm.onetime_task("netnowc_conf", \
-                lambda _: self.advance_nettime(nettime_subtype_confirm, tid), \
+                lambda _: self.advance_timestamp(timestamp_subtype_confirm, tid), \
                 0 * SECONDS)
 
         for observer in self.data_recv_observers:
             observer.recv_data(smac, msg)
+
+    def handle_ping_packett(self, smac, tid):
+        self.sm.onetime_task("netnowc_conf", \
+                lambda _: self.advance_timestamp(timestamp_subtype_confirm, tid), \
+                0 * SECONDS)
