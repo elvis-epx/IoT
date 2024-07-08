@@ -174,10 +174,9 @@ Once the confirmation arrives, the rebased timestamp is accepted.
 
 There is no special protocol for pairing. It is based on coincidence of PSK and group.
 
-The only provision at central side for pairing is to increase the pace of nettime broadcasting,
-so the peripheral has an easier time to find the central (since the peripheral does not know
-the channel). Typically, the central device will subscribe to some MQTT topic to accept a
-command and to be put in pairing mode.
+The only provision for pairing is a special "pair request" packet the peripheral sends
+blind to broadcast. When a central device sees this packet, it updates the timestamp early,
+which sends a timestamp packet that is hopefully detected by the peripheral.
 
 At peripheral side, the peer central is stored in NVRAM. The presence of this data means the
 device is paired. This data should be removed from NVRAM in order to put the device in unpaired
@@ -185,10 +184,10 @@ mode. Currently, this can be done by creating a file "pair.txt" in the ESP32 fil
 A profile can add other methods e.g. pressing a button.
 
 When unpaired, the peripheral actively scans for a suitable central peer, changing the Wi-Fi
-channel every 5 seconds and listening for nettime broadcasts. The profile may set a timeout
-(e.g. 5 minutes) to quit and go back to sleep.
+channel every 5 seconds, sending pair req packets, and listening for timestamp broadcasts.
+The profile may set a timeout (e.g. 5 minutes) to quit and go back to sleep.
 
-Once the peripheral gets a valid nettime packet, it adopts the central that sent it as its
+Once the peripheral gets a valid timestamp packet, it adopts the central that sent it as its
 manager. It simply stores the MAC address and the channel in NVRAM.
 
 While it is possible to pair w/o activating the pairing mode in central, it will take a long
