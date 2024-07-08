@@ -33,7 +33,7 @@ def decode_timestamp(b):
     return int.from_bytes(b, 'big')
 
 def gen_initial_timestamp():
-    b = os.urandom(timestamp_size)
+    b = bytearray(os.urandom(timestamp_size))
     b[0] &= 0x80
     return decode_timestamp(b)
 
@@ -269,7 +269,7 @@ class NetNowPeripheral:
             if self.tids[tid]["crono"].elapsed() > self.tids[tid]["timeout"]:
                 del self.tids[tid]
 
-    def tid_confirm(self, timestamp, tid, timestamp):
+    def tid_confirm(self, tid, timestamp):
         if tid in self.tids:
             print("confirm", b2s(tid))
             self.tids[tid]["cb"](timestamp)
@@ -514,7 +514,8 @@ class NetNowCentral:
         for observer in self.data_recv_observers:
             observer.recv_data(smac, msg)
 
-    def handle_ping_packett(self, smac, tid):
+    def handle_ping_packet(self, smac, tid):
+        print("NetNowCentral.handle_ping_packet")
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.advance_timestamp(timestamp_subtype_confirm, tid), \
                 0 * SECONDS)
