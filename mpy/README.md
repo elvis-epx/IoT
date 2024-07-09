@@ -153,17 +153,24 @@ few minutes, and drops packets with repeated tids.
 The tid deflects replay attacks that try to reuse fresh packets (seen in the last 2 or 3 minutes,
 whose timestamps are still considered valid).
 
-### TODO: Sleep + real-time
+### : Sleep + real-time
 
 When the peripheral starts up, it needs to receive the timestamp first, to be able then to
 send data. This does not work well for peripherals that a) deep sleep and b) are expected to send data
 as fast as possible e.g. a coin cell remote control.
 
-Some other mechanism must be implemented to accomodate this use case. One possibility is to
-create a new "wake up" packet type sent by peripherals so the central broadcasts the
-timestamp immediately. 
+Current mitigation is to send a "wakeup" packet, similar to the "pair request" packet. This
+special packet has timestamp zero, but has a unique TID. The central device broadcasts the
+timestamp immediately upon receiving this packet (provided the TID is not replayed).
 
-Also, the way packets are received (polling every 25ms) might have to be replaced by irq().
+One TODO of this approach is the excessive packet exchange: wakeup, timestamp, ping (see next
+section), timestamp to confirm ping, and finally the data packet. This could be reduced to
+3 packets by sending the data along with the wakeup or with the ping.
+
+Another TODO is we currently use ESPNow.irq() API to receive and process packets as fast as
+possible, and it normally works (making the abovementioned packet exchange very fast), but
+from time to time it misses a packet. We kept the old polling (every 25ms) along to work
+around this issue, which could hinder a realtime use case.
 
 ### Replay attacks from attackers posing as a central
 
