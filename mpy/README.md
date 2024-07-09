@@ -153,10 +153,17 @@ few minutes, and drops packets with repeated tids.
 The tid deflects replay attacks that try to reuse fresh packets (seen in the last 2 or 3 minutes,
 whose timestamps are still considered valid).
 
-TODO: when the peripheral starts up, it needs to receive the timestamp first, to be able then to
-send data. This does not work well for peripherals that a) sleep and b) are expected to send data
-as fast as possible e.g. a coin cell remote control. Some other mechanism must be implemented to
-accomodate this use case.
+### TODO: Sleep + real-time
+
+When the peripheral starts up, it needs to receive the timestamp first, to be able then to
+send data. This does not work well for peripherals that a) deep sleep and b) are expected to send data
+as fast as possible e.g. a coin cell remote control.
+
+Some other mechanism must be implemented to accomodate this use case. One possibility is to
+create a new "wake up" packet type sent by peripherals so the central broadcasts the
+timestamp immediately. 
+
+Also, the way packets are received (polling every 25ms) might have to be replaced by irq().
 
 ### Replay attacks from attackers posing as a central
 
