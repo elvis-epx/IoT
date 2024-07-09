@@ -83,7 +83,8 @@ class NetNowPeripheral:
         self.implnet.config(channel=self.channel)
         self.recv_tasks()
         print("netnow: paired w/", manager, "channel", self.channel)
-        self.common_tasks()
+        self.wakeup_task = self.sm.recurring_task("netnowp_wakeup", self.send_wakeup, 500 * MILISSECONDS)
+        self.wakeup_task.advance()
 
     def scan_channel(self, _):
         self.channel += 1
@@ -231,6 +232,21 @@ class NetNowPeripheral:
 
         self.impl.send(broadcast_mac, buf, False)
         print("sent pair req")
+
+    def send_wakeup(self, _):
+        if self.current_timestamp is not None or self.last_ping is not None:
+            self.wakeup_task.cancel()
+            return
+
+        tid = gen_tid()
+        buf = bytearray([version, type_wakeup])
+        buf += self.group
+        buf += encode_timestamp(0)
+        buf += tid
+        buf += hmac(self.psk, buf)
+
+        self.impl.send(self.manager, buf, False)
+        print("sent wakeup")
 
     def send_ping(self, putative_timestamp):
         if (self.last_ping is not None) and self.last_ping.elapsed() < 10 * SECONDS:

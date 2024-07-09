@@ -134,28 +134,34 @@ class NetNowCentral:
 
         print("...from", mac_b2s(mac), "pkttype", pkttype)
 
-        if pkttype == type_pairreq:
-            self.handle_pairreq_packet()
-            return
-
         msg = msg[2+group_size:-hmac_size]
         timestamp = decode_timestamp(msg[0:timestamp_size])
 
-        current_timestamp = self.current_timestamp()
-        if timestamp > current_timestamp:
-            print("...future timestamp")
-            return
-        if timestamp < (current_timestamp - 2 * MINUTES):
-            print("...past timestamp")
-            return
-        
         msg = msg[timestamp_size:]
         tid = msg[0:tid_size]
+
+        if pkttype == type_pairreq:
+            # TID is ignored, protection per timeout
+            self.handle_pairreq_packet()
+            return
 
         if self.is_tid_repeated(tid):
             print("...replayed tid")
             return
 
+        if pkttype == type_wakeup:
+            # Timestamp is ignored in this case
+            self.handle_wakeup_packet()
+            return
+
+        current_timestamp = self.current_timestamp()
+        if timestamp > current_timestamp:
+            print("...future timestamp")
+            return
+        elif timestamp < (current_timestamp - 2 * MINUTES):
+            print("...past timestamp")
+            return
+        
         msg = msg[tid_size:]
 
         if pkttype == type_data:
@@ -190,6 +196,10 @@ class NetNowCentral:
             return
         self.last_pairreq = Shortcronometer() # cleaned by handle_recv_packet
 
+        self.timestamp_task.advance()
+
+    def handle_wakeup_packet(self):
+        print("netnow.handle_wakeup_packet")
         self.timestamp_task.advance()
 
     def stop(self):

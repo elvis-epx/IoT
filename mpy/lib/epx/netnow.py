@@ -12,6 +12,7 @@ timestamp_subtype_confirm = const(0x01)
 
 type_ping = const(0x03)
 type_pairreq = const(0x04)
+type_wakeup = const(0x05)
 
 def mac_s2b(s):
     return bytes(int(x, 16) for x in s.split(':'))
