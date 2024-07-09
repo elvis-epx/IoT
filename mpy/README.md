@@ -153,25 +153,6 @@ few minutes, and drops packets with repeated tids.
 The tid deflects replay attacks that try to reuse fresh packets (seen in the last 2 or 3 minutes,
 whose timestamps are still considered valid).
 
-### : Sleep + real-time
-
-When the peripheral starts up, it needs to receive the timestamp first, to be able then to
-send data. This does not work well for peripherals that a) deep sleep and b) are expected to send data
-as fast as possible e.g. a coin cell remote control.
-
-Current mitigation is to send a "wakeup" packet, similar to the "pair request" packet. This
-special packet has timestamp zero, but has a unique TID. The central device broadcasts the
-timestamp immediately upon receiving this packet (provided the TID is not replayed).
-
-One TODO of this approach is the excessive packet exchange: wakeup, timestamp, ping (see next
-section), timestamp to confirm ping, and finally the data packet. This could be reduced to
-3 packets by sending the data along with the wakeup or with the ping.
-
-Another TODO is we currently use ESPNow.irq() API to receive and process packets as fast as
-possible, and it normally works (making the abovementioned packet exchange very fast), but
-from time to time it misses a packet. We kept the old polling (every 25ms) along to work
-around this issue, which could hinder a realtime use case.
-
 ### Replay attacks from attackers posing as a central
 
 The peripheral only accepts timestamps that are reasonable increments from the previously
@@ -183,6 +164,27 @@ ping packet has a unique TID, and the central won't confirm a ping with an inval
 timestamp.
 
 Once the confirmation arrives, the rebased timestamp is accepted.
+
+### : Sleep + real-time
+
+When the peripheral starts up, it can only send data after it learns the timestamp from
+the central's broadcast. This does not work well for peripherals that a) deep sleep and
+b) are expected to send data as fast as possible e.g. a coin cell remote control.
+
+The current mitigation is to send a "wakeup" packet, similar to the "ping" packet, as
+soon as the device starts. This special packet has timestamp zero, but has a unique TID.
+The central device broadcasts the timestamp immediately upon receiving this packet,
+and confirms the TID, just like the ping.
+
+Wakeup packets were made distinct from ping packets since the first cannot have a valid
+timestamp and could be a vector of a DDoS attack. The central device may choose to throttle
+pings and wakeups (and pair requests) differently.
+
+A TODO is we currently use ESPNow.irq() API to receive and process packets as fast as
+possible, and it normally works (making the abovementioned packet exchange very fast), but
+from time to time it misses a packet. We kept the old polling (every 25ms) along to work
+around this issue, which could hinder a realtime use case. This should be better investigated
+and tested.
 
 ### Pairing
 
