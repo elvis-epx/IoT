@@ -48,7 +48,7 @@ class NetNowCentral:
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
 
-        self.sm.recurring_task("netnowc_poll", self.recv, 25 * MILISSECONDS)
+        self.impl.irq(self.recv)
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
                 30 * SECONDS, 10 * SECONDS)
@@ -101,32 +101,36 @@ class NetNowCentral:
     def recv(self, _):
         while self.impl.any():
             mac, msg = self.impl.recv()
-            self.handle_recv_packet(mac, msg)
+            self.schedule_handle_recv_packet(mac, msg)
+
+    def schedule_handle_recv_packet(self, mac, msg):
+        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg), 0)
     
     def handle_recv_packet(self, mac, msg):
+        print("netnow.handle_recv_packet")
         if (self.last_pairreq is not None) and self.last_pairreq.elapsed() > 30 * SECONDS:
             self.last_pairreq = None
 
         if len(msg) < (2 + group_size + timestamp_size + tid_size + hmac_size):
-            print("netnow.handle_recv_packet: too short")
+            print("...too short")
             return
 
         if msg[0] != version:
-            print("netnow.handle_recv_packet: unknown version", version)
+            print("...unknown version", version)
             return
 
         pkttype = msg[1]
         group = msg[2:2+group_size]
 
         if group != self.group:
-            print("netnow.handle_recv_packet: not my group")
+            print("...not my group")
             return
 
         if not check_hmac(self.psk, msg):
-            print("netnow.handle_recv_packet: bad hmac")
+            print("...bad hmac")
             return
 
-        print("netnow.handle_recv_packet: from", mac_b2s(mac), "pkttype", pkttype)
+        print("...from", mac_b2s(mac), "pkttype", pkttype)
 
         if pkttype == type_pairreq:
             self.handle_pairreq_packet()
@@ -137,17 +141,17 @@ class NetNowCentral:
 
         current_timestamp = self.current_timestamp()
         if timestamp > current_timestamp:
-            print("netnow.handle_recv_packet: future timestamp")
+            print("...future timestamp")
             return
         if timestamp < (current_timestamp - 2 * MINUTES):
-            print("netnow.handle_recv_packet: past timestamp")
+            print("...past timestamp")
             return
         
         msg = msg[timestamp_size:]
         tid = msg[0:tid_size]
 
         if self.is_tid_repeated(tid):
-            print("netnow.handle_recv_packet: replayed tid")
+            print("...replayed tid")
             return
 
         msg = msg[tid_size:]
@@ -160,7 +164,7 @@ class NetNowCentral:
             self.handle_ping_packet(mac_b2s(mac), tid)
             return
 
-        print("netnow.handle_recv_packet: unknown type", pkttype)
+        print("...unknown type", pkttype)
 
     def handle_data_packet(self, smac, tid, msg):
         print("netnow.handle_data_packet")
@@ -180,7 +184,7 @@ class NetNowCentral:
     def handle_pairreq_packet(self):
         print("netnow.handle_pairreq_packet")
         if self.last_pairreq is not None:
-            print("pairreq still recent, not sending another")
+            print("...pairreq still recent, not sending another")
             return
         self.last_pairreq = Shortcronometer() # cleaned by handle_recv_packet
 

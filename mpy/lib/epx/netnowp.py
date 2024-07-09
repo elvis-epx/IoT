@@ -64,7 +64,7 @@ class NetNowPeripheral:
             self.sm.schedule_trans_now("unpaired")
 
     def common_tasks(self):
-        self.sm.recurring_task("netnowp_poll", self.recv, 25 * MILISSECONDS)
+        self.impl.irq(self.recv)
 
     def on_unpaired(self):
         self.channel = 0
@@ -92,29 +92,33 @@ class NetNowPeripheral:
 
     def recv(self, _):
         while self.impl.any():
-            print("netnow: recv packet")
             mac, msg = self.impl.recv()
-            self.handle_recv_packet(mac, msg)
+            self.schedule_handle_recv_packet(mac, msg)
+
+    def schedule_handle_recv_packet(self, mac, msg):
+        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg), 0)
     
     def handle_recv_packet(self, mac, msg):
+        print("netnow.handle_recv_packet")
+
         if len(msg) < 2 + group_size + hmac_size:
-            print("netnow.handle_recv_packet: invalid len")
+            print("...invalid len")
             return
 
         if msg[0] != version:
-            print("netnow.handle_recv_packet: unknown version", version)
+            print("...unknown version", version)
             return
 
         pkttype = msg[1]
         group = msg[2:2+group_size]
 
         if group != self.group:
-            print("netnow.handle_recv_packet: not my group", group)
+            print("...not my group", group)
             return
 
-        print("netnow.handle_recv_packet: hmac", b2s(msg[-hmac_size:]))
+        print("...hmac", b2s(msg[-hmac_size:]))
         if not check_hmac(self.psk, msg):
-            print("netnow.handle_recv_packet: bad hmac")
+            print("...bad hmac")
             return
 
         msg = msg[2+group_size:-hmac_size]
@@ -123,10 +127,10 @@ class NetNowPeripheral:
             self.handle_timestamp(mac_b2s(mac), msg)
             return
 
-        print("netnow.handle_recv_packet: unknown type", pkttype)
+        print("...unknown type", pkttype)
 
     def handle_timestamp(self, mac, msg):
-        print("netnow: timestamp")
+        print("netnow: handle_timestamp")
 
         if len(msg) < (1 + timestamp_size):
             print("... invalid len")
