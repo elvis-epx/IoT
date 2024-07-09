@@ -189,3 +189,8 @@ class NetNowCentral:
         self.last_pairreq = Shortcronometer() # cleaned by handle_recv_packet
 
         self.timestamp_task.advance()
+
+    def stop(self):
+        print("netnow.stop")
+        if self.impl.active():
+            self.impl.irq(lambda _: None)

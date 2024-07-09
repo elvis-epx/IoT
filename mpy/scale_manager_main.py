@@ -17,4 +17,7 @@ netnow = NetNowCentral(config, nvram, net)
 mqtt = MQTT(config, net, watchdog)
 forwarder = Forwarder(config, netnow, mqtt)
 
-loop.run()
+try:
+    loop.run()
+finally:
+    netnow.stop()
