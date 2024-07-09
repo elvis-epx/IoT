@@ -63,16 +63,17 @@ class NetNowPeripheral:
         else:
             self.sm.schedule_trans_now("unpaired")
 
-    def common_tasks(self):
+    def recv_tasks(self):
         self.impl.irq(self.recv)
+        self.sm.recurring_task("recv", self.recv, 25 * MILISSECONDS)
 
     def on_unpaired(self):
         self.channel = 0
         self.impl.add_peer(broadcast_mac)
+        self.recv_tasks()
         tsk = self.sm.recurring_task("netnowp_scan", self.scan_channel, 5 * SECONDS)
         tsk.advance()
         self.sm.recurring_task("netnowp_pairreq", self.send_pairreq, 1 * SECONDS)
-        self.common_tasks()
 
     def on_paired(self):
         manager = self.nvram.get_str('manager') or ""
@@ -80,6 +81,7 @@ class NetNowPeripheral:
         self.channel = self.nvram.get_int('channel')
         self.impl.add_peer(self.manager)
         self.implnet.config(channel=self.channel)
+        self.recv_tasks()
         print("netnow: paired w/", manager, "channel", self.channel)
         self.common_tasks()
 

@@ -49,6 +49,8 @@ class NetNowCentral:
         self.impl.add_peer(broadcast_mac)
 
         self.impl.irq(self.recv)
+        self.sm.recurring_task("recv", self.recv, 25 * MILISSECONDS)
+
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
                 30 * SECONDS, 10 * SECONDS)
