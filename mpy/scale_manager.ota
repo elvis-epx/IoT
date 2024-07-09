@@ -5,6 +5,7 @@ lib/epx/config.py
 lib/epx/mqtt.py
 lib/epx/net.py
 lib/epx/netnow.py
+lib/epx/netnowc.py
 lib/epx/watchdog.py
 lib/epx/loop.py
 lib/epx/ota.py

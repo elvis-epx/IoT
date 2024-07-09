@@ -3,6 +3,7 @@
 lib/epx/__init__.py
 lib/epx/config.py
 lib/epx/netnow.py
+lib/epx/netnowp.py
 lib/epx/watchdog.py
 lib/epx/loop.py
 
