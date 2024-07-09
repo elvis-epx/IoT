@@ -58,6 +58,9 @@ class WLAN:
         else:
             return ("0.0.0.0", "0.0.0.0", "0.0.0.0", "0.0.0.0")
 
+    def config(self, **kwargs):
+        pass
+
 class LAN:
     def __init__(self, **phyparams):
         global singleton

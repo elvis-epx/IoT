@@ -19,3 +19,19 @@ class ESPNow:
     def __init__(self):
         global singleton
         singleton = self
+        self._active = False
+
+    def active(self, st):
+        self._active = st
+
+    def any(self):
+        return False
+
+    def add_peer(self, mac):
+        pass
+
+    def del_peer(self, mac):
+        pass
+
+    def send(self, mac, data, confirmed):
+        pass

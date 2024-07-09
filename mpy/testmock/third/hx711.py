@@ -31,3 +31,6 @@ class HX711:
         global singleton
         singleton = self
         pass
+
+    def read(self):
+        return 50.0
