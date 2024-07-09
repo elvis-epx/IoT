@@ -1,0 +1,12 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+
+wifi GOT_IP
+sleep 60
+
+sleep 5
+quit

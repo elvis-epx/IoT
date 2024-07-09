@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 60
+
+sleep 5
+quit

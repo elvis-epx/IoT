@@ -1,0 +1,5 @@
+espnowpsk bla
+espnowgroup ble
+watchdog 0
+calibration_a 10
+calibration_b 20
