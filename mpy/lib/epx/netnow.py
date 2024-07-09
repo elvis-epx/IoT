@@ -43,18 +43,18 @@ def gen_tid():
 
 hash_size = 32
 
-def hash(data):
+def _hash(data):
     h = sha256()
     h.update(data)
     return h.digest()
 
 def group_hash(group):
-    return hash(group)[0:group_size]
+    return _hash(group)[0:group_size]
 
 def prepare_key(key):
     if len(key) <= hash_size:
         return key + bytearray([ 0x00 for _ in range(len(key), hash_size)])
-    return hash(key)
+    return _hash(key)
 
 def xor(a, b):
     if len(a) > len(b):
@@ -65,7 +65,7 @@ ipad = bytearray( 0x36 for _ in range(0, hash_size))
 opad = bytearray( 0x5c for _ in range(0, hash_size))
 
 def hmac(key, data):
-    return hash(xor(key, opad) + hash(xor(key, ipad) + data))[:hmac_size]
+    return _hash(xor(key, opad) + _hash(xor(key, ipad) + data))[:hmac_size]
 
 def check_hmac(key, data):
     return hmac(key, data[:-hmac_size]) == data[-hmac_size:]
