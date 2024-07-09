@@ -32,7 +32,7 @@ def decode_timestamp(b):
 
 def gen_initial_timestamp():
     b = bytearray(os.urandom(timestamp_size))
-    b[0] &= 0x80
+    b[0] &= 0x7f
     return decode_timestamp(b)
 
 def encode_timestamp(n):
