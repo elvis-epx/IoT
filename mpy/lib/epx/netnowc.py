@@ -60,7 +60,7 @@ class NetNowCentral:
         self.sm.schedule_trans_now("idle")
 
     def current_timestamp(self):
-        return self.timestamp_base + self.timestamp_delta.elapsed() + self.timestamp_delta2
+        return self.timestamp_base + int(self.timestamp_delta.elapsed()) + self.timestamp_delta2
 
     def broadcast_timestamp(self, subtype, tid=None):
         # makes sure consecutive broadcasts will send different timestamps
