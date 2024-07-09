@@ -69,7 +69,7 @@ class NetNowCentral:
         self.timestamp_delta2 += 1
 
         current_timestamp = self.current_timestamp()
-        print("Timestamp", current_timestamp % 1000000)
+        print("Sending timestamp", current_timestamp % 1000000)
 
         buf = bytearray([version, type_timestamp])
         buf += self.group
@@ -77,7 +77,7 @@ class NetNowCentral:
         buf += encode_timestamp(current_timestamp)
         if subtype == timestamp_subtype_confirm:
             buf += tid
-            print("   and confirming tid", b2s(tid))
+            print("...and confirming tid", b2s(tid))
         buf += hmac(self.psk, buf)
 
         self.impl.send(broadcast_mac, buf, False)
@@ -140,6 +140,8 @@ class NetNowCentral:
         msg = msg[timestamp_size:]
         tid = msg[0:tid_size]
 
+        print("...tid",  b2s(tid))
+
         if pkttype == type_pairreq:
             # TID is ignored, protection per timeout
             self.handle_pairreq_packet()
@@ -151,7 +153,7 @@ class NetNowCentral:
 
         if pkttype == type_wakeup:
             # Timestamp is ignored in this case
-            self.handle_wakeup_packet()
+            self.handle_wakeup_packet(mac_b2s(mac), tid)
             return
 
         current_timestamp = self.current_timestamp()
@@ -198,9 +200,11 @@ class NetNowCentral:
 
         self.timestamp_task.advance()
 
-    def handle_wakeup_packet(self):
+    def handle_wakeup_packet(self, smac, tid):
         print("netnow.handle_wakeup_packet")
-        self.timestamp_task.advance()
+        self.sm.onetime_task("netnowc_conf", \
+                lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
+                0 * SECONDS)
 
     def stop(self):
         print("netnow.stop")

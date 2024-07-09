@@ -119,7 +119,6 @@ class NetNowPeripheral:
             print("...not my group", group)
             return
 
-        print("...hmac", b2s(msg[-hmac_size:]))
         if not check_hmac(self.psk, msg):
             print("...bad hmac")
             return
@@ -158,6 +157,7 @@ class NetNowPeripheral:
                 print("... invalid confirm len")
                 return
             tid = msg[1+tid_size:]
+            print("... confirmed", b2s(tid))
             self.tid_confirm(tid, timestamp)
             return
 
@@ -167,14 +167,14 @@ class NetNowPeripheral:
 
             if self.sm.state == 'unpaired':
                 # trust right away
-                print("...timestamp trusted bc unpaired")
+                print("...timestamp trusted bc unpaired", timestamp % 1000000)
                 self.current_timestamp = timestamp
                 self.last_ping = None
                 return True
 
             if subtype == timestamp_subtype_default:
                 # send ping to confirm it is legit
-                print("...timestamp untrusted")
+                print("...timestamp untrusted", timestamp % 1000000)
                 self.send_ping(timestamp)
                 # (TID confirmation callback will fill current_timestamp)
                 return False
@@ -186,6 +186,7 @@ class NetNowPeripheral:
         diff = timestamp - self.current_timestamp
         if diff > 0 and diff < 5 * MINUTES:
             # Legit timestamp advancement
+            print("...new timestamp", timestamp % 1000000)
             self.current_timestamp = timestamp
             self.last_ping = None
             return True
@@ -234,8 +235,10 @@ class NetNowPeripheral:
         print("sent pair req")
 
     def send_wakeup(self, _):
-        if self.current_timestamp is not None or self.last_ping is not None:
+        if self.current_timestamp is not None:
+            print("not sending wakeup packet (timestamp already known)")
             self.wakeup_task.cancel()
+            self.wakeup_task = None
             return
 
         tid = gen_tid()
@@ -246,11 +249,23 @@ class NetNowPeripheral:
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
-        print("sent wakeup")
+        print("sent wakeup tid", b2s(tid))
+
+        def confirm(timestamp):
+            print("timestamp confirmed by wakeup:", timestamp % 1000000)
+            self.current_timestamp = timestamp
+            self.last_ping = None
+            self.wakeup_task.cancel()
+            self.wakeup_task = None
+
+        self.on_tid_confirm(1 * SECONDS, tid, confirm)
 
     def send_ping(self, putative_timestamp):
         if (self.last_ping is not None) and self.last_ping.elapsed() < 10 * SECONDS:
             print("ping still in flight, not sending another")
+            return
+        elif self.wakeup_task is not None:
+            print("still in wakeup phase, do not send ping")
             return
         self.last_ping = Shortcronometer()
 
@@ -265,7 +280,7 @@ class NetNowPeripheral:
         print("sent ping tid", b2s(tid), "for timestamp", putative_timestamp % 1000000)
 
         def confirm(timestamp):
-            print("timestamp confirmed:", timestamp % 1000000)
+            print("timestamp confirmed by ping:", timestamp % 1000000)
             self.current_timestamp = timestamp
             self.last_ping = None
         self.on_tid_confirm(5 * SECONDS, tid, confirm)
