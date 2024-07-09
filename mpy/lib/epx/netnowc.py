@@ -1,6 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, Longcronometer
 from epx import loop
 
 from epx.netnow import *
@@ -27,7 +27,9 @@ class NetNowCentral:
         sm.add_transition("active", "inactive")
         sm.add_transition("inactive", "idle")
 
-        self.timestamp = gen_initial_timestamp()
+        self.timestamp_base = gen_initial_timestamp()
+        self.timestamp_delta = Longcronometer()
+        self.timestamp_delta2 = 0
 
         self.sm.schedule_trans_now("idle")
 
@@ -46,9 +48,10 @@ class NetNowCentral:
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
 
-        self.sm.recurring_task("netnowc_poll", self.recv, 100 * MILISSECONDS)
+        self.sm.recurring_task("netnowc_poll", self.recv, 25 * MILISSECONDS)
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
-                lambda _: self.advance_timestamp(timestamp_subtype_default), 30 * SECONDS, 10 * SECONDS)
+                lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
+                30 * SECONDS, 10 * SECONDS)
         self.timestamp_task.advance()
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
@@ -56,14 +59,20 @@ class NetNowCentral:
         self.impl.active(False)
         self.sm.schedule_trans_now("idle")
 
-    def advance_timestamp(self, subtype, tid=None):
-        self.timestamp += 1
-        print("Timestamp", self.timestamp % 100000)
+    def current_timestamp(self):
+        return self.timestamp_base + self.timestamp_delta.elapsed() + self.timestamp_delta2
+
+    def broadcast_timestamp(self, subtype, tid=None):
+        # makes sure consecutive broadcasts will send different timestamps
+        self.timestamp_delta2 += 1
+
+        current_timestamp = self.current_timestamp()
+        print("Timestamp", current_timestamp % 1000000)
 
         buf = bytearray([version, type_timestamp])
         buf += self.group
         buf += bytearray([subtype])
-        buf += encode_timestamp(self.timestamp)
+        buf += encode_timestamp(current_timestamp)
         if subtype == timestamp_subtype_confirm:
             buf += tid
             print("   and confirming tid", b2s(tid))
@@ -126,10 +135,11 @@ class NetNowCentral:
         msg = msg[2+group_size:-hmac_size]
         timestamp = decode_timestamp(msg[0:timestamp_size])
 
-        if timestamp > self.timestamp:
+        current_timestamp = self.current_timestamp()
+        if timestamp > current_timestamp:
             print("netnow.handle_recv_packet: future timestamp")
             return
-        if timestamp < (self.timestamp - 4):
+        if timestamp < (current_timestamp - 2 * MINUTES):
             print("netnow.handle_recv_packet: past timestamp")
             return
         
@@ -155,7 +165,7 @@ class NetNowCentral:
     def handle_data_packet(self, smac, tid, msg):
         print("netnow.handle_data_packet")
         self.sm.onetime_task("netnowc_conf", \
-                lambda _: self.advance_timestamp(timestamp_subtype_confirm, tid), \
+                lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
                 0 * SECONDS)
 
         for observer in self.data_recv_observers:
@@ -164,7 +174,7 @@ class NetNowCentral:
     def handle_ping_packet(self, smac, tid):
         print("netnow.handle_ping_packet")
         self.sm.onetime_task("netnowc_conf", \
-                lambda _: self.advance_timestamp(timestamp_subtype_confirm, tid), \
+                lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
                 0 * SECONDS)
 
     def handle_pairreq_packet(self):

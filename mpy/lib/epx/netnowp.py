@@ -64,7 +64,7 @@ class NetNowPeripheral:
             self.sm.schedule_trans_now("unpaired")
 
     def common_tasks(self):
-        self.sm.recurring_task("netnowp_poll", self.recv, 100 * MILISSECONDS)
+        self.sm.recurring_task("netnowp_poll", self.recv, 25 * MILISSECONDS)
 
     def on_unpaired(self):
         self.channel = 0
@@ -177,7 +177,7 @@ class NetNowPeripheral:
 
         # timestamp already known
         diff = timestamp - self.current_timestamp
-        if diff > 0 and diff < 100:
+        if diff > 0 and diff < 5 * MINUTES:
             # Legit timestamp advancement
             self.current_timestamp = timestamp
             self.last_ping = None
@@ -240,10 +240,10 @@ class NetNowPeripheral:
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
-        print("sent ping tid", b2s(tid), "for timestamp", putative_timestamp % 100000)
+        print("sent ping tid", b2s(tid), "for timestamp", putative_timestamp % 1000000)
 
         def confirm(timestamp):
-            print("timestamp confirmed:", timestamp % 100000)
+            print("timestamp confirmed:", timestamp % 1000000)
             self.current_timestamp = timestamp
             self.last_ping = None
         self.on_tid_confirm(5 * SECONDS, tid, confirm)

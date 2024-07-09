@@ -134,15 +134,15 @@ Currently, the PSK is not used to encrypt the payloads.
 
 ### Replay attacks from peripherals
 
-Replay attacks are repelled by the central based on two tokens of information present in every packet: timestamp and
-transaction ID (tid).
+Replay attacks are repelled by the central based on two tokens of information present in every packet:
+timestamp and transaction ID (tid).
 
 The timestamp is maintained and broadcast by the central and starts with a random value.
 Legit peripherals send packets with the latest timestamp. The central accepts slightly outdated
 timestamps just in case the peripheral has missed the last broadcast.
 
 A new timestamp is broadcast by the central at least twice per minute, plus every time a packet is
-confirmed. Also, the pace is increased to twice per second when central is in "Pair" mode.
+confirmed.
 
 The timestamp deflects replay attacks that reuse packets older than 2 or 3 minutes.
 
