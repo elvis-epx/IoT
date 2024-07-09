@@ -175,6 +175,13 @@ function runme () {
     sleep 5
 }
 
+function utest () {
+    python3-coverage run utest.py $TEST_FOLDER &
+    export err=0
+    export PID=$!
+    sleep 3
+}
+
 function quit () {
     touch ${TEST_FOLDER}/quit.sim
 }

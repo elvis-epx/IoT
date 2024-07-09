@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+utest
