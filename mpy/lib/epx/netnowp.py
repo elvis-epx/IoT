@@ -11,7 +11,8 @@ class NetNowPeripheral:
         self.nvram = nvram
         self.implnet = None
         self.impl = None
-        self.current_timestamp = None
+        self.timestamp_recv = None
+        self.timestamp_age = None
         self.last_ping = None
         self.tids = {}
 
@@ -34,7 +35,7 @@ class NetNowPeripheral:
         self.sm.schedule_trans("start", startup_time * SECONDS)
 
     def is_ready(self):
-        return self.sm.state == 'paired' and self.current_timestamp is not None
+        return self.sm.state == 'paired' and self.timestamp_recv is not None
 
     def on_start(self):
         self.implnet = network.WLAN(network.STA_IF)
@@ -163,33 +164,31 @@ class NetNowPeripheral:
             return
 
     def trust_timestamp(self, subtype, timestamp):
-        if self.current_timestamp is None:
+        if self.timestamp_recv is None:
             # timestamp unknown (device just started up)
 
             if self.sm.state == 'unpaired':
                 # trust right away
                 print("...timestamp trusted bc unpaired", timestamp % 1000000)
-                self.current_timestamp = timestamp
-                self.last_ping = None
+                self.rebase_timestamp(timestamp)
                 return True
 
             if subtype == timestamp_subtype_default:
                 # send ping to confirm it is legit
                 print("...timestamp untrusted", timestamp % 1000000)
                 self.send_ping(timestamp)
-                # (TID confirmation callback will fill current_timestamp)
+                # (TID confirmation callback will fill timestamp_recv)
                 return False
 
             # ping confirm comes through here
             return True
 
         # timestamp already known
-        diff = timestamp - self.current_timestamp
+        diff = timestamp - self.timestamp_recv
         if diff > 0 and diff < 5 * MINUTES:
             # Legit timestamp advancement
             print("...new timestamp", timestamp % 1000000)
-            self.current_timestamp = timestamp
-            self.last_ping = None
+            self.rebase_timestamp(timestamp)
             return True
 
         if diff == 0:
@@ -203,7 +202,7 @@ class NetNowPeripheral:
         if subtype == timestamp_subtype_default:
             print("...timestamp jump")
             self.send_ping(timestamp)
-            # (TID confirmation callback will fill current_timestamp)
+            # (TID confirmation callback will fill timestamp_recv)
             return False
 
         # ping confirm comes through here
@@ -237,7 +236,7 @@ class NetNowPeripheral:
         print("sent pair req")
 
     def send_wakeup(self, _):
-        if self.current_timestamp is not None:
+        if self.timestamp_recv is not None:
             print("not sending wakeup packet (timestamp already known)")
             self.wakeup_task.cancel()
             self.wakeup_task = None
@@ -255,8 +254,7 @@ class NetNowPeripheral:
 
         def confirm(timestamp):
             print("timestamp confirmed by wakeup:", timestamp % 1000000)
-            self.current_timestamp = timestamp
-            self.last_ping = None
+            self.rebase_timestamp(timestamp)
             self.wakeup_task.cancel()
             self.wakeup_task = None
 
@@ -283,11 +281,18 @@ class NetNowPeripheral:
 
         def confirm(timestamp):
             print("timestamp confirmed by ping:", timestamp % 1000000)
-            self.current_timestamp = timestamp
-            self.last_ping = None
+            self.rebase_timestamp(timestamp)
         self.on_tid_confirm(5 * SECONDS, tid, confirm)
 
         return True
+
+    def rebase_timestamp(self, timestamp):
+        self.timestamp_recv = timestamp
+        self.timestamp_age = Shortcronometer()
+        self.last_ping = None
+
+    def timestamp_current(self):
+        return self.timestamp_recv + self.timestamp_age.elapsed()
 
     # TODO refactor to use on_tid_confirm
 
@@ -298,7 +303,7 @@ class NetNowPeripheral:
         tid = gen_tid()
         buf = bytearray([version, type_data])
         buf += self.group
-        buf += encode_timestamp(self.current_timestamp)
+        buf += encode_timestamp(self.timestamp_current())
         buf += tid
         buf += payload
         buf += hmac(self.psk, buf)
@@ -314,7 +319,7 @@ class NetNowPeripheral:
         tid = gen_tid()
         buf = bytearray([version, type_data])
         buf += self.group
-        buf += encode_timestamp(self.current_timestamp)
+        buf += encode_timestamp(self.timestamp_current())
         buf += tid
         buf += payload
         buf += hmac(self.psk, buf)

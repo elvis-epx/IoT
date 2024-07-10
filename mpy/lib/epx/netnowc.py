@@ -53,7 +53,7 @@ class NetNowCentral:
 
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
-                30 * SECONDS, 10 * SECONDS)
+                60 * SECONDS, 20 * SECONDS)
         self.timestamp_task.advance()
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
@@ -90,7 +90,7 @@ class NetNowCentral:
 
         # Manage TID cache
         for tid in list(self.tid_history.keys()):
-            if self.tid_history[tid].elapsed() > 3 * MINUTES:
+            if self.tid_history[tid].elapsed() > 10 * SECONDS:
                 print("retired tid", b2s(tid))
                 del self.tid_history[tid]
         # TODO memory cap using LRU
@@ -155,10 +155,10 @@ class NetNowCentral:
             return
 
         current_timestamp = self.current_timestamp()
-        if timestamp > current_timestamp:
+        if timestamp > (current_timestamp + 1 * SECONDS):
             print("...future timestamp")
             return
-        elif timestamp < (current_timestamp - 2 * MINUTES):
+        elif timestamp < (current_timestamp - 5 * SECONDS):
             print("...past timestamp")
             return
         

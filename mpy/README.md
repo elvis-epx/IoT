@@ -138,10 +138,14 @@ Currently, the PSK is not used to encrypt the payloads.
 Replay attacks are repelled by the central based on two tokens present in every packet:
 timestamp and transaction ID (tid).
 
-The timestamp is maintained and broadcast by the central, and starts at a random value.
-Legit peripherals send packets with a current timestamp. The central accepts slightly outdated
-timestamps just in case the peripheral has missed the last broadcast.
-Timestamp packets also carry transaction confirmations.
+The timestamp is maintained and broadcast by the central. It is the number of milisseconds
+since network startup, plus a (big) random initial value, plus 1 at every broadcast sent.
+Timestamp packets also carry transaction confirmations. Legit peripherals send packets with
+a reasonably current timestamp.
+
+The peripherals must send updated timestamps i.e. the last received timestamp plus the
+elapsed time. Since the central timestamp is broadcast at least once a minute, this ensures
+any deviation will be very small.
 
 The transaction ID (tid) is a random nonce attached to every packet sent by the peripheral.
 The central device caches the recent tids, within the window of timestamp tolerance.
@@ -152,9 +156,8 @@ The peripheral only accepts timestamps that are reasonable increments from the p
 known timestamp.
 
 If an unexpected timestamp arrives, a ping packet is sent to the central, using
-the new putative timestamp. Only the legit central can send a valid confirmation,
-and will send a confirmation only if the putative timestamp is in range.
-The peripheral accepts the rebased timestamp when there is confirmation.
+the new putative timestamp. Only the legit central can send a valid confirmation.
+Once the confirmation arrives, the peripheral rebases the timestamp.
 
 ### : Sleep + real-time
 
