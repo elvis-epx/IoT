@@ -1,6 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, Longcronometer
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
 from epx import loop
 
 from epx.netnow import *
@@ -28,8 +28,7 @@ class NetNowCentral:
         sm.add_transition("inactive", "idle")
 
         self.timestamp_base = gen_initial_timestamp()
-        self.timestamp_delta = Longcronometer()
-        self.timestamp_delta2 = 0
+        self.timestamp_delta = Shortcronometer()
 
         self.sm.schedule_trans_now("idle")
 
@@ -61,14 +60,16 @@ class NetNowCentral:
         self.impl.active(False)
         self.sm.schedule_trans_now("idle")
 
-    def current_timestamp(self):
-        return self.timestamp_base + int(self.timestamp_delta.elapsed()) + self.timestamp_delta2
+    def current_timestamp(self, unique=False):
+        self.timestamp_base += int(self.timestamp_delta.elapsed())
+        self.timestamp_delta.restart()
+        if unique:
+            self.timestamp_base += 1
+        return self.timestamp_base
 
     def broadcast_timestamp(self, subtype, tid=None):
         # makes sure consecutive broadcasts will send different timestamps
-        self.timestamp_delta2 += 1
-
-        current_timestamp = self.current_timestamp()
+        current_timestamp = self.current_timestamp(True)
         print("Sending timestamp", current_timestamp % 1000000)
 
         buf = bytearray([version, type_timestamp])
@@ -156,6 +157,8 @@ class NetNowCentral:
 
         diff = timestamp - self.current_timestamp()
 
+        # TODO: linked with is_tid_repeated
+        # TODO: could be more strict (typical diff ~100ms)
         if diff > 5 * SECONDS:
             print("...future timestamp")
             return
