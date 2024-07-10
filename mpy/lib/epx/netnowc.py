@@ -38,7 +38,7 @@ class NetNowCentral:
 
     def on_active(self):
         self.tid_history = {}
-        self.last_pairreq = None
+        self.pairreq_cts = True
         self.impl.active(True)
         try:
             # must remove before re-adding
@@ -91,6 +91,7 @@ class NetNowCentral:
         # Manage TID cache
         for tid in list(self.tid_history.keys()):
             if self.tid_history[tid].elapsed() > 3 * MINUTES:
+                print("retired tid", b2s(tid))
                 del self.tid_history[tid]
         # TODO memory cap using LRU
 
@@ -110,9 +111,6 @@ class NetNowCentral:
     
     def handle_recv_packet(self, mac, msg):
         print("netnow.handle_recv_packet")
-        if (self.last_pairreq is not None) and self.last_pairreq.elapsed() > 30 * SECONDS:
-            self.last_pairreq = None
-
         if len(msg) < (2 + group_size + timestamp_size + tid_size + hmac_size):
             print("...too short")
             return
@@ -143,7 +141,7 @@ class NetNowCentral:
         print("...tid",  b2s(tid))
 
         if pkttype == type_pairreq:
-            # TID is ignored, protection per timeout
+            # TID is ignored
             self.handle_pairreq_packet()
             return
 
@@ -152,7 +150,7 @@ class NetNowCentral:
             return
 
         if pkttype == type_wakeup:
-            # Timestamp is ignored in this case
+            # Timestamp is ignored
             self.handle_wakeup_packet(mac_b2s(mac), tid)
             return
 
@@ -176,35 +174,37 @@ class NetNowCentral:
 
         print("...unknown type", pkttype)
 
-    def handle_data_packet(self, smac, tid, msg):
-        print("netnow.handle_data_packet")
+    def send_confirm(self, tid):
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
                 0 * SECONDS)
+        self.timestamp_task.restart()
 
+    def handle_data_packet(self, smac, tid, msg):
+        print("netnow.handle_data_packet")
+        self.send_confirm(tid)
         for observer in self.data_recv_observers:
             observer.recv_data(smac, msg)
 
     def handle_ping_packet(self, smac, tid):
         print("netnow.handle_ping_packet")
-        self.sm.onetime_task("netnowc_conf", \
-                lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
-                0 * SECONDS)
+        self.send_confirm(tid)
 
     def handle_pairreq_packet(self):
         print("netnow.handle_pairreq_packet")
-        if self.last_pairreq is not None:
+        if not self.pairreq_cts:
             print("...pairreq still recent, not sending another")
             return
-        self.last_pairreq = Shortcronometer() # cleaned by handle_recv_packet
-
         self.timestamp_task.advance()
+
+        self.pairreq_cts = False
+        def restore_cts():
+            self.pairreq_cts = True
+        self.sm.onetime_task("netnowc_pairreqcts", restore_cts, 30 * SECONDS)
 
     def handle_wakeup_packet(self, smac, tid):
         print("netnow.handle_wakeup_packet")
-        self.sm.onetime_task("netnowc_conf", \
-                lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
-                0 * SECONDS)
+        self.send_confirm(tid)
 
     def stop(self):
         print("netnow.stop")
