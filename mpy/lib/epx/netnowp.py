@@ -188,7 +188,7 @@ class NetNowPeripheral:
         diff2 = timestamp - self.timestamp_current()
         if (diff > 0 and diff < 2 * MINUTES) and abs(diff2) < 5 * SECONDS:
             # Legit timestamp advancement
-            print("...new timestamp", timestamp % 1000000, "diff", diff2)
+            print("...new timestamp", timestamp % 1000000, "diff", diff, diff2)
             self.rebase_timestamp(timestamp)
             return True
 
