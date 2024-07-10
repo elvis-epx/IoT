@@ -74,6 +74,7 @@ class NetNowPeripheral:
         tsk = self.sm.recurring_task("netnowp_scan", self.scan_channel, 5 * SECONDS)
         tsk.advance()
         self.sm.recurring_task("netnowp_pairreq", self.send_pairreq, 1 * SECONDS)
+        self.wakeup_task = None
 
     def on_paired(self):
         manager = self.nvram.get_str('manager') or ""
