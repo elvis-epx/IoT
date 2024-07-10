@@ -154,13 +154,15 @@ class NetNowCentral:
             self.handle_wakeup_packet(mac_b2s(mac), tid)
             return
 
-        current_timestamp = self.current_timestamp()
-        if timestamp > (current_timestamp + 1 * SECONDS):
+        diff = timestamp - self.current_timestamp()
+
+        if diff > 5 * SECONDS:
             print("...future timestamp")
             return
-        elif timestamp < (current_timestamp - 5 * SECONDS):
+        elif diff < -5 * SECONDS:
             print("...past timestamp")
             return
+        print("... timestamp skew", diff)
         
         msg = msg[tid_size:]
 
@@ -198,7 +200,7 @@ class NetNowCentral:
         self.timestamp_task.advance()
 
         self.pairreq_cts = False
-        def restore_cts():
+        def restore_cts(_):
             self.pairreq_cts = True
         self.sm.onetime_task("netnowc_pairreqcts", restore_cts, 30 * SECONDS)
 

@@ -185,9 +185,10 @@ class NetNowPeripheral:
 
         # timestamp already known
         diff = timestamp - self.timestamp_recv
-        if diff > 0 and diff < 5 * MINUTES:
+        diff2 = timestamp - self.timestamp_current()
+        if (diff > 0 and diff < 2 * MINUTES) and abs(diff2) < 5 * SECONDS:
             # Legit timestamp advancement
-            print("...new timestamp", timestamp % 1000000)
+            print("...new timestamp", timestamp % 1000000, "diff", diff2)
             self.rebase_timestamp(timestamp)
             return True
 
@@ -200,7 +201,7 @@ class NetNowPeripheral:
         # keep current timestamp and ping to confirm new one
 
         if subtype == timestamp_subtype_default:
-            print("...timestamp jump")
+            print("...timestamp gap", diff, diff2)
             self.send_ping(timestamp)
             # (TID confirmation callback will fill timestamp_recv)
             return False
