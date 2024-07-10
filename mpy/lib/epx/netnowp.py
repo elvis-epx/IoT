@@ -212,6 +212,7 @@ class NetNowPeripheral:
     def tid_cleanup(self):
         for tid in list(self.tids.keys()):
             if self.tids[tid]["crono"].elapsed() > self.tids[tid]["timeout"]:
+                print("retired tid", b2s(tid))
                 del self.tids[tid]
 
     def tid_confirm(self, tid, timestamp):
