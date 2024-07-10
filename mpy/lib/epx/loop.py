@@ -125,8 +125,8 @@ class Task:
         tasks[self.nid] = self
         delta = self.delay
         if self.fudge:
-            rnd = random.getrandbits(8)
-            delta += (self.fudge * rnd) // 256
+            rnd = random.getrandbits(24) / 2 ** 24
+            delta += int(self.fudge * rnd)
         self.time_due = millis_add(millis(), delta)
 
     def advance(self):
