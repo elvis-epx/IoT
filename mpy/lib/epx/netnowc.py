@@ -52,7 +52,7 @@ class NetNowCentral:
 
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
-                30 * SECONDS, 5 * SECONDS)
+                25 * SECONDS, 10 * SECONDS)
         self.timestamp_task.advance()
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
