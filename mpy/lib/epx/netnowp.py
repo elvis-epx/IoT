@@ -12,6 +12,7 @@ class NetNowPeripheral:
         self.implnet = None
         self.impl = None
         self.timestamp_recv = None
+        self.timestamp_delay = None
         self.timestamp_age = None
         self.last_ping = None
         self.tids = {}
@@ -171,7 +172,7 @@ class NetNowPeripheral:
             if self.sm.state == 'unpaired':
                 # trust right away
                 print("...timestamp trusted bc unpaired", timestamp % 1000000)
-                self.rebase_timestamp(timestamp)
+                self.rebase_timestamp(timestamp, 0)
                 return True
 
             if subtype == timestamp_subtype_default:
@@ -187,6 +188,7 @@ class NetNowPeripheral:
         # timestamp already known
         diff = timestamp - self.timestamp_recv
         diff2 = timestamp - my_timestamp
+        processing_delay = self.timestamp_current() - my_timestamp
 
         if diff == 0:
             # replay attack
@@ -195,8 +197,8 @@ class NetNowPeripheral:
 
         if (diff > 0 and diff < 2 * MINUTES) and abs(diff2) < 1 * SECONDS:
             # Legit timestamp advancement
-            print("...new timestamp", timestamp % 1000000, "diff", diff, diff2)
-            self.rebase_timestamp(timestamp)
+            print("...new timestamp", timestamp % 1000000, "diff", diff, diff2, processing_delay)
+            self.rebase_timestamp(timestamp, processing_delay)
             return True
 
         # replay attack, or central may have rebooted
@@ -257,7 +259,7 @@ class NetNowPeripheral:
 
         def confirm(timestamp):
             print("timestamp confirmed by wakeup:", timestamp % 1000000)
-            self.rebase_timestamp(timestamp)
+            self.rebase_timestamp(timestamp, 0)
             self.wakeup_task.cancel()
             self.wakeup_task = None
 
@@ -284,20 +286,21 @@ class NetNowPeripheral:
 
         def confirm(timestamp):
             print("timestamp confirmed by ping:", timestamp % 1000000)
-            self.rebase_timestamp(timestamp)
+            self.rebase_timestamp(timestamp, 0)
         self.on_tid_confirm(5 * SECONDS, tid, confirm)
 
         return True
 
-    def rebase_timestamp(self, timestamp):
+    def rebase_timestamp(self, timestamp, processing_delay):
         self.timestamp_recv = timestamp
+        self.timestamp_delay = processing_delay
         self.timestamp_age = Shortcronometer()
         self.last_ping = None
 
     def timestamp_current(self):
         if self.timestamp_recv is None:
             return None
-        return self.timestamp_recv + self.timestamp_age.elapsed()
+        return self.timestamp_recv + self.timestamp_delay + self.timestamp_age.elapsed()
 
     # TODO refactor to use on_tid_confirm
 
