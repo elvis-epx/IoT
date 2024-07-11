@@ -91,7 +91,7 @@ class NetNowCentral:
 
         # Manage TID cache
         for tid in list(self.tid_history.keys()):
-            if self.tid_history[tid].elapsed() > 10 * SECONDS:
+            if self.tid_history[tid].elapsed() > 2 * SECONDS:
                 print("retired tid", b2s(tid))
                 del self.tid_history[tid]
         # TODO memory cap using LRU
@@ -108,9 +108,10 @@ class NetNowCentral:
             self.schedule_handle_recv_packet(mac, msg)
 
     def schedule_handle_recv_packet(self, mac, msg):
-        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg), 0)
+        my_timestamp = self.current_timestamp()
+        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg, my_timestamp), 0)
     
-    def handle_recv_packet(self, mac, msg):
+    def handle_recv_packet(self, mac, msg, my_timestamp):
         print("netnow.handle_recv_packet")
         if len(msg) < (2 + group_size + timestamp_size + tid_size + hmac_size):
             print("...too short")
@@ -155,15 +156,12 @@ class NetNowCentral:
             self.handle_wakeup_packet(mac_b2s(mac), tid)
             return
 
-        diff = timestamp - self.current_timestamp()
+        diff = timestamp - my_timestamp
 
-        # TODO: linked with is_tid_repeated
-        # TODO: could be more strict (typical diff ~100ms)
-        # TODO: in theory diff should always be < 0
-        if diff > 5 * SECONDS:
+        if diff > 1 * SECONDS:
             print("...future timestamp", diff)
             return
-        elif diff < -5 * SECONDS:
+        elif diff < -1 * SECONDS:
             print("...past timestamp", diff)
             return
         print("... timestamp skew", diff)
