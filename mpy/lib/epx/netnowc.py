@@ -159,11 +159,12 @@ class NetNowCentral:
 
         # TODO: linked with is_tid_repeated
         # TODO: could be more strict (typical diff ~100ms)
+        # TODO: in theory diff should always be < 0
         if diff > 5 * SECONDS:
-            print("...future timestamp")
+            print("...future timestamp", diff)
             return
         elif diff < -5 * SECONDS:
-            print("...past timestamp")
+            print("...past timestamp", diff)
             return
         print("... timestamp skew", diff)
         
