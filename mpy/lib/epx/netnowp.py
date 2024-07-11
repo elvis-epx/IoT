@@ -101,9 +101,10 @@ class NetNowPeripheral:
             self.schedule_handle_recv_packet(mac, msg)
 
     def schedule_handle_recv_packet(self, mac, msg):
-        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg), 0)
+        my_timestamp = self.timestamp_current()
+        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg, my_timestamp), 0)
     
-    def handle_recv_packet(self, mac, msg):
+    def handle_recv_packet(self, mac, msg, my_timestamp):
         print("netnow.handle_recv_packet")
 
         if len(msg) < 2 + group_size + hmac_size:
@@ -128,12 +129,12 @@ class NetNowPeripheral:
         msg = msg[2+group_size:-hmac_size]
 
         if pkttype == type_timestamp:
-            self.handle_timestamp(mac_b2s(mac), msg)
+            self.handle_timestamp(mac_b2s(mac), msg, my_timestamp)
             return
 
         print("...unknown type", pkttype)
 
-    def handle_timestamp(self, mac, msg):
+    def handle_timestamp(self, mac, msg, my_timestamp):
         print("netnow: handle_timestamp")
 
         if len(msg) < (1 + timestamp_size):
@@ -143,7 +144,7 @@ class NetNowPeripheral:
         subtype = msg[0]
         timestamp = decode_timestamp(msg[1:1+timestamp_size])
 
-        if not self.trust_timestamp(subtype, timestamp):
+        if not self.trust_timestamp(subtype, timestamp, my_timestamp):
             return
 
         if self.sm.state == 'unpaired':
@@ -163,8 +164,8 @@ class NetNowPeripheral:
             self.tid_confirm(tid, timestamp)
             return
 
-    def trust_timestamp(self, subtype, timestamp):
-        if self.timestamp_recv is None:
+    def trust_timestamp(self, subtype, timestamp, my_timestamp):
+        if my_timestamp is None:
             # timestamp unknown (device just started up)
 
             if self.sm.state == 'unpaired':
@@ -185,18 +186,18 @@ class NetNowPeripheral:
 
         # timestamp already known
         diff = timestamp - self.timestamp_recv
-        diff2 = timestamp - self.timestamp_current()
-        # TODO diff2 could be more strict (typical value +/- 10ms, 15ms tops)
-        if (diff > 0 and diff < 2 * MINUTES) and abs(diff2) < 5 * SECONDS:
-            # Legit timestamp advancement
-            print("...new timestamp", timestamp % 1000000, "diff", diff, diff2)
-            self.rebase_timestamp(timestamp)
-            return True
+        diff2 = timestamp - my_timestamp
 
         if diff == 0:
             # replay attack
             print("...timestamp replayed")
             return False
+
+        if (diff > 0 and diff < 2 * MINUTES) and abs(diff2) < 1 * SECONDS:
+            # Legit timestamp advancement
+            print("...new timestamp", timestamp % 1000000, "diff", diff, diff2)
+            self.rebase_timestamp(timestamp)
+            return True
 
         # replay attack, or central may have rebooted
         # keep current timestamp and ping to confirm new one
@@ -294,6 +295,8 @@ class NetNowPeripheral:
         self.last_ping = None
 
     def timestamp_current(self):
+        if self.timestamp_recv is None:
+            return None
         return self.timestamp_recv + self.timestamp_age.elapsed()
 
     # TODO refactor to use on_tid_confirm
