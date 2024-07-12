@@ -108,7 +108,18 @@ class NetNowPeripheral:
     def handle_recv_packet(self, mac, msg, my_timestamp):
         print("netnow.handle_recv_packet")
 
-        if len(msg) < 2 + group_size + hmac_size:
+        if not check_hmac(self.psk, msg):
+            print("...bad hmac")
+            return
+
+        msg = msg[:-hmac_size]
+        msg = decrypt(self.psk, msg)
+
+        if msg is None:
+            print("...cannot decrypt")
+            return
+
+        if len(msg) < 2 + group_size:
             print("...invalid len")
             return
 
@@ -123,11 +134,7 @@ class NetNowPeripheral:
             print("...not my group", group)
             return
 
-        if not check_hmac(self.psk, msg):
-            print("...bad hmac")
-            return
-
-        msg = msg[2+group_size:-hmac_size]
+        msg = msg[2+group_size:]
 
         if pkttype == type_timestamp:
             self.handle_timestamp(mac_b2s(mac), msg, my_timestamp)
@@ -235,6 +242,8 @@ class NetNowPeripheral:
         buf += self.group
         buf += encode_timestamp(0)
         buf += bytearray([0 for _ in range(0, tid_size)])
+
+        buf = encrypt(self,psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(broadcast_mac, buf, False)
@@ -252,6 +261,8 @@ class NetNowPeripheral:
         buf += self.group
         buf += encode_timestamp(0)
         buf += tid
+
+        buf = encrypt(self,psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
@@ -279,6 +290,8 @@ class NetNowPeripheral:
         buf += self.group
         buf += encode_timestamp(putative_timestamp)
         buf += tid
+
+        buf = encrypt(self,psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
@@ -314,6 +327,8 @@ class NetNowPeripheral:
         buf += encode_timestamp(self.timestamp_current())
         buf += tid
         buf += payload
+
+        buf = encrypt(self,psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
@@ -330,6 +345,8 @@ class NetNowPeripheral:
         buf += encode_timestamp(self.timestamp_current())
         buf += tid
         buf += payload
+
+        buf = encrypt(self,psk, buf)
         buf += hmac(self.psk, buf)
 
         try:

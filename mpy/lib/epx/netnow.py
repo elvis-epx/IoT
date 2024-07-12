@@ -70,23 +70,23 @@ def hmac(key, data):
     return _hash(xor(key, opad) + _hash(xor(key, ipad) + data))[:hmac_size]
 
 def check_hmac(key, data):
-    return hmac(key, data[:-hmac_size]) == data[-hmac_size:]
+    return (len(data) >= hmac_size) and (hmac(key, data[:-hmac_size]) == data[-hmac_size:])
+
+enc_block_size = 16
 
 def encrypt(key, data):
-    iv = bytearray(os.urandom(16))
+    iv = bytearray(os.urandom(enc_block_size))
     a = aes(key, 2, iv) # depends on len(prepare_key(k)) == 32
     blockdata = bytearray([len(data)]) + data
-    blockdata += bytearray([ 0x00 for _ in range(0, (16 - len(blockdata) % 16) % 16)])
+    blockdata += bytearray([ 0x00 for _ in range(0, (enc_block_size - len(blockdata) % enc_block_size) % enc_block_size)])
     encdata = a.encrypt(blockdata)
     return iv + encdata
 
 def decrypt(key, encdata):
-    if len(encdata) < 32:
+    if (len(encdata) < (enc_block_size * 2)) or (len(encdata) % enc_block_size != 0):
         return None
-    iv = encdata[0:16]
-    encdata = encdata[16:]
-    if len(encdata) % 16 != 0:
-        return None
+    iv = encdata[0:enc_block_size]
+    encdata = encdata[enc_block_size:]
     a = aes(key, 2, iv)
     blockdata = a.decrypt(encdata)
     length = blockdata[0]

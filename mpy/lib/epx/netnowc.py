@@ -79,6 +79,8 @@ class NetNowCentral:
         if subtype == timestamp_subtype_confirm:
             buf += tid
             print("...and confirming tid", b2s(tid))
+
+        buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(broadcast_mac, buf, False)
@@ -113,7 +115,19 @@ class NetNowCentral:
     
     def handle_recv_packet(self, mac, msg, my_timestamp):
         print("netnow.handle_recv_packet")
-        if len(msg) < (2 + group_size + timestamp_size + tid_size + hmac_size):
+
+        if not check_hmac(self.psk, msg):
+            print("...bad hmac")
+            return
+
+        msg = msg[:-hmac_size]
+        msg = decrypt(self.psk, msg)
+
+        if msg is None:
+            print("...cannot decrypt")
+            return
+
+        if len(msg) < (2 + group_size + timestamp_size + tid_size):
             print("...too short")
             return
 
@@ -128,13 +142,9 @@ class NetNowCentral:
             print("...not my group")
             return
 
-        if not check_hmac(self.psk, msg):
-            print("...bad hmac")
-            return
-
         print("...from", mac_b2s(mac), "pkttype", pkttype)
 
-        msg = msg[2+group_size:-hmac_size]
+        msg = msg[2+group_size:]
         timestamp = decode_timestamp(msg[0:timestamp_size])
 
         msg = msg[timestamp_size:]
