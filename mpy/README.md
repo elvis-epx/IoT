@@ -132,11 +132,11 @@ Currently, the PSK is used only to sign the HMAC, not to encrypt the payloads.
 ### Replay attacks
 
 Replay attacks are repelled by the central using the textbook approach of HMACs, timestamps
-and unique random transaction IDs (tids). The central device maintains and broadcasts the network
-"time".
+and unique random transaction IDs (tids). The central device maintains and broadcasts the "network
+time".
 
-The peripheral only accepts timestamps that are reasonable increments from the
-currently known timestamp. If an unexpected timestamp arrives, a ping packet is
+The peripheral only accepts time updates that are reasonable increments from the
+currently known time. If an unexpected timestamp arrives, a ping packet is
 sent to the central to seek confirmation.
 
 Similar to the ping packet, there is also the wakeup packet, sent when the peripheral
@@ -157,7 +157,7 @@ and tested.
 There is no special protocol for pairing. It is based on coincidence of PSK and group.
 
 The only provision for pairing is a special "pair request" packet the peripheral broadcasts
-blindly. When a central device sees this packet, it broadcasts the timestamp
+blindly. When a central device sees this packet, it broadcasts the network time
 immediately to be seen by the peripheral.
 
 At peripheral side, the central device is stored in NVRAM, as well as the Wi-Fi channel
