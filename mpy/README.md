@@ -127,7 +127,8 @@ Every central and peripheral device has two config tokens: espnowpsk (pre-shared
 espnowgroup (device group). Only devices that share the same two values can communicate to each other.
 On the other hand, many groups can share the air without conflict, even if they use the same PSK.
 
-Currently, the PSK is used only to sign the HMAC, not to encrypt the payloads.
+Currently, the PSK is used to sign the HMAC and to encrypt the payload. The ideal mechanism would
+be to use PSK to exchange new keys at pairing time.
 
 ### Replay attacks
 
