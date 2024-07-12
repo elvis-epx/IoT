@@ -34,3 +34,11 @@ assert(not check_hmac(b'k2', b'bla' + hmac(b'k1', b'bla')))
 assert(not check_hmac(b'k1', b'bla' + hmac(b'k1', b'ble')))
 assert(not check_hmac(b'k1', b'abracadabra'))
 assert(not check_hmac(b'k1', b''))
+
+for n in range(0, 50):
+    payload = b'p' * n
+    enc = encrypt(b'k' * 32, b'p' * n)
+    assert(len(enc) % 16 == 0)
+    dec = decrypt(b'k' * 32, enc)
+    assert(dec == payload)
+    assert(decrypt(b'k' * 32, enc[:-1]) is None)

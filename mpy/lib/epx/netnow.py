@@ -1,5 +1,6 @@
 import os
 from hashlib import sha256
+from cryptolib import aes
 
 broadcast_mac = b'\xff\xff\xff\xff\xff\xff'
 version = const(0x02)
@@ -70,3 +71,25 @@ def hmac(key, data):
 
 def check_hmac(key, data):
     return hmac(key, data[:-hmac_size]) == data[-hmac_size:]
+
+def encrypt(key, data):
+    iv = bytearray(os.urandom(16))
+    a = aes(key, 2, iv) # depends on len(prepare_key(k)) == 32
+    blockdata = bytearray([len(data)]) + data
+    blockdata += bytearray([ 0x00 for _ in range(0, (16 - len(blockdata) % 16) % 16)])
+    encdata = a.encrypt(blockdata)
+    return iv + encdata
+
+def decrypt(key, encdata):
+    if len(encdata) < 32:
+        return None
+    iv = encdata[0:16]
+    encdata = encdata[16:]
+    if len(encdata) % 16 != 0:
+        return None
+    a = aes(key, 2, iv)
+    blockdata = a.decrypt(encdata)
+    length = blockdata[0]
+    if length > (len(blockdata) - 1):
+        return None
+    return blockdata[1:length+1]
