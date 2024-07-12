@@ -136,7 +136,7 @@ and unique random transaction IDs (tids). The central device maintains and broad
 time".
 
 The peripheral only accepts time updates that are reasonable increments from the
-currently known time. If an unexpected timestamp arrives, a ping packet is
+currently known time. If an unexpected time value arrives, a ping packet is
 sent to the central to seek confirmation.
 
 Similar to the ping packet, there is also the wakeup packet, sent when the peripheral
