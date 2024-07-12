@@ -1,8 +1,7 @@
 - ESP-NOW
+    - irq() vs polling - more tests
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
-    - encryption using PSK
-    - irq() vs polling - more tests
 
 Roadmap
 =======
