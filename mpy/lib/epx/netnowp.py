@@ -11,9 +11,9 @@ class NetNowPeripheral:
         self.nvram = nvram
         self.implnet = None
         self.impl = None
-        self.timestamp_recv = None
-        self.timestamp_delay = None
-        self.timestamp_age = None
+        self.timestamp_recv = 0
+        self.timestamp_delay = 0
+        self.timestamp_age = Shortcronometer()
         self.last_ping = None
         self.tids = {}
 
@@ -36,7 +36,7 @@ class NetNowPeripheral:
         self.sm.schedule_trans("start", startup_time * SECONDS)
 
     def is_ready(self):
-        return self.sm.state == 'paired' and self.timestamp_recv is not None
+        return self.sm.state == 'paired' and self.timestamp_recv != 0
 
     def on_start(self):
         self.implnet = network.WLAN(network.STA_IF)
@@ -169,17 +169,18 @@ class NetNowPeripheral:
                 return
             tid = msg[1+tid_size:]
             print("... confirmed", b2s(tid))
-            self.tid_confirm(tid, timestamp)
+            self.tid_confirm(tid, timestamp, my_timestamp)
             return
 
     def trust_timestamp(self, subtype, timestamp, my_timestamp):
-        if my_timestamp is None:
-            # timestamp unknown (device just started up)
+        if self.timestamp_recv == 0:
+            # network time unknown (device just started up)
 
             if self.sm.state == 'unpaired':
                 # trust right away
                 print("...timestamp trusted bc unpaired", timestamp % 1000000)
-                self.rebase_timestamp(timestamp, 0)
+                processing_delay = self.timestamp_current() - my_timestamp
+                self.rebase_timestamp(timestamp, processing_delay)
                 return True
 
             if subtype == timestamp_subtype_default:
@@ -226,10 +227,10 @@ class NetNowPeripheral:
                 print("retired tid", b2s(tid))
                 del self.tids[tid]
 
-    def tid_confirm(self, tid, timestamp):
+    def tid_confirm(self, tid, timestamp, my_timestamp):
         if tid in self.tids:
             print("confirm", b2s(tid))
-            self.tids[tid]["cb"](timestamp)
+            self.tids[tid]["cb"](timestamp, my_timestamp)
             del self.tids[tid]
         self.tid_cleanup()
 
@@ -250,7 +251,7 @@ class NetNowPeripheral:
         print("sent pair req")
 
     def send_wakeup(self, _):
-        if self.timestamp_recv is not None:
+        if self.timestamp_recv != 0:
             print("not sending wakeup packet (timestamp already known)")
             self.wakeup_task.cancel()
             self.wakeup_task = None
@@ -268,9 +269,10 @@ class NetNowPeripheral:
         self.impl.send(self.manager, buf, False)
         print("sent wakeup tid", b2s(tid))
 
-        def confirm(timestamp):
+        def confirm(timestamp, my_timestamp):
             print("timestamp confirmed by wakeup:", timestamp % 1000000)
-            self.rebase_timestamp(timestamp, 0)
+            processing_delay = self.timestamp_current() - my_timestamp
+            self.rebase_timestamp(timestamp, processing_delay)
             self.wakeup_task.cancel()
             self.wakeup_task = None
 
@@ -297,9 +299,10 @@ class NetNowPeripheral:
         self.impl.send(self.manager, buf, False)
         print("sent ping tid", b2s(tid), "for timestamp", putative_timestamp % 1000000)
 
-        def confirm(timestamp):
+        def confirm(timestamp, my_timestamp):
             print("timestamp confirmed by ping:", timestamp % 1000000)
-            self.rebase_timestamp(timestamp, 0)
+            processing_delay = self.timestamp_current() - my_timestamp
+            self.rebase_timestamp(timestamp, processing_delay)
         self.on_tid_confirm(5 * SECONDS, tid, confirm)
 
         return True
@@ -311,8 +314,6 @@ class NetNowPeripheral:
         self.last_ping = None
 
     def timestamp_current(self):
-        if self.timestamp_recv is None:
-            return None
         return self.timestamp_recv + self.timestamp_delay + self.timestamp_age.elapsed()
 
     # TODO refactor to use on_tid_confirm
