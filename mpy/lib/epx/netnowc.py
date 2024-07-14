@@ -47,7 +47,9 @@ class NetNowCentral:
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
 
-        self.impl.irq(self.recv)
+        # TODO configurable for real-time tasks
+        # TODO irq() runs in another thread so it does not wake up our event loop
+        # TODO use poll() in event loop for immediate response
         self.sm.recurring_task("recv", self.recv, 25 * MILISSECONDS)
 
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \

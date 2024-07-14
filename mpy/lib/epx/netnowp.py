@@ -66,7 +66,9 @@ class NetNowPeripheral:
             self.sm.schedule_trans_now("unpaired")
 
     def recv_tasks(self):
-        self.impl.irq(self.recv)
+        # TODO configurable for real-time tasks
+        # TODO irq() runs in another thread so it does not wake up our event loop
+        # TODO use poll() in event loop for immediate response
         self.sm.recurring_task("recv", self.recv, 25 * MILISSECONDS)
 
     def on_unpaired(self):
