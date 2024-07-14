@@ -270,6 +270,9 @@ class NetNowPeripheral:
         print("sent wakeup tid", b2s(tid))
 
         def confirm(timestamp, my_timestamp):
+            if self.wakeup_task is None:
+                # another wakeup tid already confirmed
+                return
             print("timestamp confirmed by wakeup:", timestamp % 1000000)
             processing_delay = self.timestamp_current() - my_timestamp
             self.rebase_timestamp(timestamp, processing_delay)
