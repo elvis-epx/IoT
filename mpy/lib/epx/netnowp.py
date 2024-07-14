@@ -86,7 +86,7 @@ class NetNowPeripheral:
         self.implnet.config(channel=self.channel)
         self.recv_tasks()
         print("netnow: paired w/", manager, "channel", self.channel)
-        self.wakeup_task = self.sm.recurring_task("netnowp_wakeup", self.send_wakeup, 500 * MILISSECONDS)
+        self.wakeup_task = self.sm.recurring_task("netnowp_wakeup", self.send_wakeup, 1 * SECONDS)
         self.wakeup_task.advance()
 
     def scan_channel(self, _):
