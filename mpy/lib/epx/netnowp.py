@@ -244,7 +244,7 @@ class NetNowPeripheral:
         buf += encode_timestamp(0)
         buf += bytearray([0 for _ in range(0, tid_size)])
 
-        buf = encrypt(self,psk, buf)
+        buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(broadcast_mac, buf, False)
@@ -263,7 +263,7 @@ class NetNowPeripheral:
         buf += encode_timestamp(0)
         buf += tid
 
-        buf = encrypt(self,psk, buf)
+        buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
@@ -329,7 +329,7 @@ class NetNowPeripheral:
         buf += tid
         buf += payload
 
-        buf = encrypt(self,psk, buf)
+        buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
@@ -347,7 +347,7 @@ class NetNowPeripheral:
         buf += tid
         buf += payload
 
-        buf = encrypt(self,psk, buf)
+        buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
         try:
