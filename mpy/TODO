@@ -1,3 +1,7 @@
+- poll() support
+    - tests x mqtt
+    - OTA poll
+
 - ESP-NOW
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
