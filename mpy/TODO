@@ -1,3 +1,5 @@
+- poll_object() - integration with state machine
+
 - ESP-NOW
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
@@ -6,7 +8,6 @@
 Roadmap
 =======
 
-- MQTT w/o blocking points (use poll)
 - OTA commit all or nothing
 - MicroPython OTA
 - MQTT with TLS
