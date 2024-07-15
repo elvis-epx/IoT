@@ -86,6 +86,8 @@ class MQTT:
         self.disconn_backoff = 500 * MILISSECONDS
         self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=20 * SECONDS)
         self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval)
+        # Keep infrequent polling for testing
+        self.sm.recurring_task("mqtt_eval", self.eval, 500 * MILISSECONDS)
 
     def received_data(self, topic, msg, retained, dup):
         if topic in self.sublist:

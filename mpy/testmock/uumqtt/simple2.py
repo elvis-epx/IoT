@@ -30,6 +30,10 @@ class MQTTException(Exception):
     pass
 
 
+class MQTTClientSockMock():
+    pass
+
+
 class MQTTClient:
     def __init__(self, device_id, broker):
         global singleton
@@ -39,6 +43,7 @@ class MQTTClient:
         self.state = 0
         self.mqttblock = False
         self.mqttfail = {}
+        self.sock = MQTTClientSockMock()
 
     def set_callback(self, sub_cb):
         self.sub_cb = sub_cb

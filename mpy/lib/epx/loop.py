@@ -205,10 +205,12 @@ POLLERR = select.POLLERR
 
 def poll_object(name, obj, mask, cb):
     polls[name] = {"obj": obj, "mask": mask, "cb": cb}
-    opoll.register(obj, mask)
+    if not hasattr(machine, 'TEST_ENV'):
+        opoll.register(obj, mask)
 
 def unpoll_object(name):
-    opoll.unregister(polls[name]["obj"])
+    if not hasattr(machine, 'TEST_ENV'):
+        opoll.unregister(polls[name]["obj"])
     del polls[name]
 
 def handle_poll_res(res):
