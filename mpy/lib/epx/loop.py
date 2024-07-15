@@ -3,6 +3,7 @@ import time
 import random
 import machine
 import sys
+import select
 
 MILISSECONDS = const(1)
 SECONDS = const(1000 * MILISSECONDS)
@@ -181,6 +182,34 @@ def millis_diff(a, b):
 def millis_add(a, b):
     return time.ticks_add(a, b)
 
+polls = {}
+opoll = select.poll()
+POLLIN = select.POLLIN
+POLLOUT = select.POLLOUT
+POLLHUP = select.POLLHUP
+POLLERR = select.POLLERR
+
+def poll_object(name, obj, mask, cb):
+    polls[name] = {"obj": obj, "mask": mask, "cb": cb}
+    opoll.register(obj, mask)
+
+def unpoll_object(name):
+    if name not in polls:
+        return
+    opoll.unregister(polls[name]["obj"])
+    del polls[name]
+
+def handle_poll_res(res):
+    for ptuple in res:
+        obj, flags = ptuple[0], ptuple[1]
+        for name in list(polls.keys()):
+            d = polls[name]
+            if d["obj"] is obj:
+                d["cb"](flags)
+                if flags & (POLLHUP | POLLERR):
+                    unpoll_object(name)
+                break
+
 def run(led_pin=2, led_inverse=0):
     try:
         gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
@@ -195,12 +224,23 @@ def run(led_pin=2, led_inverse=0):
     
         while running:
             task, t = next_task()
-            sleep(t)
+
+            if t > 0:
+                poll_res = opoll.poll(t)
+            else:
+                poll_res = None
+
             if led:
                 led.value(not led_inverse)
-            task.run()
+
+            if poll_res:
+                handle_poll_res(poll_res)
+            else:
+                task.run()
+
             if led:
                 led.value(led_inverse)
+
     except Exception as e:
         with open("exception.txt", "w") as f:
             sys.print_exception(e, f)

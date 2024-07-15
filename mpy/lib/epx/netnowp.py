@@ -1,7 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
-from epx import loop
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, POLLIN, poll_object, unpoll_object
 
 from epx.netnow import *
 
@@ -38,6 +37,10 @@ class NetNowPeripheral:
     def is_ready(self):
         return self.sm.state == 'paired' and self.timestamp_recv != 0
 
+    def clean_rx_buffer(self):
+        while self.impl.any():
+            self.impl.recv()
+
     def on_start(self):
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
@@ -55,9 +58,7 @@ class NetNowPeripheral:
         except OSError:
             pass
 
-        # clean rx buffer
-        while self.impl.any():
-            self.impl.recv()
+        self.clean_rx_buffer()
 
         manager = self.nvram.get_str('manager') or ""
         if bool(manager):
@@ -66,10 +67,7 @@ class NetNowPeripheral:
             self.sm.schedule_trans_now("unpaired")
 
     def recv_tasks(self):
-        # TODO configurable for real-time tasks
-        # TODO irq() runs in another thread so it does not wake up our event loop
-        # TODO use poll() in event loop for immediate response
-        self.sm.recurring_task("recv", self.recv, 25 * MILISSECONDS)
+        poll_object("espnow", self.impl, POLLIN, self.recv)
 
     def on_unpaired(self):
         self.channel = 0
@@ -370,5 +368,3 @@ class NetNowPeripheral:
 
     def stop(self):
         print("netnow.stop")
-        if self.impl.active():
-            self.impl.irq(lambda _: None)

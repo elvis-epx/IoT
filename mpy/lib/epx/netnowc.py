@@ -1,7 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer
-from epx import loop
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, POLLIN, poll_object, unpoll_object
 
 from epx.netnow import *
 
@@ -47,10 +46,7 @@ class NetNowCentral:
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
 
-        # TODO configurable for real-time tasks
-        # TODO irq() runs in another thread so it does not wake up our event loop
-        # TODO use poll() in event loop for immediate response
-        self.sm.recurring_task("recv", self.recv, 25 * MILISSECONDS)
+        poll_object("espnow", self.impl, POLLIN, self.recv)
 
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
@@ -59,6 +55,8 @@ class NetNowCentral:
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
     def on_inactive(self):
+        unpoll_object("espnow")
+        self.clean_rx_buffer()
         self.impl.active(False)
         self.sm.schedule_trans_now("idle")
 
@@ -222,7 +220,9 @@ class NetNowCentral:
         print("netnow.handle_wakeup_packet")
         self.send_confirm(tid)
 
+    def clean_rx_buffer(self):
+        while self.impl.any():
+            self.impl.recv()
+
     def stop(self):
         print("netnow.stop")
-        if self.impl.active():
-            self.impl.irq(lambda _: None)
