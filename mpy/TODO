@@ -1,6 +1,5 @@
 - poll() support
-    - tests x mqtt
-    - OTA poll
+    - tests x mqtt, espnow
 
 - ESP-NOW
     - fixing channel in central device does not work
