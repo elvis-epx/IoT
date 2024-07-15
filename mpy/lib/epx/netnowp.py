@@ -298,7 +298,7 @@ class NetNowPeripheral:
         buf += encode_timestamp(putative_timestamp)
         buf += tid
 
-        buf = encrypt(self,psk, buf)
+        buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
         self.impl.send(self.manager, buf, False)
