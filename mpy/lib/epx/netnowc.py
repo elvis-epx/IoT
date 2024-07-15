@@ -1,6 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, POLLIN, poll_object, unpoll_object
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, POLLIN
 
 from epx.netnow import *
 
@@ -46,7 +46,7 @@ class NetNowCentral:
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
 
-        poll_object("espnow", self.impl, POLLIN, self.recv)
+        self.sm.poll_object("espnow", self.impl, POLLIN, self.recv)
 
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
@@ -55,7 +55,6 @@ class NetNowCentral:
         self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
 
     def on_inactive(self):
-        unpoll_object("espnow")
         self.clean_rx_buffer()
         self.impl.active(False)
         self.sm.schedule_trans_now("idle")

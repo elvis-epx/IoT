@@ -4,7 +4,7 @@ import os
 from uumqtt.simple2 import MQTTClient, MQTTException
 import ubinascii
 
-from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer, poll_object, unpoll_object, POLLIN
+from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer, POLLIN
 from epx import loop
 
 ota_pub = None
@@ -85,7 +85,7 @@ class MQTT:
     def on_connected(self):
         self.disconn_backoff = 500 * MILISSECONDS
         self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=20 * SECONDS)
-        poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval)
+        self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval)
 
     def received_data(self, topic, msg, retained, dup):
         if topic in self.sublist:
@@ -109,7 +109,6 @@ class MQTT:
             self.watchdog.may_block_exit()
 
     def on_connlost(self):
-        unpoll_object("mqtt_sock")
         self.disconnect()
         self.sm.schedule_trans("testnet", self.disconn_backoff, fudge=self.disconn_backoff)
 

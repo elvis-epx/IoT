@@ -40,6 +40,7 @@ class StateMachine:
         self.states = {"initial": None}
         self.transitions = {}
         self.tasks = []
+        self.polls = []
         self.state = "initial"
         self.observers = {}
 
@@ -64,10 +65,23 @@ class StateMachine:
         self.attach(tsk)
         return tsk
 
+    def poll_object(self, name, obj, mask, cb):
+        poll_name = self.name + "_" + name
+        poll_object(poll_name, obj, mask, cb)
+        self.polls.append(poll_name)
+
+    def unpoll_object(self, name):
+        poll_name = self.name + "_" + name
+        unpoll_object(poll_name)
+        self.polls.remove(poll_name)
+
     def cancel_state_tasks(self):
         for task in self.tasks:
             task.cancel()
         self.tasks = []
+        for poll_name in self.polls:
+            unpoll_object(poll_name)
+        self.polls = []
 
     def schedule_trans(self, new_state, to, fudge=0):
         name = self.name + "$" + self.state + "$" + new_state
@@ -194,8 +208,6 @@ def poll_object(name, obj, mask, cb):
     opoll.register(obj, mask)
 
 def unpoll_object(name):
-    if name not in polls:
-        return
     opoll.unregister(polls[name]["obj"])
     del polls[name]
 

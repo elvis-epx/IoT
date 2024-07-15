@@ -1,6 +1,6 @@
 import network, machine, espnow, errno, os
 
-from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, POLLIN, poll_object, unpoll_object
+from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronometer, POLLIN
 
 from epx.netnow import *
 
@@ -67,7 +67,7 @@ class NetNowPeripheral:
             self.sm.schedule_trans_now("unpaired")
 
     def recv_tasks(self):
-        poll_object("espnow", self.impl, POLLIN, self.recv)
+        self.sm.poll_object("espnow", self.impl, POLLIN, self.recv)
 
     def on_unpaired(self):
         self.channel = 0
