@@ -56,6 +56,13 @@ class OTAHandler:
         self.connection = None
         self.tmpfile = None
 
+        upl = [ f for f in os.listdir("/") if f.endswith(".upl") ]
+        for f in upl:
+            try:
+                os.unlink(f)
+            except OSError as e:
+                print("OTA rm %s fail" % f)
+
         self.sm.schedule_trans("listen", 1 * SECONDS)
 
     def on_listen(self):
@@ -66,7 +73,7 @@ class OTAHandler:
         if self.tmpfile:
             self.tmpfile.close()
             self.tmpfile = None
-        self.filename = ''
+        self.uplfilename = ''
         self.filelen = 0
         gc.collect()
         self.sm.recurring_task("ota_listen", self.listen_poll, 500 * MILISSECONDS)
@@ -125,16 +132,23 @@ class OTAHandler:
         else:
             self.sm.schedule_trans_now("connlost")
 
+    def encodeuplfile(self, f):
+        return f.replace("/", "$") + ".upl"
+
+    def decodeuplfile(self, f):
+        return f[:-4].replace("$", "/")
+
     def header_to_payload(self):
         self.filelen = self.buf[2] * 256 + self.buf[3]
         self.filetot = 0
-        self.filename = self.buf[4:-1].decode('ascii')
+        filename = self.buf[4:-1].decode('ascii')
         self.tmpfilename = 'tmppiggy'
         if hasattr(machine, 'TEST_ENV'):
-            self.filename = machine.TEST_FOLDER + self.filename
+            filename = machine.TEST_FOLDER + filename
             self.tmpfilename = machine.TEST_FOLDER + self.tmpfilename
         self.tmpfile = open(self.tmpfilename, 'wb')
-        print("OTA file %s len %d" % (self.filename, self.filelen))
+        self.uplfilename = self.encodeuplfile(filename)
+        print("OTA file %s len %d" % (self.uplfilename, self.filelen))
         self.buf = b''
         gc.collect()
 
@@ -275,21 +289,10 @@ class OTAHandler:
         self.tmpfile.close()
         self.tmpfile = None
 
-        path_segments = self.filename.split('/')[:-1]
-        path = root
-        for segm in path_segments:
-            path += '/' + segm
-            try:
-                os.mkdir(path)
-                print('mkdir', path)
-            except OSError as e:
-                # Most probably existing folder
-                pass
-
         try:
-            os.rename(self.tmpfilename, self.filename)
+            os.rename(self.tmpfilename, self.uplfilename)
         except OSError as e:
-            print("Could not move tmpfile onto file")
+            print("Could not rename tmpfile onto uplfile")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -303,6 +306,33 @@ class OTAHandler:
     def on_done(self):
         self.sm.schedule_trans_now("listen")
 
+    def commit(self):
+        res = ""
+        upl = [ f for f in os.listdir("/") if f.endswith(".upl") ]
+        for uplfile in upl:
+            finalfile = self.decodeuplfile(uplfile)
+
+            path_segments = finalfile.split('/')[:-1]
+            path = root
+            for segm in path_segments:
+                path += '/' + segm
+                try:
+                    os.mkdir(path)
+                    print('mkdir', path)
+                except OSError as e:
+                    # Most probably existing folder
+                    pass
+
+            try:
+                os.rename(uplfile, finalfile)
+                res += "good " + uplfile + " -> " + finalfile + "\n"
+            except OSError as e:
+                res += "err " + uplfile + " -> " + finalfile + "\n"
+
+        if not res:
+            res = "nop"
+        return res
+
 
 singleton = None
 
@@ -310,3 +340,9 @@ def start():
     global singleton
     if not singleton:
         singleton = OTAHandler()
+
+def commit():
+    global singleton
+    if not singleton:
+        return "OTA inactive"
+    return singleton.commit()

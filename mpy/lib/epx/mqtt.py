@@ -261,6 +261,9 @@ class Log(MQTTPub):
         self.logmsg = 'connlost events net %d mqtt %d' % (self.net_connlost_count, self.mqtt_connlost_count)
         self.forcepub()
 
+    def dumpmsg(self, msg):
+        self.logmsg = msg
+        self.forcepub()
 
 class OTASub(MQTTSub):
     def __init__(self):
@@ -274,6 +277,9 @@ class OTASub(MQTTSub):
             from epx import ota
             ota.start()
             ota_pub.start_bcast()
+        elif msg == b'commit':
+            res = ota.commit()
+            log_pub.dumpmsg(res)
         elif msg == b'msg_reboot':
             log_pub.dump('reboot.txt')
         elif msg == b'msg_exception':
