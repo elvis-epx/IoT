@@ -224,6 +224,3 @@ class NetNowCentral:
     def clean_rx_buffer(self):
         while self.impl.any():
             self.impl.recv()
-
-    def stop(self):
-        print("netnow.stop")

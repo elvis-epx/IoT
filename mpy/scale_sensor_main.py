@@ -16,7 +16,4 @@ netnow = NetNowPeripheral(config, nvram, watchdog)
 sensor = Sensor(config, watchdog)
 srv = Service(config, watchdog, netnow, sensor)
 
-try:
-    loop.run()
-finally:
-    netnow.stop()
+loop.run()

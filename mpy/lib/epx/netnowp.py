@@ -367,6 +367,3 @@ class NetNowPeripheral:
                 # should not happen
                 raise
         return res
-
-    def stop(self):
-        print("netnow.stop")
