@@ -2,8 +2,7 @@
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
     - increase test coverage
-- OTA commit all or nothing
-- OTA code cleanup
-- MicroPython OTA
+- OTA code cleanup (particulary the otatool client)
 - MQTT with TLS
+- MicroPython OTA
 - Remote mpy console, if possible
