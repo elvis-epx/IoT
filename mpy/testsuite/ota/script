@@ -8,20 +8,45 @@ wifi GOT_IP
 sleep 10 
 mqttsub cmnd/TempSensor/OTA invalid
 sleep 1
+touch bla.upl ble.upl
 mqttsub cmnd/TempSensor/OTA open
 sleep 1
+
+if [ -f bla.upl ] || [ -f ble.upl ]; then
+    echo ".upl files not removed"
+    exit 1
+fi
 
 # Top-folder new file
 
 TESTFILE=otatest111.sim
+INTERMFILE=$(echo $TEST_FOLDER/$TESTFILE | sed 's/\//$/g' | sed 's/$/.upl/')
 rm -f $TESTFILE
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 chmod 400 $TESTFILE
 [ ! -e $TEST_FOLDER/$TESTFILE ] || ( echo "File preexistant"; exit 1 )
 ./otatool 127.0.0.1 send $TESTFILE =
-while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
-        sleep 1
+
+while [ ! -f $INTERMFILE ]; do
+    sleep 1
 done
+
+if [ -f $TEST_FOLDER/$TESTFILE ]; then
+    echo "File before commit"
+    exit 1
+fi
+
+mqttsub cmnd/TempSensor/OTA commit
+sleep 1
+
+while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
+    sleep 1
+done
+
+if [ -f $INTERMFILE ]; then
+    echo "Intermediate file still presentt"
+    exit 1
+fi
 
 sleep 3
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
@@ -33,42 +58,66 @@ fi
 chmod 644 $TESTFILE
 rm -f $TESTFILE
 
-
 # Top-folder existing file
 
 TESTFILE=otatest111.sim
+INTERMFILE=$(echo $TEST_FOLDER/$TESTFILE | sed 's/\//$/g' | sed 's/$/.upl/')
 rm -f $TESTFILE
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ -f $TEST_FOLDER/$TESTFILE ] || ( echo "File not preexistant"; exit 1 )
 ./otatool 127.0.0.1 send $TESTFILE =
-while [ -f $TEST_FOLDER/tmppiggy ] || [ ! -f $TEST_FOLDER/$TESTFILE ]; do
+while [ -f $TEST_FOLDER/tmppiggy ] || [ ! -f $INTERMFILE ]; do
     sleep 1
 done
 
+if cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
+    echo "Source and destination file equal"
+    exit 1
+fi
+
+mqttsub cmnd/TempSensor/OTA commit
 sleep 3
+
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     echo "Source and destination file different"
     exit 1
 fi
 
-rm -f $TESTFILE
+if [ -f $INTERMFILE ]; then
+    echo "Intermediate file still present"
+    exit 1
+fi
 
+rm -f $TESTFILE
 
 # New file in new folder
 
 TESTFILE=folder.sim/folder.sim2/otatest112.sim
+INTERMFILE=$(echo $TEST_FOLDER/$TESTFILE | sed 's/\//$/g' | sed 's/$/.upl/')
 rm -rf folder.sim
 mkdir -p folder.sim/folder.sim2
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ ! -e $TEST_FOLDER/folder.sim ] || ( echo "Target folder preexistant"; exit 1 )
 ./otatool 127.0.0.1 send $TESTFILE =
-while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
+while [ ! -f $INTERMFILE ]; do
         sleep 1
 done
 
+if [ -e $TEST_FOLDER/$TESTFILE ]; then
+    echo "File before commit"
+    exit 1
+fi
+
+mqttsub cmnd/TempSensor/OTA commit
 sleep 3
+
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     echo "Source and destination file different"
+    exit 1
+fi
+
+if [ -f $INTERMFILE ]; then
+    echo "Intermediate file still present"
     exit 1
 fi
 
@@ -76,18 +125,31 @@ fi
 # New file in existing folder
 
 TESTFILE=folder.sim/folder.sim2/otatest113.sim
+INTERMFILE=$(echo $TEST_FOLDER/$TESTFILE | sed 's/\//$/g' | sed 's/$/.upl/')
 rm -rf folder.sim
 # target folder recreated here
 mkdir -p folder.sim/folder.sim2
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ -d $TEST_FOLDER/folder.sim/folder.sim2 ] || ( echo "Target folder not preexistant"; exit 1 )
 ./otatool 127.0.0.1 send $TESTFILE =
-while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
+while [ ! -f $INTERMFILE ]; do
         sleep 1
 done
+
+if [ -e $TEST_FOLDER/$TESTFILE ]; then
+    echo "File before commit"
+    exit 1
+fi
+
+mqttsub cmnd/TempSensor/OTA commit
 sleep 3
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     echo "Source and destination file different"
+    exit 1
+fi
+
+if [ -f $INTERMFILE ]; then
+    echo "Intermediate file still present"
     exit 1
 fi
 
@@ -95,19 +157,30 @@ fi
 # Existing file in existing folder
 
 TESTFILE=folder.sim/folder.sim2/otatest113.sim
+INTERMFILE=$(echo $TEST_FOLDER/$TESTFILE | sed 's/\//$/g' | sed 's/$/.upl/')
 rm -rf folder.sim
 # target folder recreated here
 mkdir -p folder.sim/folder.sim2
 dd if=/dev/urandom of=$TESTFILE bs=$((1 + $RANDOM % 5000)) count=1
 [ -f $TEST_FOLDER/$TESTFILE ] || ( echo "Target file not preexistant"; exit 1 )
 ./otatool 127.0.0.1 send $TESTFILE =
-while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
+while [ ! -f $INTERMFILE ]; do
         sleep 1
 done
 
+if cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
+    echo "Source and destination file equal"
+    exit 1
+fi
+mqttsub cmnd/TempSensor/OTA commit
 sleep 3
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     echo "Source and destination file different"
+    exit 1
+fi
+
+if [ -f $INTERMFILE ]; then
+    echo "Intermediate file still present"
     exit 1
 fi
 
@@ -129,19 +202,31 @@ fi
 # Top-folder zero-sized file
 
 TESTFILE=otatest115.sim
+INTERMFILE=$(echo $TEST_FOLDER/$TESTFILE | sed 's/\//$/g' | sed 's/$/.upl/')
 rm -f $TESTFILE
 touch $TESTFILE
 chmod 400 $TESTFILE
 [ ! -e $TEST_FOLDER/$TESTFILE ] || ( echo "File preexistant"; exit 1 )
 ./otatool 127.0.0.1 send $TESTFILE =
-while [ ! -f $TEST_FOLDER/$TESTFILE ]; do
+while [ ! -f $INTERMFILE ]; do
         sleep 1
 done
 
+if [ -e $TEST_FOLDER/$TESTFILE ]; then
+    echo "File before commit"
+    exit 1
+fi
+
+mqttsub cmnd/TempSensor/OTA commit
 sleep 3
 if ! cmp $TESTFILE $TEST_FOLDER/$TESTFILE; then
     echo "Source and destination file different"
     chmod 644 $TESTFILE
+    exit 1
+fi
+
+if [ -f $INTERMFILE ]; then
+    echo "Intermediate file still present"
     exit 1
 fi
 

@@ -58,7 +58,9 @@ class WLAN:
         else:
             return ("0.0.0.0", "0.0.0.0", "0.0.0.0", "0.0.0.0")
 
-    def config(self, **kwargs):
+    def config(self, *args, **kwargs):
+        if 'mac' in args:
+            return b'\x01\x02\x03\x04\x05\x06'
         pass
 
 class LAN:
