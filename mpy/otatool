@@ -3,7 +3,8 @@
 import socket, sys, time, struct, binascii
 
 # send MQTT message 'open' to cmnd/<DeviceName>/OTA
-# send MQTT message 'reboot' to cmnd/<DeviceName>/OTA after sending updates
+# send MQTT message 'commit' to cmnd/<DeviceName>/OTA after sending all updates
+# and send 'reboot' to restart device and use the new code
 
 if len(sys.argv) < 4:
     print("Usage: %s <ip addr> send <local file> <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
