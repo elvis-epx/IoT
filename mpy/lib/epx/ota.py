@@ -56,9 +56,10 @@ class OTAHandler:
         self.connection = None
         self.tmpfile = None
 
-        upl = [ f for f in os.listdir("/") if f.endswith(".upl") ]
+        upl = [ f for f in os.listdir(root) if f.endswith(".upl") ]
         for f in upl:
             try:
+                print("Removing", f)
                 os.unlink(f)
             except OSError as e:
                 print("OTA rm %s fail" % f)
@@ -308,7 +309,7 @@ class OTAHandler:
 
     def commit(self):
         res = ""
-        upl = [ f for f in os.listdir("/") if f.endswith(".upl") ]
+        upl = [ f for f in os.listdir(root) if f.endswith(".upl") ]
         for uplfile in upl:
             finalfile = self.decodeuplfile(uplfile)
 
@@ -324,6 +325,7 @@ class OTAHandler:
                     pass
 
             try:
+                print("Renaming", uplfile, finalfile)
                 os.rename(uplfile, finalfile)
                 res += "good " + uplfile + " -> " + finalfile + "\n"
             except OSError as e:

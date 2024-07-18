@@ -278,6 +278,7 @@ class OTASub(MQTTSub):
             ota.start()
             ota_pub.start_bcast()
         elif msg == b'commit':
+            from epx import ota
             res = ota.commit()
             log_pub.dumpmsg(res)
         elif msg == b'msg_reboot':
