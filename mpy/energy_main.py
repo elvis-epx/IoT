@@ -10,12 +10,13 @@ from epx.ota import mqtt_ota_start
 from energy.service import Voltage, Current, Power, PowerFactor, Energy, Malfunction, Ticker
 
 config = Config()
+config.data['flavor'] = 'energy'
 watchdog = Watchdog(config)
 sensor = Sensor()
 net = Net(config)
 
 mqtt = MQTT(config, net, watchdog)
-mqtt_ota_start(mqtt)
+mqtt_ota_start(mqtt, config)
 mqtt.pub(Voltage(sensor))
 mqtt.pub(Current(sensor))
 mqtt.pub(Power(sensor))

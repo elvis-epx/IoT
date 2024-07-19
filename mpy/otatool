@@ -6,10 +6,11 @@ import socket, sys, time, struct, binascii
 # send MQTT message 'commit' to cmnd/<DeviceName>/OTA after sending all updates
 # and send 'reboot' to restart device and use the new code
 
-if len(sys.argv) < 4:
+if len(sys.argv) < 3:
     print("Usage: %s <ip addr> send <local file> <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
     print("       %s <ip addr> hash <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
     print("       %s <ip addr> rm <remote file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
+    print("       %s <ip addr> flavor get [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
     sys.exit(1)
 
 addr, op = sys.argv[1], sys.argv[2]
@@ -28,6 +29,10 @@ elif op == "rm":
     remotefile = sys.argv[3]
     if len(sys.argv) > 4:
         simfail = sys.argv[4]
+elif op == "flavor":
+    remotefile = None
+    if len(sys.argv) > 3:
+        simfail = sys.argv[3]
 
 def make_packet(ptype, payload):
     length = len(payload) + 3
@@ -59,6 +64,8 @@ if op == "send":
     header = bytes([len(filedata) // 256, len(filedata) % 256]) + remotefile.encode('ascii')
 elif op == "hash" or op == "rm":
     header = remotefile.encode('ascii')
+else:
+    header = b""
 
 print("Sending header", file=sys.stderr)
 if simfail == 'timeout1':
@@ -78,6 +85,8 @@ elif op == "hash":
     ptype = 5
 elif op == "rm":
     ptype = 7
+elif op == "flavor":
+    ptype = 9
 
 if simfail == 'type1':
     ptype = 2
@@ -116,6 +125,17 @@ elif op == 'rm':
     if s.recv(1) != b'8':
         print("Invalid header response", file=sys.stderr)
         sys.exit(1)
+    sys.exit(0)
+
+elif op == 'flavor':
+    if s.recv(1) != b'f':
+        print("Invalid header response", file=sys.stderr)
+        sys.exit(1)
+    flavor = s.recv(100)
+    if flavor[-1] != b'\n'[0]:
+        print("Invalid flavor response", flavor, file=sys.stderr)
+        sys.exit(1)
+    print(flavor[:-1].decode('ascii'))
     sys.exit(0)
 
 if s.recv(1) != b'1':

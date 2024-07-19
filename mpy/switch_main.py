@@ -12,10 +12,11 @@ from switch.actuator import Switch
 from switch.sensor import Manual
 
 config = Config()
+config.data['flavor'] = 'switch'
 watchdog = Watchdog(config)
 net = Net(config)
 mqtt = MQTT(config, net, watchdog)
-mqtt_ota_start(mqtt)
+mqtt_ota_start(mqtt, config)
 nvram = NVRAM("switch")
 
 print(config.data)

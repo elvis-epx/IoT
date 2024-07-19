@@ -7,7 +7,12 @@ import os
 from hashlib import sha1
 import binascii
 
-def mqtt_ota_start(mqtt):
+flavor = 'unknown'
+
+def mqtt_ota_start(mqtt, config):
+    if 'flavor' in config.data:
+        global flavor
+        flavor = config.data['flavor']
     ota_pub = OTAPub(mqtt.net)
     mqtt.pub(ota_pub)
     mqtt.sub(OTASub(ota_pub, mqtt.log_pub))
@@ -68,7 +73,7 @@ class OTAPub(MQTTPub):
         netstatus, ifconfig = self.net.ifconfig()
         if ifconfig and netstatus == 'connected':
             addr = ifconfig[0]
-        return "netstatus %s addr %s mac %s count %d" % (netstatus, addr, mac, self.counter)
+        return "netstatus %s addr %s mac %s flavor %s count %d" % (netstatus, addr, mac, flavor, self.counter)
 
 ### Accept OTA commands, including some debugging/diagnostics not strictly OTA
 
@@ -204,7 +209,7 @@ class OTAHandler:
             return
 
         self.buf += data
-        res, ptype = self.parse_packet({1: 6, 5: 4, 7: 4})
+        res, ptype = self.parse_packet({1: 6, 5: 4, 7: 4, 9: 3})
         if res <= 0:
             return
 
@@ -214,6 +219,8 @@ class OTAHandler:
             self.header_to_hash()
         elif ptype == 7:
             self.header_to_rm()
+        elif ptype == 9:
+            self.header_to_flavor()
         else:
             self.sm.schedule_trans_now("connlost")
 
@@ -271,6 +278,16 @@ class OTAHandler:
             self.connection.send(b'6' + h)
         except sockerror as e:
             print("Failure while answering hash")
+            self.sm.schedule_trans_now("connlost")
+            return
+
+        self.sm.schedule_trans_now("done")
+
+    def header_to_flavor(self):
+        try:
+            self.connection.send(b'f' + flavor.encode('ascii') + b'\n')
+        except sockerror as e:
+            print("Failure while answering flavor")
             self.sm.schedule_trans_now("connlost")
             return
 

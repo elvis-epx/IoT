@@ -4,10 +4,24 @@ set -e
 
 DEVTYPE="$1"
 IP="$2"
+FORCE="$3"
 
 if ! [ -f ${DEVTYPE}.ota ]; then
     echo "Error: device type has no .ota laundry list"
     exit 1
+fi
+
+if ! ./otatool "$IP" flavor; then
+    REMOTEDEVTYPE="old"
+else
+    REMOTEDEVTYPE=$(./otatool "$IP" flavor)
+fi
+
+if [ "$DEVTYPE" != "$REMOTEDEVTYPE" ]; then
+    echo "Flavor type does not match" $DEVTYPE $REMOTEDEVTYPE
+    if [ "$FORCE" != "force" ]; then
+            exit 1
+    fi
 fi
 
 (while true; do

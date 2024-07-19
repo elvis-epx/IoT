@@ -11,6 +11,7 @@ from relay.actuator import Relay, Display
 from machine import I2C, Pin
 
 config = Config()
+config.data['flavor'] = 'relay'
 watchdog = Watchdog(config)
 i2c = I2C(0, sda=Pin(21), scl=Pin(22))
 net = Net(config)
@@ -19,7 +20,7 @@ net = Net(config)
 timeouts = [600, 24 * 3600, 24 * 3600, 24 * 3600]
 relays = []
 mqtt = MQTT(config, net, watchdog)
-mqtt_ota_start(mqtt)
+mqtt_ota_start(mqtt, config)
 for i in range(0, 4):
     relay = Relay(i, timeouts[i])
     relays.append(relay)

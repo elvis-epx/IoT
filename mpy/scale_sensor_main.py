@@ -10,6 +10,7 @@ from scale_sensor.service import Service
 from machine import Pin
 
 config = Config()
+config.data['flavor'] = 'scale_sensor'
 nvram = NVRAM("scale_sensor")
 watchdog = Watchdog(config, True)
 netnow = NetNowPeripheral(config, nvram, watchdog)

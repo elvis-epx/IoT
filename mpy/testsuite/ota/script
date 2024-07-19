@@ -259,6 +259,17 @@ fi
 chmod 644 $TESTFILE
 rm -f $TESTFILE
 
+if ! ./otatool 127.0.0.1 flavor; then
+    echo "Error getting flavor"
+    exit 1
+fi
+
+GOTFLAVOR=$(./otatool 127.0.0.1 flavor)
+if [ "$GOTFLAVOR" != "weather" ]; then
+    echo "Wrong flavor"
+    exit 1
+fi
+
 rm -rf folder.sim
 
 mqttsub cmnd/TempSensor/OTA msg_reboot

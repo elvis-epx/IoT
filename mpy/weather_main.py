@@ -12,6 +12,7 @@ from weather.service import Temperature, Humidity, Pressure, Malfunction
 from machine import I2C, Pin
 
 config = Config()
+config.data['flavor'] = 'weather'
 watchdog = Watchdog(config)
 i2c = I2C(0, sda=Pin(21), scl=Pin(22))
 sensor = Sensor(i2c)
@@ -19,7 +20,7 @@ sensor = Sensor(i2c)
 net = Net(config)
 
 mqtt = MQTT(config, net, watchdog)
-mqtt_ota_start(mqtt)
+mqtt_ota_start(mqtt, config)
 mqtt.pub(Temperature(sensor))
 mqtt.pub(Humidity(sensor))
 mqtt.pub(Pressure(sensor))
