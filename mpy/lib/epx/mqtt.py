@@ -7,8 +7,6 @@ import ubinascii
 from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer, POLLIN
 from epx import loop
 
-ota_pub = None
-log_pub = None
 
 class MQTT:
     def __init__(self, cfg, net, watchdog):
@@ -42,13 +40,11 @@ class MQTT:
         if "mqttbroker" in self.cfg.data and "mqttname" in self.cfg.data:
             self.name = self.cfg.data['mqttname']
             self.sm.schedule_trans("start", 12 * SECONDS)
-            global ota_pub, log_pub
-            ota_pub = OTAPub(self.net)
-            self.pub(ota_pub)
-            self.sub(OTASub())
-            self.pub(Uptime())
-            log_pub = Log()
-            self.pub(log_pub)
+
+        self.pub(Uptime())
+
+        self.log_pub = Log()
+        self.pub(self.log_pub)
 
     def pub(self, pubobj):
         pubobj.adjust_topic(self.name)
@@ -97,7 +93,7 @@ class MQTT:
 
     def ping(self, _):
         # seize the opportunity to copy the data
-        log_pub.net_connlost_count = self.net.connlost_count
+        self.log_pub.net_connlost_count = self.net.connlost_count
 
         self.watchdog.may_block()
         try:
@@ -105,7 +101,7 @@ class MQTT:
             # print("MQTT ping")
         except (MQTTException, OSError):
             print("MQTT conn fail at ping")
-            log_pub.mqtt_connlost_count += 1
+            self.log_pub.mqtt_connlost_count += 1
             self.sm.schedule_trans_now("connlost")
         finally:
             self.watchdog.may_block_exit()
@@ -119,7 +115,7 @@ class MQTT:
             self.impl.check_msg()
         except (MQTTException, OSError):
             print("MQTT conn fail at check_msg")
-            log_pub.mqtt_connlost_count += 1
+            self.log_pub.mqtt_connlost_count += 1
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -132,7 +128,7 @@ class MQTT:
                     self.ping_task.restart()
                 except (MQTTException, OSError):
                     print("MQTT conn fail at pub")
-                    log_pub.mqtt_connlost_count += 1
+                    self.log_pub.mqtt_connlost_count += 1
                     self.sm.schedule_trans_now("connlost")
                 finally:
                     self.watchdog.may_block_exit()
@@ -214,30 +210,6 @@ class MQTTSub:
         pass # pragma: no cover
 
 
-# TODO move OTAPub/OTASub etc. to ota.py and reduce coupling
-
-class OTAPub(MQTTPub):
-    def __init__(self, net):
-        MQTTPub.__init__(self, "stat/%s/OTA", 10 * SECONDS, 24 * 60 * MINUTES, False)
-        self.enabled = False
-        self.counter = 0
-        self.net = net
-
-    def start_bcast(self):
-        self.enabled = True
-
-    def gen_msg(self):
-        if not self.enabled:
-            return ''
-        self.counter += 1
-        addr = 'undef'
-        mac = self.net.macaddr() or 'undef'
-        netstatus, ifconfig = self.net.ifconfig()
-        if ifconfig and netstatus == 'connected':
-            addr = ifconfig[0]
-        return "netstatus %s addr %s mac %s count %d" % (netstatus, addr, mac, self.counter)
-
-
 class Log(MQTTPub):
     def __init__(self):
         MQTTPub.__init__(self, "stat/%s/Log", 0, 0, False)
@@ -265,42 +237,8 @@ class Log(MQTTPub):
         self.logmsg = msg
         self.forcepub()
 
-class OTASub(MQTTSub):
-    def __init__(self):
-        MQTTSub.__init__(self, "cmnd/%s/OTA")
 
-    def recv(self, topic, msg, retained, dup):
-        if msg == b'reboot':
-            loop.reboot("Received MQTT reboot cmd")
-        elif msg == b'open':
-            print("Received MQTT OTA open cmd")
-            from epx import ota
-            ota.start()
-            ota_pub.start_bcast()
-        elif msg == b'commit':
-            from epx import ota
-            res = ota.commit()
-            log_pub.dumpmsg(res)
-        elif msg == b'msg_reboot':
-            log_pub.dump('reboot.txt')
-        elif msg == b'msg_exception':
-            log_pub.dump('exception.txt')
-        elif msg == b'stats':
-            log_pub.dumpstats()
-        elif msg == b'test_exception':
-            raise Exception("Test exception")
-        elif msg == b'msg_rm':
-            try:
-                os.unlink('reboot.txt')
-            except OSError as e:
-                pass
-            try:
-                os.unlink('exception.txt')
-            except OSError as e:
-                pass
-
-
-# FIXME allow to decrease how often it is pinged
+# TODO allow to decrease how often it is pinged
 class Uptime(MQTTPub):
     def __init__(self):
         MQTTPub.__init__(self, "stat/%s/Uptime", 60 * SECONDS, 30 * MINUTES, False)

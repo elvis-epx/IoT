@@ -5,6 +5,7 @@ from epx.config import Config
 from epx.watchdog import Watchdog
 from epx.net import Net
 from epx.mqtt import MQTT
+from epx.ota import mqtt_ota_start
 from relay.service import RelayPub, RelaySub
 from relay.actuator import Relay, Display
 from machine import I2C, Pin
@@ -18,6 +19,7 @@ net = Net(config)
 timeouts = [600, 24 * 3600, 24 * 3600, 24 * 3600]
 relays = []
 mqtt = MQTT(config, net, watchdog)
+mqtt_ota_start(mqtt)
 for i in range(0, 4):
     relay = Relay(i, timeouts[i])
     relays.append(relay)

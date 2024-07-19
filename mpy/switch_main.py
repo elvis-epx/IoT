@@ -5,6 +5,7 @@ from epx.config import Config
 from epx.watchdog import Watchdog
 from epx.net import Net
 from epx.mqtt import MQTT
+from epx.ota import mqtt_ota_start
 from epx.nvram import NVRAM
 from switch import driver as drivers
 from switch.actuator import Switch
@@ -14,6 +15,7 @@ config = Config()
 watchdog = Watchdog(config)
 net = Net(config)
 mqtt = MQTT(config, net, watchdog)
+mqtt_ota_start(mqtt)
 nvram = NVRAM("switch")
 
 print(config.data)

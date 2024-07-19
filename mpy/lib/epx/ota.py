@@ -1,10 +1,18 @@
 import gc
 from epx import loop
+from epx.mqtt import MQTTPub, MQTTSub
 import machine
-from epx.loop import StateMachine, Task, SECONDS, MILISSECONDS
+from epx.loop import StateMachine, Task, SECONDS, MILISSECONDS, MINUTES
 import os
 from hashlib import sha1
 import binascii
+
+def mqtt_ota_start(mqtt):
+    ota_pub = OTAPub(mqtt.net)
+    mqtt.pub(ota_pub)
+    mqtt.sub(OTASub(ota_pub, mqtt.log_pub))
+
+### Socket drudgery
 
 if hasattr(machine, 'TEST_ENV'):
     import socket
@@ -23,6 +31,82 @@ else: # pragma: no cover
     def setuplistener(s):
         pass
     root = ""
+
+### Lazy-evaluated handler to save memory
+
+ota_handler = None
+
+def ota_start():
+    global ota_handler
+    if not ota_handler:
+        ota_handler = OTAHandler()
+
+def ota_commit():
+    global ota_handler
+    if not ota_handler:
+        return "OTA inactive"
+    return ota_handler.commit()
+
+### Publish the OTA status with IP address, when open
+
+class OTAPub(MQTTPub):
+    def __init__(self, net):
+        MQTTPub.__init__(self, "stat/%s/OTA", 10 * SECONDS, 24 * 60 * MINUTES, False)
+        self.enabled = False
+        self.counter = 0
+        self.net = net
+
+    def start_bcast(self):
+        self.enabled = True
+
+    def gen_msg(self):
+        if not self.enabled:
+            return ''
+        self.counter += 1
+        addr = 'undef'
+        mac = self.net.macaddr() or 'undef'
+        netstatus, ifconfig = self.net.ifconfig()
+        if ifconfig and netstatus == 'connected':
+            addr = ifconfig[0]
+        return "netstatus %s addr %s mac %s count %d" % (netstatus, addr, mac, self.counter)
+
+### Accept OTA commands, including some debugging/diagnostics not strictly OTA
+
+class OTASub(MQTTSub):
+    def __init__(self, ota_pub, log_pub):
+        MQTTSub.__init__(self, "cmnd/%s/OTA")
+        self.ota_pub = ota_pub
+        self.log_pub = log_pub
+
+    def recv(self, topic, msg, retained, dup):
+        if msg == b'reboot':
+            loop.reboot("Received MQTT reboot cmd")
+        elif msg == b'open':
+            print("Received MQTT OTA open cmd")
+            ota_start()
+            self.ota_pub.start_bcast()
+        elif msg == b'commit':
+            res = ota_commit()
+            self.log_pub.dumpmsg(res)
+        elif msg == b'msg_reboot':
+            self.log_pub.dump('reboot.txt')
+        elif msg == b'msg_exception':
+            self.log_pub.dump('exception.txt')
+        elif msg == b'stats':
+            self.log_pub.dumpstats()
+        elif msg == b'test_exception':
+            raise Exception("Test exception")
+        elif msg == b'msg_rm':
+            try:
+                os.unlink('reboot.txt')
+            except OSError as e:
+                pass
+            try:
+                os.unlink('exception.txt')
+            except OSError as e:
+                pass
+
+# OTA proper handler
 
 class OTAHandler:
     def __init__(self):
@@ -334,17 +418,3 @@ class OTAHandler:
         if not res:
             res = "nop"
         return res
-
-
-singleton = None
-
-def start():
-    global singleton
-    if not singleton:
-        singleton = OTAHandler()
-
-def commit():
-    global singleton
-    if not singleton:
-        return "OTA inactive"
-    return singleton.commit()

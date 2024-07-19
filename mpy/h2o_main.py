@@ -5,6 +5,7 @@ from epx.config import Config
 from epx.watchdog import Watchdog
 from epx.net import Net
 from epx.mqtt import MQTT
+from epx.ota import mqtt_ota_start
 from h2o.service import VolUnit, CoarseLevelPct, CoarseLevelVol, PumpedAfterLevelChange, \
                             EstimatedLevelVol, EstimatedLevelStr, Malfunction, Flow
 from h2o.sensor import LevelMeter, FlowMeter 
@@ -20,6 +21,7 @@ flowmeter = FlowMeter(config)
 levelmeter = LevelMeter(config, i2c, flowmeter)
 
 mqtt = MQTT(config, net, watchdog)
+mqtt_ota_start(mqtt)
 mqtt.pub(VolUnit(config))
 mqtt.pub(CoarseLevelPct(levelmeter))
 mqtt.pub(CoarseLevelVol(levelmeter))
