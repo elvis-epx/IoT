@@ -261,5 +261,17 @@ rm -f $TESTFILE
 
 rm -rf folder.sim
 
+mqttsub cmnd/TempSensor/OTA msg_reboot
+sleep 2
+
+mqttsub cmnd/TempSensor/OTA msg_exception
+sleep 2
+
+mqttsub cmnd/TempSensor/OTA stats
+sleep 2
+
+mqttsub cmnd/TempSensor/OTA msg_rm 
+sleep 2
+
 mqttsub cmnd/TempSensor/OTA reboot
 sleep 5
