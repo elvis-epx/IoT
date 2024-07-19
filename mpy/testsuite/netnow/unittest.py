@@ -49,3 +49,4 @@ for n in range(0, 50):
     dec = decrypt(b'k' * 32, enc)
     assert(dec == payload)
     assert(decrypt(b'k' * 32, enc[:-1]) is None)
+    assert(decrypt(b'k' * 32, b'b' * n) is None)
