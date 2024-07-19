@@ -35,6 +35,13 @@ assert(not check_hmac(b'k1', b'bla' + hmac(b'k1', b'ble')))
 assert(not check_hmac(b'k1', b'abracadabra'))
 assert(not check_hmac(b'k1', b''))
 
+k1 = b'bla' + b'\x00' * 28
+k2 = b'bla' + b'\x00' * 29
+k3 = b'bla' + b'\x00' * 30
+assert(prepare_key(k1) == k2)
+assert(prepare_key(k2) == k2)
+assert(prepare_key(k3) != k3)
+
 for n in range(0, 50):
     payload = b'p' * n
     enc = encrypt(b'k' * 32, b'p' * n)
