@@ -1,6 +1,7 @@
 import machine
 import os
 import os.path
+import socket
 
 singleton = None
 
@@ -20,6 +21,10 @@ class ESPNow:
         global singleton
         singleton = self
         self._active = False
+        self.sock_r, self.sock_w = socket.socketpair()
+
+    def fileno(self):
+        return self.sock_r.fileno()
 
     def active(self, st):
         self._active = st
