@@ -24,7 +24,7 @@ def test_mock():
         singleton.mqttfail[mode] = 1
         return True
 
-    if singleton is None:
+    if singleton is None or singleton.pipe_w is None:
         return False
 
     if 'checkmsg' in singleton.mqttfail:
@@ -52,8 +52,7 @@ class MQTTClient:
         self.state = 0
         self.mqttblock = False
         self.mqttfail = {}
-        self.pipe_r, self.pipe_w = socket.socketpair()
-        self.sock = self.pipe_r
+        self.pipe_r = self.pipe_w = None
 
     def set_callback(self, sub_cb):
         self.sub_cb = sub_cb
@@ -66,11 +65,21 @@ class MQTTClient:
             raise MQTTException("server not found")
         self.simulate_socket_failure()
         self.simulate_socket_block()
+        self.pipe_r, self.pipe_w = socket.socketpair()
+        self.sock = self.pipe_r
         self.state = 1
         return False # returns persistent connection
 
     def disconnect(self):
         self.state = 0
+        if self.pipe_r:
+            self.pipe_r.close()
+            self.pipe_r = None
+        if self.pipe_w:
+            self.pipe_w.close()
+            self.pipe_w = None
+        if getattr(self, 'sock', None):
+            self.sock.close()
         if random.random() > 0.5:
             raise MQTTException("simulate umqtt.simple failure (not simple2)")
 
