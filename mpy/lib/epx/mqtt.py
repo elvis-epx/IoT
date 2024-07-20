@@ -81,9 +81,8 @@ class MQTT:
     def on_connected(self):
         self.disconn_backoff = 500 * MILISSECONDS
         self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=20 * SECONDS)
-        self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval)
-        # Keep infrequent polling for testing
-        self.sm.recurring_task("mqtt_eval", self.eval, 500 * MILISSECONDS)
+        self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval_sub)
+        self.sm.recurring_task("mqtt_pub", self.eval_pub, 100 * MILISSECONDS)
 
     def received_data(self, topic, msg, retained, dup):
         if topic in self.sublist:
@@ -110,7 +109,7 @@ class MQTT:
         self.disconnect()
         self.sm.schedule_trans("testnet", self.disconn_backoff, fudge=self.disconn_backoff)
 
-    def eval(self, _):
+    def eval_sub(self, _):
         try:
             self.impl.check_msg()
         except (MQTTException, OSError):
@@ -119,6 +118,7 @@ class MQTT:
             self.sm.schedule_trans_now("connlost")
             return
 
+    def eval_pub(self, _):
         for pubobj in self.publist:
             if pubobj.has_changed():
                 self.watchdog.may_block() # impl.publish() may block
