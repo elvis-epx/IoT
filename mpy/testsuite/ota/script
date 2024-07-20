@@ -7,7 +7,9 @@ sleep 5
 wifi GOT_IP
 sleep 10 
 mqttsub cmnd/TempSensor/OTA invalid
-sleep 1
+sleep 2
+mqttsub cmnd/TempSensor/OTA commit
+sleep 2
 touch bla.upl ble.upl
 mqttsub cmnd/TempSensor/OTA open
 sleep 1
