@@ -70,11 +70,6 @@ class StateMachine:
         poll_object(poll_name, obj, mask, cb)
         self.polls.append(poll_name)
 
-    def unpoll_object(self, name):
-        poll_name = self.name + "_" + name
-        unpoll_object(poll_name)
-        self.polls.remove(poll_name)
-
     def cancel_state_tasks(self):
         for task in self.tasks:
             task.cancel()
@@ -127,7 +122,7 @@ class Task:
         self.name = name
         self.cb = cb
         self.delay = delay
-        if delay >= 0x40000000:
+        if delay >= 0x40000000: # pragma: no cover
             # time.ticks_ms() wraps in 31 or 32 bits, so tasks can't be longer than 12 days or so
             raise Exception("Task too long TODO add support to long timeouts")
         self.fudge = fudge
@@ -183,9 +178,7 @@ def do_gc(_):
     print("Mem alloc", gc.mem_alloc(), "free", gc.mem_free())
 
 def sleep(ms):
-    if ms < 0:
-        ms = 0
-    time.sleep_ms(ms)
+    time.sleep_ms(max(ms, 0))
 
 def millis():
     return millis_add(time.ticks_ms(), millis_offset)
@@ -229,10 +222,7 @@ def run(led_pin=2, led_inverse=0):
     try:
         gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
 
-        if led_pin > 0:
-            led = machine.Pin(led_pin, machine.Pin.OUT)
-        else:
-            led = None
+        led = (led_pin > 0) and machine.Pin(led_pin, machine.Pin.OUT) or None
     
         if hasattr(machine, 'TEST_ENV'):
             test_task = Task(True, "testh", machine.test_mock, 250 * MILISSECONDS)
