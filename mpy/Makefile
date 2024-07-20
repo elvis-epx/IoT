@@ -23,7 +23,7 @@ report:
 	python3-coverage html
 	xdg-open htmlcov/index.html
 
-test2: clean-coverage
+test2:
 	./runtest ota
 	python3-coverage combine || echo
 	python3-coverage html
