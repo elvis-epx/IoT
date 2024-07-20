@@ -204,13 +204,14 @@ POLLHUP = select.POLLHUP
 POLLERR = select.POLLERR
 
 def poll_object(name, obj, mask, cb):
+    if hasattr(machine, 'TEST_ENV'):
+        # in regular Python, poll.poll() returns file descriptors, not objects
+        obj = obj.fileno()
     polls[name] = {"obj": obj, "mask": mask, "cb": cb}
-    if not hasattr(machine, 'TEST_ENV'):
-        opoll.register(obj, mask)
+    opoll.register(obj, mask)
 
 def unpoll_object(name):
-    if not hasattr(machine, 'TEST_ENV'):
-        opoll.unregister(polls[name]["obj"])
+    opoll.unregister(polls[name]["obj"])
     del polls[name]
 
 def handle_poll_res(res):
@@ -234,7 +235,7 @@ def run(led_pin=2, led_inverse=0):
             led = None
     
         if hasattr(machine, 'TEST_ENV'):
-            test_task = Task(True, "testh", machine.test_mock, 1 * SECONDS)
+            test_task = Task(True, "testh", machine.test_mock, 250 * MILISSECONDS)
     
         while running:
             task, t = next_task()

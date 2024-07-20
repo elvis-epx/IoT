@@ -68,8 +68,6 @@ class NetNowPeripheral:
 
     def recv_tasks(self):
         self.sm.poll_object("espnow", self.impl, POLLIN, self.recv)
-        # Keep infrequent polling for testing
-        self.sm.recurring_task("recv", self.recv, 1 * SECONDS)
 
     def on_unpaired(self):
         self.channel = 0

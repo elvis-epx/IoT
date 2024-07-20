@@ -4,6 +4,7 @@ import os
 import os.path
 import random
 from epx import loop
+import socket
 
 singleton = None
 
@@ -23,14 +24,22 @@ def test_mock():
         singleton.mqttfail[mode] = 1
         return True
 
+    if singleton is None:
+        return False
+
+    if 'checkmsg' in singleton.mqttfail:
+        singleton.pipe_w.send(b'c')
+        return True
+
+    f = machine.TEST_FOLDER + "mqttsub.sim"
+    if os.path.exists(f):
+        singleton.pipe_w.send(b'i')
+        return True
+
     return False
 
 
 class MQTTException(Exception):
-    pass
-
-
-class MQTTClientSockMock():
     pass
 
 
@@ -43,7 +52,8 @@ class MQTTClient:
         self.state = 0
         self.mqttblock = False
         self.mqttfail = {}
-        self.sock = MQTTClientSockMock()
+        self.pipe_r, self.pipe_w = socket.socketpair()
+        self.sock = self.pipe_r
 
     def set_callback(self, sub_cb):
         self.sub_cb = sub_cb
@@ -70,6 +80,7 @@ class MQTTClient:
         self.subscribed[topic] = 1
 
     def check_msg(self):
+        self.pipe_r.recv(1)
         if 'checkmsg' in self.mqttfail:
             del self.mqttfail['checkmsg']
             raise MQTTException("server disconn")
