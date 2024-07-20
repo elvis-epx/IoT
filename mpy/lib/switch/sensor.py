@@ -163,8 +163,8 @@ class Manual:
                 p = self.default_program()
                 err = self.do_compile_program(p)
                 if err:
-                    print(err)
-                    self.program_compilation_msg = "Double fault"
+                    print(err) # pragma: no cover
+                    self.program_compilation_msg = "Double fault" # pragma: no cover
                 else:
                     self.program_compilation_msg = "Success"
         self.compilation_pub.forcepub()

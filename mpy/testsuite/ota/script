@@ -284,5 +284,8 @@ sleep 2
 mqttsub cmnd/TempSensor/OTA msg_rm 
 sleep 2
 
+mqttsub cmnd/TempSensor/OTA msg_rm 
+sleep 2
+
 mqttsub cmnd/TempSensor/OTA reboot
 sleep 5
