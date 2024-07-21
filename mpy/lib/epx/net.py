@@ -61,8 +61,6 @@ class Net:
     def on_connecting(self):
         self.impl.active(True)
         if not self.wired:
-            if 'channel' in self.cfg.data:
-                self.impl.config(channel=int(self.cfg.data["channel"]))
             self.impl.connect(self.cfg.data['ssid'], self.cfg.data['password'])
         self.sm.schedule_trans("connlost", 60 * SECONDS)
         self.sm.recurring_task("net_poll1", self.connecting_poll, 1 * SECONDS)
