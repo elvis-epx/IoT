@@ -13,3 +13,4 @@ log
 serial*.txt
 reboot.txt
 exception.txt
+*.upl
