@@ -83,8 +83,8 @@ it by polling (i.e. checking every 100ms or so). At least MQTT and ESP-NOW handl
 "right" way i.e. using select.poll to wait on data. We may use asyncio in the future, and some hardware
 interfacing could use IRQs. (Currently we only use IRQs to count pulses from a flow meter in h2o profile.)
 
-The event loop does call time.sleep() or poll.poll() when idle, but this won't put the ESP32 MCU to sleep.
-MicroPython currently does not use the "automatic light sleep" feature available in ESP-IDF, but it may use
+The event loop does call time.sleep() or poll.poll() as it should in a UNIX environment, but this won't put the ESP32 MCU to sleep.
+MicroPython currently does not use the "automatic light sleep" feature available in ESP-IDF, but it might use
 it in the future, and then our framework will enable significant energy savings.
 
 Still about energy, we use the profile\_boot.py to set the MCU frequency. In all our profiles, we 
@@ -147,12 +147,6 @@ the network time (important for real-time use cases like remote controls).
 
 Wakeup, ping and pair request packets are 3 different types because they are different
 vectors for a DoS attack, and the strategy to throttle each type could be different.
-
-A TODO is we currently use ESPNow.irq() API to receive and process packets as fast as
-possible, and it normally works (making the abovementioned packet exchange very fast), but
-from time to time it misses a packet. We kept the old polling (every 25ms) along to work
-around this issue, which could hinder a realtime use case. This should be better investigated
-and tested.
 
 ### Pairing
 
