@@ -26,8 +26,6 @@ class Net:
         sm.add_transition("connecting", "connlost")
         sm.add_transition("connlost", "idle")
 
-        if 'ssid' not in self.cfg.data:
-            return
         self.wired = self.cfg.data['ssid'] == '(wired)'
         if 'password' not in self.cfg.data:
             self.cfg.data['password'] = None
