@@ -14,15 +14,12 @@ class Watchdog:
             config.data['watchdog'] = "0"
         self.disabled = config.data['watchdog'] == "0"
 
-        self.grace = 10
+        self.grace = (fast_dehibernate and machine.wake_reason() == machine.DEEPSLEEP) and 1 or 10
 
         if self.disabled:
             print("Watchdog off")
             self.grace = 0
             return
-
-        if fast_dehibernate and machine.wake_reason() == machine.DEEPSLEEP:
-            self.grace = 1
 
         print("Watchdog will be on in %ds" % self.grace)
         def bring_up(_):
