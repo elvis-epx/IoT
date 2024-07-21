@@ -3,6 +3,7 @@ import threading
 import sys
 import os, os.path
 from epx import loop, net, mqtt
+import traceback
 
 TEST_ENV = True
 TEST_FOLDER = "."
@@ -132,3 +133,8 @@ def test_mock(_):
             return True
 
     return False
+
+def print_exception(e, f):
+    print(str(e), file=f)
+
+sys.print_exception = print_exception
