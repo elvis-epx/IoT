@@ -151,6 +151,7 @@ class NetNowPeripheral:
             return
 
         subtype, ttid, msg = msg[0], msg[1:1 + tid_size], msg[1 + tid_size:]
+        print("... ttid", b2s(ttid))
         timestamp = decode_timestamp(msg[0:timestamp_size])
         msg = msg[timestamp_size:]
 
@@ -236,7 +237,7 @@ class NetNowPeripheral:
         # Manage Timestamp TID cache
         for ttid in list(self.ttid_history.keys()):
             if self.ttid_history[ttid].elapsed() > 2 * SECONDS:
-                print("retired ttid", b2s(ttid))
+                # print("retired ttid", b2s(ttid))
                 del self.ttid_history[ttid]
         # TODO memory cap using LRU
 
@@ -245,7 +246,7 @@ class NetNowPeripheral:
     def tid_cleanup(self):
         for tid in list(self.tids.keys()):
             if self.tids[tid]["crono"].elapsed() > self.tids[tid]["timeout"]:
-                print("retired tid", b2s(tid))
+                print("timeout tid", b2s(tid))
                 del self.tids[tid]
 
     def tid_confirm(self, tid, timestamp, my_timestamp):

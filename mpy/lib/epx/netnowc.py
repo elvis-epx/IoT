@@ -94,7 +94,7 @@ class NetNowCentral:
         # Manage TID cache
         for tid in list(self.tid_history.keys()):
             if self.tid_history[tid].elapsed() > 2 * SECONDS:
-                print("retired tid", b2s(tid))
+                # print("retired tid", b2s(tid))
                 del self.tid_history[tid]
         # TODO memory cap using LRU
 
