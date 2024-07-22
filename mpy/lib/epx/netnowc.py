@@ -46,6 +46,7 @@ class NetNowCentral:
         # must re-add, otherwise fails silently
         self.impl.add_peer(broadcast_mac)
 
+        self.clean_rx_buffer()
         self.sm.poll_object("espnow", self.impl, POLLIN, self.recv)
 
         self.timestamp_task = self.sm.recurring_task("netnowc_timestamp", \
