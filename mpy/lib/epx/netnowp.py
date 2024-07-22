@@ -15,6 +15,7 @@ class NetNowPeripheral:
         self.timestamp_age = Shortcronometer()
         self.last_ping = None
         self.tids = {}
+        self.ttid_history = {}
 
         self.group = group_hash(self.cfg.data['espnowgroup'].encode())
         self.psk = prepare_key(self.cfg.data['espnowpsk'].encode())
@@ -145,14 +146,15 @@ class NetNowPeripheral:
     def handle_timestamp(self, mac, msg, my_timestamp):
         print("netnow: handle_timestamp")
 
-        if len(msg) < (1 + timestamp_size):
+        if len(msg) < (1 + tid_size + timestamp_size):
             print("... invalid len")
             return
 
-        subtype = msg[0]
-        timestamp = decode_timestamp(msg[1:1+timestamp_size])
+        subtype, ttid, msg = msg[0], msg[1:1 + tid_size], msg[1 + tid_size:]
+        timestamp = decode_timestamp(msg[0:timestamp_size])
+        msg = msg[timestamp_size:]
 
-        if not self.trust_timestamp(subtype, timestamp, my_timestamp):
+        if not self.trust_timestamp(subtype, ttid, timestamp, my_timestamp):
             return
 
         if self.sm.state == 'unpaired':
@@ -164,15 +166,19 @@ class NetNowPeripheral:
             return
 
         if subtype == timestamp_subtype_confirm:
-            if len(msg) != (1 + timestamp_size + tid_size):
+            if len(msg) != tid_size:
                 print("... invalid confirm len")
                 return
-            tid = msg[1+tid_size:]
+            tid = msg
             print("... confirmed", b2s(tid))
             self.tid_confirm(tid, timestamp, my_timestamp)
             return
 
-    def trust_timestamp(self, subtype, timestamp, my_timestamp):
+    def trust_timestamp(self, subtype, ttid, timestamp, my_timestamp):
+        if self.is_ttid_repeated(ttid):
+            print("...replayed ttid")
+            return False
+
         if self.timestamp_recv == 0:
             # network time unknown (device just started up)
 
@@ -220,6 +226,21 @@ class NetNowPeripheral:
 
         # ping confirm comes through here
         return True
+
+    def is_ttid_repeated(self, ttid):
+        if ttid in self.ttid_history:
+            return True
+
+        self.ttid_history[ttid] = Shortcronometer()
+
+        # Manage Timestamp TID cache
+        for ttid in list(self.ttid_history.keys()):
+            if self.ttid_history[ttid].elapsed() > 2 * SECONDS:
+                print("retired ttid", b2s(ttid))
+                del self.ttid_history[ttid]
+        # TODO memory cap using LRU
+
+        return False
 
     def tid_cleanup(self):
         for tid in list(self.tids.keys()):

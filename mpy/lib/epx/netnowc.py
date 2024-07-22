@@ -74,6 +74,7 @@ class NetNowCentral:
         buf = bytearray([version, type_timestamp])
         buf += self.group
         buf += bytearray([subtype])
+        buf += gen_tid()
         buf += encode_timestamp(current_timestamp)
         if subtype == timestamp_subtype_confirm:
             buf += tid
