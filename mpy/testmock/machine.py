@@ -134,6 +134,11 @@ def test_mock(_):
 
     return False
 
+DEEPSLEEP = 1
+
+def wake_reason():
+    return 0
+
 def print_exception(e, f):
     print(str(e), file=f)
 
