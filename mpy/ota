@@ -21,6 +21,8 @@ if ! ./otascript $FLAVOR $IPADDR; then
     exit 1
 fi
 
+( mosquitto_sub -h mqtt.kepler -t "stat/${DEV}/Log" -W 10 -C 1 ) &
+sleep 1
 echo "Committing..."
 mosquitto_pub -h mqtt.kepler -t "cmnd/${DEV}/OTA" -m commit
 sleep 5
