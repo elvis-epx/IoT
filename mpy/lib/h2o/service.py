@@ -64,12 +64,13 @@ class Flow(MQTTPub):
         self.flowmeter = flowmeter
         MQTTPub.__init__(self, "stat/%s/Flow", 10 * SECONDS, 30 * MINUTES, False)
 
+    # Make sure rate is republished as long as it is positive, even if unchanged
+    def pub_condition(self, force, oldrate, newrate):
+        return force or oldrate != newrate or newrate != b'0.0'
+
     def gen_msg(self):
         rate = self.flowmeter.rate()
         # rate can't be None, only 0
-        if rate > 0.0:
-            # Force republish as long as there is flow, even if flow is stable
-            self.changed = True
         return "%.1f" % rate
 
 
