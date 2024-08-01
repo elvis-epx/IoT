@@ -1,0 +1,33 @@
+#!/bin/bash
+
+DEV="$1"
+FLAVOR="$2"
+
+rm -f /tmp/piggy_ota
+( mosquitto_sub -h mqtt.kepler -t "stat/${DEV}/OTA" -W 60 -C 1 >/tmp/piggy_ota 2>&1 ) &
+mosquitto_pub -h mqtt.kepler -t "cmnd/${DEV}/OTA" -m open
+echo "Waiting for OTA details"
+while lsof /tmp/piggy_ota >/dev/null 2>&1; do
+    sleep 1
+done
+cat /tmp/piggy_ota
+IPADDR=`cat /tmp/piggy_ota | grep netstatus | tail -1 | sed 's/^.* addr \([0-9.]*\) .*$/\1/'`
+echo $IPADDR
+
+echo "Sending files"
+
+if ! ./otascript $FLAVOR $IPADDR; then
+    echo "otascript failed"
+    exit 1
+fi
+
+echo "Committing..."
+mosquitto_pub -h mqtt.kepler -t "cmnd/${DEV}/OTA" -m commit
+sleep 5
+
+echo "Rebooting"
+mosquitto_pub -h mqtt.kepler -t "cmnd/${DEV}/OTA" -m reboot
+sleep 1
+
+echo "Waiting for MQTT messages..."
+mosquitto_sub -h mqtt.kepler -t "stat/${DEV}/#" -W 120 -C 10 -v
