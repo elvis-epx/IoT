@@ -55,13 +55,21 @@ class StateMachine:
     def attach(self, task):
         self.tasks.append(task)
 
+    def deattach(self, task):
+        self.tasks.remove(task)
+
+    # FIXME not detattached if cancelled by client
     def recurring_task(self, name, cb, to, fudge=0):
         tsk = Task(True, name, cb, to, fudge)
         self.attach(tsk)
         return tsk
 
+    # FIXME not detattached if cancelled by client
     def onetime_task(self, name, cb, to, fudge=0):
-        tsk = Task(False, name, cb, to, fudge)
+        def cb_in(task):
+            self.deattach(task)
+            cb(task)
+        tsk = Task(False, name, cb_in, to, fudge)
         self.attach(tsk)
         return tsk
 
@@ -82,7 +90,8 @@ class StateMachine:
         name = self.name + "$" + self.state + "$" + new_state
         def cb(_):
             self._trans(new_state)
-        self.onetime_task(name, cb, to, fudge)
+        tsk = Task(False, name, cb, to, fudge)
+        self.attach(tsk)
 
     def schedule_trans_now(self, new_state):
         self.cancel_state_tasks()
