@@ -15,7 +15,6 @@ class MQTT:
         self.watchdog = watchdog
 
         self.publist = []
-        self.pub_pending = []
         self.sublist = {}
         self.name = ""
 
@@ -48,7 +47,6 @@ class MQTT:
         self.pub(self.log_pub)
 
     def pub(self, pubobj):
-        pubobj.set_observer(self)
         pubobj.adjust_topic(self.name)
         self.publist.append(pubobj)
         return pubobj
@@ -84,7 +82,7 @@ class MQTT:
         self.disconn_backoff = 500 * MILISSECONDS
         self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=20 * SECONDS)
         self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval_sub)
-        self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
+        self.sm.recurring_task("mqtt_pub", self.eval_pub, 100 * MILISSECONDS)
 
     def received_data(self, topic, msg, retained, dup):
         if topic in self.sublist:
@@ -120,29 +118,21 @@ class MQTT:
             self.sm.schedule_trans_now("connlost")
             return
 
-    def pub_requested(self, pubobj):
-        if pubobj not in self.pub_pending:
-            self.pub_pending.append(pubobj)
-        self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
-
     def eval_pub(self, _):
-        if self.sm.state != 'connected' or not self.pub_pending:
-            return
-
-        pubobj, self.pub_pending = self.pub_pending[0], self.pub_pending[1:]
-
-        self.watchdog.may_block() # impl.publish() may block
-        try:
-            self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
-            print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
-            self.ping_task.restart()
-            self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
-        except (MQTTException, OSError):
-            print("MQTT conn fail at pub")
-            self.log_pub.mqtt_connlost_count += 1
-            self.sm.schedule_trans_now("connlost")
-        finally:
-            self.watchdog.may_block_exit()
+        for pubobj in self.publist:
+            if pubobj.has_changed():
+                self.watchdog.may_block() # impl.publish() may block
+                try:
+                    self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
+                    print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
+                    self.ping_task.restart()
+                except (MQTTException, OSError):
+                    print("MQTT conn fail at pub")
+                    self.log_pub.mqtt_connlost_count += 1
+                    self.sm.schedule_trans_now("connlost")
+                finally:
+                    self.watchdog.may_block_exit()
+                break
 
     def connect(self):
         result = False
@@ -178,15 +168,12 @@ class MQTTPub:
     def __init__(self, topic, to, forcepubto, retain):
         self.topic = topic.encode('ascii')
         self.msg = None
+        self.changed = False
         self.retain = retain
-        self.observer = None
         if to > 0:
             Task(True, "eval_%s" % topic, self.eval, to).advance()
         if forcepubto > 0:
             Task(True, "force_%s" % topic, self.forcepub, forcepubto)
-
-    def set_observer(self, observer):
-        self.observer = observer
 
     def adjust_topic(self, name):
         self.topic = self.topic % name.encode('ascii')
@@ -195,21 +182,21 @@ class MQTTPub:
     def forcepub(self, _=None):
         self.eval(_, True)
 
-    # May be overridden
-    def pub_condition(self, force, oldmsg, newmsg):
-        return force or oldmsg != newmsg
-
     def eval(self, _, force=False):
         new_msg = self.gen_msg()
         if new_msg is not None:
             new_msg = new_msg.encode('utf-8')
-        if self.pub_condition(force, self.msg, new_msg):
+        if force or new_msg != self.msg:
             self.msg = new_msg
-            if self.msg is not None and self.observer:
-                self.observer.pub_requested(self)
+            self.changed = self.msg is not None
 
     def gen_msg(self): # override
         self.msg = None # pragma: no cover
+
+    def has_changed(self):
+        changed = self.changed
+        self.changed = False
+        return changed
 
 
 class MQTTSub:

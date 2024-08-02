@@ -1,7 +1,6 @@
 - OSError EIO exception in event loop poll() - investigate
     - EIO expected?
     - Is socket being polled when it is already invalid?
-    - no run path found that could lead to this
 - ESP-NOW
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
