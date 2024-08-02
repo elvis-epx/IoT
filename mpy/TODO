@@ -1,5 +1,3 @@
-- MQTT: publish immediately when forcepub() is called
-    - Optimize publish pathway to avoid polling
 - OSError EIO exception in event loop poll() - investigate
     - EIO expected?
     - Is socket being polled when it is already invalid?
