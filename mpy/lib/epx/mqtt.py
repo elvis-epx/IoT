@@ -7,14 +7,19 @@ import ubinascii
 from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer, POLLIN
 from epx import loop
 
+mqtt_manager = None
 
 class MQTT:
     def __init__(self, cfg, net, watchdog):
+        global mqtt_manager
+        mqtt_manager = self
+
         self.cfg = cfg
         self.net = net
         self.watchdog = watchdog
 
         self.publist = []
+        self.pub_pending = []
         self.sublist = {}
         self.name = ""
 
@@ -82,7 +87,7 @@ class MQTT:
         self.disconn_backoff = 500 * MILISSECONDS
         self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=20 * SECONDS)
         self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval_sub)
-        self.sm.recurring_task("mqtt_pub", self.eval_pub, 100 * MILISSECONDS)
+        self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
 
     def received_data(self, topic, msg, retained, dup):
         if topic in self.sublist:
@@ -118,21 +123,31 @@ class MQTT:
             self.sm.schedule_trans_now("connlost")
             return
 
+    def pub_requested(self, pubobj):
+        if self.sm.state == 'connected' and not self.pub_pending:
+            self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
+        if pubobj not in self.pub_pending:
+            self.pub_pending.append(pubobj)
+
     def eval_pub(self, _):
-        for pubobj in self.publist:
-            if pubobj.has_changed():
-                self.watchdog.may_block() # impl.publish() may block
-                try:
-                    self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
-                    print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
-                    self.ping_task.restart()
-                except (MQTTException, OSError):
-                    print("MQTT conn fail at pub")
-                    self.log_pub.mqtt_connlost_count += 1
-                    self.sm.schedule_trans_now("connlost")
-                finally:
-                    self.watchdog.may_block_exit()
-                break
+        if self.sm.state != 'connected' or not self.pub_pending:
+            return
+
+        pubobj, self.pub_pending = self.pub_pending[0], self.pub_pending[1:]
+
+        self.watchdog.may_block() # impl.publish() may block
+        try:
+            self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
+            print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
+            self.ping_task.restart()
+            if self.pub_pending:
+                self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
+        except (MQTTException, OSError):
+            print("MQTT conn fail at pub")
+            self.log_pub.mqtt_connlost_count += 1
+            self.sm.schedule_trans_now("connlost")
+        finally:
+            self.watchdog.may_block_exit()
 
     def connect(self):
         result = False
@@ -168,7 +183,6 @@ class MQTTPub:
     def __init__(self, topic, to, forcepubto, retain):
         self.topic = topic.encode('ascii')
         self.msg = None
-        self.changed = False
         self.retain = retain
         if to > 0:
             Task(True, "eval_%s" % topic, self.eval, to).advance()
@@ -182,21 +196,21 @@ class MQTTPub:
     def forcepub(self, _=None):
         self.eval(_, True)
 
+    # May be overridden
+    def pub_condition(self, force, oldmsg, newmsg):
+        return force or oldmsg != newmsg
+
     def eval(self, _, force=False):
         new_msg = self.gen_msg()
         if new_msg is not None:
             new_msg = new_msg.encode('utf-8')
-        if force or new_msg != self.msg:
+        if self.pub_condition(force, self.msg, new_msg):
             self.msg = new_msg
-            self.changed = self.msg is not None
+            if self.msg is not None:
+                mqtt_manager.pub_requested(self)
 
     def gen_msg(self): # override
         self.msg = None # pragma: no cover
-
-    def has_changed(self):
-        changed = self.changed
-        self.changed = False
-        return changed
 
 
 class MQTTSub:
