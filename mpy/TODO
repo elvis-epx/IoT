@@ -1,7 +1,10 @@
 - OSError EIO exception in event loop poll() - investigate
     - EIO expected?
     - Is socket being polled when it is already invalid?
-    - No pathway suggests this
+        - No pathway suggests this
+    - Try to determine conditions where OSError EIO is raised
+    - Mitigations (difficult but not impossible if polling >1 object)
+    - See if it still happens with new mqtt publish
 - ESP-NOW
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
