@@ -227,6 +227,9 @@ def handle_poll_res(res):
                     unpoll_object(name)
                 break
 
+def get_any_poll_obj():
+    return polls[list(polls.keys())[0]]
+
 def run(led_pin=2, led_inverse=0):
     try:
         gc_task = Task(True, "gc", do_gc, 1 * MINUTES)
@@ -240,7 +243,14 @@ def run(led_pin=2, led_inverse=0):
             task, t = next_task()
 
             if t > 0:
-                poll_res = opoll.poll(t)
+                try:
+                    poll_res = opoll.poll(t)
+                except OSError:
+                    # cannot know exactly which socket has been invalidated
+                    # report anyone as POLLERR (which excludes it from polling).
+                    # In the worst case, it will keep excluding sockets until
+                    # the culprit is reached.
+                    poll_res = ((get_any_poll_obj(), POLLERR))
             else:
                 poll_res = None
 
