@@ -122,21 +122,15 @@ class Sensor:
         return self.data['A']
 
     def power(self):
-        if self.data['Malfunction']:
-            return None
-        return self.data['W']
+        return (not self.data['Malfunction']) and self.data['W'] or None
 
     def powerfactor(self):
-        if self.data['Malfunction']:
-            return None
-        return self.data['pf']
+        return (not self.data['Malfunction']) and self.data['pf'] or None
 
     def energy(self):
-        if self.data['Malfunction']:
-            return None
-        elif self.data['Wh'] is None:
-            return None
-        return self.data['Wh'] + 0.0
+        return (not self.data['Malfunction'] and self.data['Wh'] is not None) and \
+            (self.data['Wh'] + 0.0) or \
+            None
 
     def malfunction(self):
         return self.data['Malfunction']
