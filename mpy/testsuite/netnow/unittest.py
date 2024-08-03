@@ -1,5 +1,14 @@
 # Unit tests of our protocol for ESP-NOW
 
+from epx.nvram import NVRAM
+
+nvram = NVRAM("test")
+assert(nvram.get_str("unknown") is None)
+assert(nvram.get_str("goodtext") == "ble")
+assert(nvram.get_str("goodunicode") == "blé")
+assert(nvram.get_str("badunicode") is None)
+assert(nvram.get_str("nofile") is None)
+
 from epx.netnow import *
 
 mac = '0A:1B:22:33:44:5F'

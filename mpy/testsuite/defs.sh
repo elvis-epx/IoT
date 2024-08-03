@@ -164,7 +164,22 @@ function gpio () {
 function nvram () {
     echo -n "$4" > ${TEST_FOLDER}/nvram_${1}_${2}_${3}.sim
     if [ "$1" = "b" ]; then
-        echo -n "${#4}" > ${TEST_FOLDER}/nvram_i_${2}_${3}_len.sim
+        len=$(cat ${TEST_FOLDER}/nvram_${1}_${2}_${3}.sim | wc -c)
+        echo -n "$len" > ${TEST_FOLDER}/nvram_i_${2}_${3}_len.sim
+    fi
+}
+
+function nvrambu () {
+    echo -n "$4" | iconv -f UTF-8 -t ISO-8859-1 > ${TEST_FOLDER}/nvram_${1}_${2}_${3}.sim
+    if [ "$1" = "b" ]; then
+        len=$(cat ${TEST_FOLDER}/nvram_${1}_${2}_${3}.sim | wc -c)
+        echo -n "$len" > ${TEST_FOLDER}/nvram_i_${2}_${3}_len.sim
+    fi
+}
+
+function nvramnf () {
+    if [ "$1" = "b" ]; then
+        echo -n "6" > ${TEST_FOLDER}/nvram_i_${2}_${3}_len.sim
     fi
 }
 

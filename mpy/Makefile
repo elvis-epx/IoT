@@ -23,8 +23,8 @@ report:
 	python3-coverage html
 	xdg-open htmlcov/index.html
 
-test2:
-	./runtest ota
+test2: clean-coverage
+	./runtest netnow
 	python3-coverage combine || echo
 	python3-coverage html
 	xdg-open htmlcov/index.html

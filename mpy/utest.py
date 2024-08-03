@@ -21,5 +21,8 @@ gc.mem_free = lambda: 54321
 if len(sys.argv) < 2:
     raise Exception("Test folder should be passed")
 
+import machine
+machine.TEST_FOLDER = sys.argv[1] + "/"
+
 import importlib
 main = importlib.import_module((sys.argv[1] + '/unittest').replace("/", "."))

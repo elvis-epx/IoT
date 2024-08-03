@@ -2,4 +2,9 @@
 
 . testsuite/defs.sh
 
+nvram b test goodtext "ble"
+nvram b test goodunicode "blé"
+nvrambu b test badunicode "blé"
+nvramnf b test nofile "ble"
+
 utest
