@@ -295,5 +295,9 @@ sleep 2
 mqttsub cmnd/TempSensor/OTA msg_exception
 sleep 2
 
+# Exercise nop commit
+mqttsub cmnd/TempSensor/OTA commit
+sleep 2
+
 mqttsub cmnd/TempSensor/OTA reboot
 sleep 5
