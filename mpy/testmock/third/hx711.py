@@ -34,3 +34,6 @@ class HX711:
 
     def read(self):
         return 50.0
+
+    def power_off(self):
+        pass

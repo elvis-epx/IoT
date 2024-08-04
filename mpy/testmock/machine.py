@@ -142,4 +142,7 @@ def wake_reason():
 def print_exception(e, f):
     print(str(e), file=f)
 
+def deepsleep(t):
+    pass
+
 sys.print_exception = print_exception
