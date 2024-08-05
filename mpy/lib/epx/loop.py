@@ -204,6 +204,7 @@ POLLIN = select.POLLIN
 POLLOUT = select.POLLOUT
 POLLHUP = select.POLLHUP
 POLLERR = select.POLLERR
+POLLNVAL = 32 # when WiFi is inactive or disconnected
 
 def poll_object(name, obj, mask, cb):
     if hasattr(machine, 'TEST_ENV'):
@@ -224,9 +225,10 @@ def handle_poll_res(res):
         for name in list(polls.keys()):
             d = polls[name]
             if d["obj"] is obj:
-                d["cb"](flags)
-                if flags & (POLLHUP | POLLERR):
+                if flags & (POLLHUP | POLLERR | POLLNVAL):
                     unpoll_object(name)
+                    # Last call for the callback to handle the error
+                d["cb"](flags)
                 break
 
 def get_any_poll_obj():
