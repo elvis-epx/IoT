@@ -209,12 +209,14 @@ def poll_object(name, obj, mask, cb):
     if hasattr(machine, 'TEST_ENV'):
         # in regular Python, poll.poll() returns file descriptors, not objects
         obj = obj.fileno()
+    unpoll_object(name)
     polls[name] = {"obj": obj, "mask": mask, "cb": cb}
     opoll.register(obj, mask)
 
 def unpoll_object(name):
-    opoll.unregister(polls[name]["obj"])
-    del polls[name]
+    if name in polls:
+        opoll.unregister(polls[name]["obj"])
+        del polls[name]
 
 def handle_poll_res(res):
     for ptuple in res:
