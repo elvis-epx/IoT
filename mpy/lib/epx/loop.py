@@ -254,7 +254,7 @@ def run(led_pin=2, led_inverse=0):
                     # report anyone as POLLERR (which excludes it from polling).
                     # In the worst case, it will keep excluding sockets until
                     # the culprit is reached.
-                    poll_res = ((get_any_poll_obj(), POLLERR))
+                    poll_res = ((get_any_poll_obj(), POLLERR),)
             else:
                 poll_res = None
 
