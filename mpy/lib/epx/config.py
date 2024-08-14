@@ -3,8 +3,6 @@ import machine
 class Config:
     def __init__(self):
         fname = "config.txt"
-        if hasattr(machine, 'TEST_ENV'):
-            fname = machine.TEST_FOLDER + "config.test"
 
         self.data = {}
 

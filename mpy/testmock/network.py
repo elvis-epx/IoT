@@ -6,7 +6,7 @@ import os.path
 singleton = None
 
 def test_mock():
-    f = machine.TEST_FOLDER + "wifi.sim"
+    f = "wifi.sim"
     if not os.path.exists(f):
         return False
     print("Got wifi.sim")

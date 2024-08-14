@@ -7,7 +7,7 @@ from select import select
 singleton = None
 
 def test_mock():
-    f = machine.TEST_FOLDER + "espnow.sim"
+    f = "espnow.sim"
     if not os.path.exists(f):
         return False
     print("Got espnow.sim")
@@ -21,7 +21,7 @@ class ESPNow:
     def __init__(self):
         global singleton
         singleton = self
-        f = machine.TEST_FOLDER + "espnow_role"
+        f = "espnow_role"
         role = open(f).read().strip()
         if role == "central":
             self.port_send = 12001

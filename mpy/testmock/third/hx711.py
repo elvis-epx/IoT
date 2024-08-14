@@ -7,7 +7,7 @@ failsim = 0
 
 def test_mock():
     global failsim
-    f = machine.TEST_FOLDER + "hx711.sim"
+    f = "hx711.sim"
     if not os.path.exists(f):
         return False
     print("Got hx711.sim")

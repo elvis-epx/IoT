@@ -235,9 +235,6 @@ class OTAHandler:
         self.filetot = 0
         filename = self.buf[4:-1].decode('ascii')
         self.tmpfilename = 'tmppiggy'
-        if hasattr(machine, 'TEST_ENV'):
-            filename = machine.TEST_FOLDER + filename
-            self.tmpfilename = machine.TEST_FOLDER + self.tmpfilename
         self.tmpfile = open(self.tmpfilename, 'wb')
         self.uplfilename = self.encodeuplfile(filename)
         print("OTA file %s len %d" % (self.uplfilename, self.filelen))
@@ -257,8 +254,6 @@ class OTAHandler:
         filename = self.buf[2:-1].decode('ascii')
         self.buf = b''
 
-        if hasattr(machine, 'TEST_ENV'):
-            filename = machine.TEST_FOLDER + filename
         try:
             h = sha1()
             f = open(filename, 'rb')
@@ -297,8 +292,6 @@ class OTAHandler:
         filename = self.buf[2:-1].decode('ascii')
         self.buf = b''
 
-        if hasattr(machine, 'TEST_ENV'):
-            filename = machine.TEST_FOLDER + filename
         try:
             os.unlink(filename)
             print("OTA file rm %s" % filename)

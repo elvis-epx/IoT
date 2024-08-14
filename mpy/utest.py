@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import sys
-sys.path.insert(0, '.')
-sys.path.insert(0, 'lib')
-sys.path.insert(0, 'testmock')
+import sys, os
+os.chdir(sys.argv[1])
+sys.path.insert(0, '../../')
+sys.path.insert(0, '../../lib')
+sys.path.insert(0, '../../testmock')
 
 import builtins
 builtins.const = lambda x: x
@@ -21,8 +22,5 @@ gc.mem_free = lambda: 54321
 if len(sys.argv) < 2:
     raise Exception("Test folder should be passed")
 
-import machine
-machine.TEST_FOLDER = sys.argv[1] + "/"
-
 import importlib
-main = importlib.import_module((sys.argv[1] + '/unittest').replace("/", "."))
+main = importlib.import_module('unittest')

@@ -5,14 +5,14 @@ class NVS:
         self.namespace = namespace
 
     def _read(self, kind, key):
-        fname = "%s/nvram_%s_%s_%s.sim" % (machine.TEST_FOLDER, kind, self.namespace, key)
+        fname = "nvram_%s_%s_%s.sim" % (kind, self.namespace, key)
         try:
             return open(fname, "rb").read()
         except FileNotFoundError:
             return None
 
     def _write(self, kind, key, value):
-        fname = "%s/nvram_%s_%s_%s.sim" % (machine.TEST_FOLDER, kind, self.namespace, key)
+        fname = "nvram_%s_%s_%s.sim" % (kind, self.namespace, key)
         open(fname, "wb").write(value)
 
     def set_i32(self, key, value):

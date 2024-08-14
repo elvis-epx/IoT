@@ -5,7 +5,7 @@ ok = True
 
 def test_mock():
     global ok
-    f = machine.TEST_FOLDER + "mcp23017.sim"
+    f = "mcp23017.sim"
     if not os.path.exists(f):
         return False
     print("Got mcp23017.sim")

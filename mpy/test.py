@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-import sys
-sys.path.insert(0, '.')
-sys.path.insert(0, 'lib')
-sys.path.insert(0, 'testmock')
+import sys, os
+os.chdir(sys.argv[2])
+sys.path.insert(0, '../../')
+sys.path.insert(0, '../../lib')
+sys.path.insert(0, '../../testmock')
+
+flavor = sys.argv[1]
 
 import builtins
 builtins.const = lambda x: x
@@ -21,9 +24,6 @@ gc.mem_free = lambda: 54321
 import machine
 if len(sys.argv) < 3:
     raise Exception("Flavor and test folder should be passed")
-
-flavor = sys.argv[1]
-machine.TEST_FOLDER = sys.argv[2] + "/"
 
 import importlib
 

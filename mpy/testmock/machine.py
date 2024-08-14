@@ -6,7 +6,6 @@ from epx import loop, net, mqtt
 import traceback
 
 TEST_ENV = True
-TEST_FOLDER = "."
 test_mocks = {}
 pins = []
 
@@ -35,13 +34,13 @@ class Pin:
             # write
             if self.direction == Pin.IN:
                 return
-            open((TEST_FOLDER + "/" + "pin%d.sim") % self.pin, "w").write(n and "1" or "0")
+            open(("pin%d.sim") % self.pin, "w").write(n and "1" or "0")
         else:
             # read
             if self.direction == Pin.OUT:
                 return
             try:
-                data = open((TEST_FOLDER + "/" + "pin%d.sim") % self.pin).read()
+                data = open(("pin%d.sim") % self.pin).read()
             except FileNotFoundError:
                 return 0
             try:
@@ -53,7 +52,7 @@ class Pin:
         self.irq_cb = handler
 
     def test_mock(self):
-        f = TEST_FOLDER + ("pulse%d.sim" % self.pin)
+        f = "pulse%d.sim" % self.pin
         if os.path.exists(f):
             print("Got pulse%d.sim" % self.pin)
             p = int(open(f).read())
@@ -100,14 +99,14 @@ def reset():
     loop.running = False
 
 def test_mock(_):
-    f = TEST_FOLDER + "quit.sim"
+    f = "quit.sim"
     if os.path.exists(f):
         print("Got quit.sim")
         os.remove(f)
         loop.running = False
         return True
 
-    f = TEST_FOLDER + "advance.sim"
+    f = "advance.sim"
     if os.path.exists(f):
         print("Got advance.sim")
         t = int(open(f).read())
@@ -115,7 +114,7 @@ def test_mock(_):
         os.remove(f)
         return True
 
-    f = TEST_FOLDER + "wdtblock.sim"
+    f = "wdtblock.sim"
     if os.path.exists(f):
         print("Got wdtblock.sim")
         os.remove(f)

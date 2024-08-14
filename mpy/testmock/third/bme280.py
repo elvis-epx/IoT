@@ -8,7 +8,7 @@ BME280_OSAMPLE_4 = 1
 singleton = None
 
 def test_mock():
-    f = machine.TEST_FOLDER + "bme280.sim"
+    f = "bme280.sim"
     if not os.path.exists(f):
         return False
     print("Got bme280.sim")
@@ -26,7 +26,7 @@ class BME280:
         singleton = self
         self.value = None
         self.fail = False
-        f = machine.TEST_FOLDER + "bme280f.sim"
+        f = "bme280f.sim"
         if os.path.exists(f):
             print("Got bme280f.sim")
             os.remove(f)

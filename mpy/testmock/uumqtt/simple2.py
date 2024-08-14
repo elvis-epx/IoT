@@ -9,14 +9,14 @@ import socket
 singleton = None
 
 def test_mock():
-    f = machine.TEST_FOLDER + "mqttblock.sim"
+    f = "mqttblock.sim"
     if os.path.exists(f):
         print("Got mqttblock.sim")
         os.remove(f)
         singleton.mqttblock = True
         return True
 
-    f = machine.TEST_FOLDER + "mqttfail.sim"
+    f = "mqttfail.sim"
     if os.path.exists(f):
         print("Got mqttfail.sim")
         mode = open(f).read().strip()
@@ -31,7 +31,7 @@ def test_mock():
         singleton.pipe_w.send(b'c')
         return True
 
-    f = machine.TEST_FOLDER + "mqttsub.sim"
+    f = "mqttsub.sim"
     if os.path.exists(f):
         singleton.pipe_w.send(b'i')
         return True
@@ -94,7 +94,7 @@ class MQTTClient:
             del self.mqttfail['checkmsg']
             raise MQTTException("server disconn")
         self.simulate_socket_failure()
-        f = machine.TEST_FOLDER + "mqttsub.sim"
+        f = "mqttsub.sim"
         if not os.path.exists(f):
             return False
         print("Got mqttsub.sim")
@@ -113,7 +113,7 @@ class MQTTClient:
             raise MQTTException("server disconn")
         self.simulate_socket_failure()
         self.simulate_socket_block()
-        f = machine.TEST_FOLDER + "mqttpub.sim"
+        f = "mqttpub.sim"
         open(f, 'ab').write(topic + b' ' + msg + b' ' + (retain and b'retain' or b'noretain') + b'\n')
         if self.mqttblock:
             print("Simulate MQTT socket block")
@@ -126,7 +126,7 @@ class MQTTClient:
             raise MQTTException("server disconn")
         self.simulate_socket_failure()
         self.simulate_socket_block()
-        f = machine.TEST_FOLDER + "mqttping.sim"
+        f = "mqttping.sim"
         open(f, 'a').write('ping\n')
 
     def simulate_socket_block(self):

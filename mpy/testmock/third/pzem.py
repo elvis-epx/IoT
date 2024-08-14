@@ -7,7 +7,7 @@ failsim = 0
 
 def test_mock():
     global failsim
-    f = machine.TEST_FOLDER + "pzem.sim"
+    f = "pzem.sim"
     if not os.path.exists(f):
         return False
     print("Got pzem.sim")

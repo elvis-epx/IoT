@@ -6,7 +6,7 @@ import machine
 singleton = None
 
 def test_mock():
-    f = machine.TEST_FOLDER + "hdc1080.sim"
+    f = "hdc1080.sim"
     if not os.path.exists(f):
         return False
     print("Got hdc1080.sim")
@@ -25,7 +25,7 @@ class HDC1080:
         self.temp = None
         self.hum = None
         self.fail = False
-        f = machine.TEST_FOLDER + "hdc1080f.sim"
+        f = "hdc1080f.sim"
         if os.path.exists(f):
             print("Got hdc1080f.sim")
             os.remove(f)

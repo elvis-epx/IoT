@@ -6,7 +6,7 @@ ok = True
 
 def test_mock():
     global ok
-    f = machine.TEST_FOLDER + "ssd1306f.sim"
+    f = "ssd1306f.sim"
     if os.path.exists(f):
         print("Got ssd1306f.sim")
         os.remove(f)
