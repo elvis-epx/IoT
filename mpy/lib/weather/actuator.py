@@ -5,7 +5,7 @@ class Display:
     def __init__(self, config, i2c, sensor):
         try:
             self.impl = ssd1306.SSD1306_I2C(128, 64, i2c)
-        except OSError:
+        except OSError: # pragma: no cover
             print("No display found")
             return
 
@@ -43,6 +43,6 @@ class Display:
             self.impl.text("%.2f m" % h, 20, 48)
         try:
             self.impl.show()
-        except OSError:
+        except OSError: # pragma: no cover
             print("No display found")
             self.impl = None

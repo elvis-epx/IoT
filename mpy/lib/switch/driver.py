@@ -30,7 +30,7 @@ class Direct4:
 
 # DTWonder www.dingtian-tech.com
 
-class dtwonder2:
+class dtwonder2: # pragma: no cover
     def __init__(self):
         self.inputs = 2
         self.outputs = 2
@@ -55,7 +55,7 @@ class dtwonder2:
         pass
 
 
-class dtwonder4:
+class dtwonder4: # pragma: no cover
     def __init__(self):
         self.inputs = 4
         self.outputs = 4
@@ -82,7 +82,7 @@ class dtwonder4:
 
 # PLC HF-006 Hofffer Automação https://hofferautomacao.com/
 
-class hoffer6:
+class hoffer6: # pragma: no cover
     def __init__(self):
         self.inputs = 8
         self.outputs = 6
@@ -109,7 +109,7 @@ class hoffer6:
 
 # Sonoff Mini R4 (yes, it can run MicroPython)
 
-class minir4:
+class minir4: # pragma: no cover
     def __init__(self):
         self.inputs = 2
         self.outputs = 1
@@ -136,7 +136,7 @@ class minir4:
 
 # DTWonder www.dingtian-tech.com with 8 inputs and 8 outputs
 
-class dtwonder8:
+class dtwonder8: # pragma: no cover
     def __init__(self):
         self.inputs = 8
         self.outputs = 8
