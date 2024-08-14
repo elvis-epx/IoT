@@ -1,5 +1,7 @@
 - OSError EIO exception in event loop poll() - investigate
     - Mitigations in place, testing
+- Coverage and testing
+    - remove TEST_FOLDER, run each test in its own folder, allowing parallelism
 - ESP-NOW
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
