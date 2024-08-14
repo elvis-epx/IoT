@@ -34,7 +34,7 @@ class Power(MQTTPub):
 
     def gen_msg(self):
         # as float
-        if self.sensor.current() is None:
+        if self.sensor.power() is None:
             return None
         return "%.1f" % self.sensor.power()
 

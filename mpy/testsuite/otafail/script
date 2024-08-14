@@ -9,105 +9,105 @@ sleep 6
 mqttsub cmnd/TempSensor/OTA open
 sleep 1
 
+
+TESTFILE=$TEST_FOLDER/testfile_fail1.sim
+echo bla > $TESTFILE
+
 # File in the way of a folder path
 
-TESTFILE=folder.sim/fail1.sim
-rm -rf folder.sim
-mkdir -p folder.sim
-echo bla > $TESTFILE
+TARGETFILE=folder.sim/fail1.sim
+rm -rf $TEST_FOLDER/folder.sim
 touch $TEST_FOLDER/folder.sim
-./otatool 127.0.0.1 send $TESTFILE = && ( echo "otatool should have failed"; exit 1 )
-rm -f $TESTFILE
-rm -rf folder.sim
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE # does not fail here yet
+mqttsub cmnd/TempSensor/OTA commit # fails here, silently
+sleep 2
+rm -rf $TEST_FOLDER/folder.sim
 
 # Wrong packet size at header (too short)
 
-TESTFILE=fail1.sim
-echo "bla" > $TESTFILE
-
-# Wrong packet size at header (too short)
+TARGETFILE=fail1.sim
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = length1a && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE length1a && ( echo "otatool should have failed"; exit 1 )
 
 # Wrong packet size at header (too long)
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = length1b && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE length1b && ( echo "otatool should have failed"; exit 1 )
 
 # Wrong packet size at payload (too long)
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = length2b && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE length2b && ( echo "otatool should have failed"; exit 1 )
 
 # Wrong packet size at payload (too short)
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = length1b && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE length1b && ( echo "otatool should have failed"; exit 1 )
 
 # Bad checksum at header
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = checksum1 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE checksum1 && ( echo "otatool should have failed"; exit 1 )
 
 # Close connection at header
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = zero1 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE zero1 && ( echo "otatool should have failed"; exit 1 )
 
 # Close connection using RST, for recv() header
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = rst && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE rst && ( echo "otatool should have failed"; exit 1 )
 
 # Close connection using RST, for send() header response
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = rstw1 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE rstw1 && ( echo "otatool should have failed"; exit 1 )
 
 # Close connection using RST, for send() payload response
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = rstw2 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE rstw2 && ( echo "otatool should have failed"; exit 1 )
 
 # Close connection at payload
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = zero2 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE zero2 && ( echo "otatool should have failed"; exit 1 )
 
 # Timeout at header
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = timeout1 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE timeout1 && ( echo "otatool should have failed"; exit 1 )
 
 # Timeout at payload
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = timeout2 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE timeout2 && ( echo "otatool should have failed"; exit 1 )
 
 # Fragmentation (non fatal)
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = frag
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE frag
 
 # Packet valid but short for the app
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = short && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE short && ( echo "otatool should have failed"; exit 1 )
 
 # Send too much file data (more than declared length)
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = overflow && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE overflow && ( echo "otatool should have failed"; exit 1 )
 
 # Send valid packet but type at unexpected moment
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = type1 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE type1 && ( echo "otatool should have failed"; exit 1 )
 
 # Send valid packet but type at unexpected moment
 echo
 echo
-./otatool 127.0.0.1 send $TESTFILE = type2 && ( echo "otatool should have failed"; exit 1 )
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE type2 && ( echo "otatool should have failed"; exit 1 )
 
-rm -f $TESTFILE
+rm -f $TESTFILE $TEST_FOLDER/$TARGETFILE

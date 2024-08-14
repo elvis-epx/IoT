@@ -6,13 +6,13 @@ runme
 sleep 5
 wifi GOT_IP
 sleep 10
-rm -f exception.txt
+rm -f $TEST_FOLDER/exception.txt
 mqttsub cmnd/TempSensor/OTA test_exception
 sleep 5
 
-if [ ! -f exception.txt ]; then
+if [ ! -f $TEST_FOLDER/exception.txt ]; then
     echo "Exception dump not found"
     exit 1
 fi
 
-rm -f exception.txt
+rm -f $TEST_FOLDER/exception.txt

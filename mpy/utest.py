@@ -2,6 +2,8 @@
 
 import sys, os
 os.chdir(sys.argv[1])
+
+sys.path.insert(0, '.')
 sys.path.insert(0, '../../')
 sys.path.insert(0, '../../lib')
 sys.path.insert(0, '../../testmock')
@@ -22,5 +24,7 @@ gc.mem_free = lambda: 54321
 if len(sys.argv) < 2:
     raise Exception("Test folder should be passed")
 
+print("Importing unittest")
 import importlib
-main = importlib.import_module('unittest')
+main = importlib.import_module('unittest_meat')
+print("Finished unittest")
