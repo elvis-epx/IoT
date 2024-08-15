@@ -1,0 +1,17 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 10
+wifi GOT_IP
+sleep 5
+advance 30000
+
+mqttfail pollerr
+sleep 10
+advance 60000
+sleep 10
+advance 30000
+
+quit

@@ -231,7 +231,7 @@ def handle_poll_res(res):
                 d["cb"](flags)
                 break
 
-def get_any_poll_obj():
+def get_any_poll_obj(): # pragma: no cover
     return polls[list(polls.keys())[0]]
 
 def run(led_pin=2, led_inverse=0):
@@ -249,11 +249,17 @@ def run(led_pin=2, led_inverse=0):
             if t > 0:
                 try:
                     poll_res = opoll.poll(t)
-                except OSError:
-                    # cannot know exactly which socket has been invalidated
-                    # report anyone as POLLERR (which excludes it from polling).
-                    # In the worst case, it will keep excluding sockets until
-                    # the culprit is reached.
+                except OSError: # pragma: no cover
+                    # "Should not happen", seems to be a MicroPython-only behavior
+                    # when the underlying network interface fails
+                    # (extmod/modusocket.c, function socket_ioctl)
+                    #
+                    # Difficult to simulate in coverage test - CPython3 does not raise
+                    # at poll.poll() for any error, so coverage disabled
+                    #
+                    # Cannot pinpoint the offending file descriptor, so we report anyone
+                    # as POLLERR (which excludes it from polling). In the worst case,
+                    # it will keep excluding sockets until the culprit is reached.
                     poll_res = ((get_any_poll_obj(), POLLERR),)
             else:
                 poll_res = None

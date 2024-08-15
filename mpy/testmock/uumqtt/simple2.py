@@ -31,6 +31,12 @@ def test_mock():
         singleton.pipe_w.send(b'c')
         return True
 
+    if 'pollerr' in singleton.mqttfail:
+        print("POLLERR provoked")
+        del singleton.mqttfail['pollerr']
+        singleton.pipe_r.close()
+        return True
+
     f = "mqttsub.sim"
     if os.path.exists(f):
         singleton.pipe_w.send(b'i')
