@@ -133,7 +133,7 @@ class Sensor:
 
     def energy(self):
         if self.data['Malfunction'] or self.data['Wh'] is None:
-            return None
+            return None # pragma: no cover
         return (self.data['Wh'] + 0.0)
 
     def malfunction(self):

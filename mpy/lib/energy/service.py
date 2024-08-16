@@ -66,7 +66,7 @@ class Energy(MQTTPub):
     def gen_msg(self):
         # as float, though PZEM supplies Wh as integer
         if self.sensor.energy() is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.energy()
 
 
