@@ -62,7 +62,7 @@ assert mqtt stat/Switch/ProgramCompilation "Program kind unexp"
 mqttsub cmnd/Switch/Program "0:P:+0"
 sleep 1
 assert mqtt stat/Switch/ProgramCompilation "Success"
-assert mqtt "stat/Switch/Program " "0:P:+0"
+assert mqtt stat/Switch/Program "0:P:+0"
 
 mqttsub cmnd/Switch/Program "0:P:"
 sleep 1
@@ -87,7 +87,7 @@ assert mqtt stat/Switch/ProgramCompilation "Phase switch# unexp"
 mqttsub cmnd/Switch/Program "0:P:+1/-1"
 sleep 1
 assert mqtt stat/Switch/ProgramCompilation "Success"
-assert mqtt "stat/Switch/Program " "0:P:+1/-1"
+assert mqtt stat/Switch/Program "0:P:+1/-1"
 
 # Pulse Manual 0, should change switch 1 now
 gpio 26 0
