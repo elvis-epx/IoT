@@ -132,11 +132,11 @@ function assert_mqtt ()
         echo "waiting for $f..."
         sleep 1
     done
-    while ! grep "$1" ${TEST_FOLDER}/mqttpub.sim >/dev/null; do
+    while ! grep "$1 " ${TEST_FOLDER}/mqttpub.sim >/dev/null; do
         echo "waiting for $1 in $f..."
         sleep 1
     done
-    LASTPUB=`grep "$1" ${TEST_FOLDER}/mqttpub.sim | tail -1`
+    LASTPUB=`grep "$1 " ${TEST_FOLDER}/mqttpub.sim | tail -1`
     if echo "$LASTPUB" | grep " $2" >/dev/null; then
         return 0
     fi

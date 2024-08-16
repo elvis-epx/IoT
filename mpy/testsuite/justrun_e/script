@@ -12,6 +12,7 @@ assert mqtt stat/Energy/V 222.1
 assert mqtt stat/Energy/A 4.8
 assert mqtt stat/Energy/PowerFactor 0.70
 assert mqtt stat/Energy/Wh 150.0
+assert mqtt stat/Energy/W 0.0
 assert mqtt stat/Energy/Malfunction 0
 
 pzemf fail4 # read energy failure 
@@ -38,5 +39,8 @@ sleep 20
 
 assert mqtt stat/Energy/Malfunction 0
 
+timeout 5s nc localhost 1338 || echo
+
 sleep 5
+
 quit
