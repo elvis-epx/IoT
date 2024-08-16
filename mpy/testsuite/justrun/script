@@ -10,4 +10,6 @@ advance 60000
 advance 60000
 advance $((30 * 60 * 1000))
 sleep 5
+ssd1306f
+sleep 15
 quit
