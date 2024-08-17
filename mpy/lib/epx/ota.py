@@ -221,7 +221,7 @@ class OTAHandler:
             self.header_to_rm()
         elif ptype == 9:
             self.header_to_flavor()
-        else:
+        else: # pragma: no cover
             self.sm.schedule_trans_now("connlost")
 
     def encodeuplfile(self, f):
@@ -271,16 +271,16 @@ class OTAHandler:
 
         try:
             self.connection.send(b'6' + h)
-        except sockerror as e:
-            pass # pragma: no cover
+        except sockerror as e: # pragma: no cover
+            pass
 
         self.sm.schedule_trans_now("done")
 
     def header_to_flavor(self):
         try:
             self.connection.send(b'f' + flavor.encode('ascii') + b'\n')
-        except sockerror as e:
-            pass # pragma: no cover
+        except sockerror as e: # pragma: no cover
+            pass
 
         self.sm.schedule_trans_now("done")
 
@@ -296,8 +296,8 @@ class OTAHandler:
 
         try:
             self.connection.send(b'8')
-        except sockerror as e:
-            pass # pragma: no cover
+        except sockerror as e: # pragma: no cover
+            pass
 
         self.sm.schedule_trans_now("done")
 
