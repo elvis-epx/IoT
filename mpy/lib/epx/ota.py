@@ -387,7 +387,7 @@ class OTAHandler:
 
         try:
             self.connection.send(b'3')
-        except OSError as e: # pragma: no cover
+        except sockerror as e: # pragma: no cover
             pass
 
         self.sm.schedule_trans_now("done")
