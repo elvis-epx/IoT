@@ -142,7 +142,9 @@ class Ticker:
         s = self.sensor.jsonish().encode()
         try:
             n = self.connection.send(s)
-            if n <= 0:
+            if n <= 0: # pragma: no cover
+                # difficult to happen or rehearse; output buffer is full
+                # or the remote party called shutdown(SHUT_RD).
                 self.sm.schedule_trans_now("connlost")
                 return
         except sockerror as e:
