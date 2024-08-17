@@ -23,6 +23,13 @@ mqttsub cmnd/TempSensor/OTA commit # fails here, silently
 sleep 2
 rm -rf $TEST_FOLDER/folder.sim
 
+# .upl file in the way
+
+TARGETFILE=fail1.sim
+mkdir -p $TEST_FOLDER/fail1.sim.upl
+./otatool 127.0.0.1 send $TESTFILE $TARGETFILE && (echo "otatool should have failed"; exit 1)
+rm -rf $TEST_FOLDER/fail1.sim.upl
+
 # Wrong packet size at header (too short)
 
 TARGETFILE=fail1.sim
