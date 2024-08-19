@@ -2,6 +2,10 @@
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
     - increase test coverage
+        - espnow mock
+            - use socketpair() to satisfy poll()
+            - exchange packets using files
+        - create separate tool to send/receive packets as files
 - MQTT with TLS
 - MicroPython OTA
 - Remote mpy console, if possible

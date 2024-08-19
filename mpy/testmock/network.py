@@ -35,6 +35,7 @@ class WLAN:
         global singleton
         singleton = self
         self._status = STAT_OFF
+        self._channel = 1
         machine._wifi = self # for simulation of socket failures in mqttsimple
         pass
 
@@ -61,7 +62,13 @@ class WLAN:
     def config(self, *args, **kwargs):
         if 'mac' in args:
             return b'\x01\x02\x03\x04\x05\x06'
-        pass
+        if 'channel' in args:
+            return self._channel
+        if 'channel' in kwargs:
+            channel = kwargs['channel']
+            if channel < 1 or channel > 13:
+                raise Exception("Bad WiFi channel")
+            self._channel = channel
 
 class LAN:
     def __init__(self, **phyparams):
