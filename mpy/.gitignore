@@ -15,3 +15,4 @@ reboot.txt
 exception.txt
 *.upl
 *.tst
+espnow_packets/
