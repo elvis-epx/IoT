@@ -142,6 +142,12 @@ def print_exception(e, f):
     print(str(e), file=f)
 
 def deepsleep(t):
-    pass
+    f = "quit.sim"
+    while True:
+        if os.path.exists(f):
+            print("Got quit.sim (hibernation)")
+            os.remove(f)
+            sys.exit(0)
+        time.sleep(0.25)
 
 sys.print_exception = print_exception

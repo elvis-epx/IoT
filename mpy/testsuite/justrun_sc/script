@@ -5,5 +5,9 @@
 runme
 
 ./entool bla ble 5 rx 90 pairreq
+./entool bla ble 5 tx ts
+./entool bla ble 5 rx 60 data
+
+sleep 5
 
 quit

@@ -34,6 +34,7 @@ def test_mock():
         elif dmac != singleton.my_mac and dmac != singleton.bcast_mac:
             print("espnow mock: recv for mac that is not me")
         else:
+            global recv_pkts
             recv_pkts.append((smac, data))
             singleton.pipe_w.send(b'p')
             return True
@@ -98,6 +99,7 @@ class ESPNow:
 
     def recv(self):
         self.pipe_r.recv(1)
+        global recv_pkts
         smac, data = recv_pkts[0]
         recv_pkts = recv_pkts[1:]
         return smac, data

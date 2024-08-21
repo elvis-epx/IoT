@@ -15,6 +15,7 @@ def const(n):
     return n
 
 broadcast_mac = b'\xff\xff\xff\xff\xff\xff'
+my_mac = b"\x00\x01\x02\x03\x04\x06"
 version = const(0x02)
 
 type_data = const(0x01)

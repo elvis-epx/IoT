@@ -1,5 +1,6 @@
 import sys, time
-from espnowtool.proto import *
+from espnowtool.rx import *
+from espnowtool.tx import *
 from espnowtool.utils import group_hash, prepare_key
 
 def usage():
@@ -21,12 +22,17 @@ def rx():
     print("entool: failed to receive expected packet")
     sys.exit(1)
 
+def tx():
+    psk = prepare_key(sys.argv[1].encode())
+    group = group_hash(sys.argv[2].encode())
+    channel = int(sys.argv[3])
+    pkttype = sys.argv[5]
+    tx_packet(psk, group, channel, pkttype)
+
 def run():
-    if len(sys.argv) < 7:
-        usage()
-    elif sys.argv[4] == "rx":
+    if len(sys.argv) >= 7 and sys.argv[4] == "rx":
         rx()
-    elif sys.argv[4] == "tx":
+    elif len(sys.argv) >= 6 and sys.argv[4] == "tx":
         tx()
     else:
         usage()

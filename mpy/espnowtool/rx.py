@@ -2,7 +2,7 @@ from espnowtool.utils import *
 import time
 import os
 
-pkttypes = {"pairreq": type_pairreq}
+pkttypes = {"pairreq": type_pairreq, "data": type_data}
 
 def rx_packet(psk, group, channel, timeout, pkttypename):
     folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
@@ -29,9 +29,9 @@ def rx_packet_in(folder, psk, group, channel, exptype):
         pkt_data = rawdata[13:]
 
         if pkt_channel != channel:
-            print("entool: recv for channel I am not listening")
-        elif pkt_dmac != b"\x00\x01\x02\x03\x04\x05" and pkt_dmac != broadcast_mac:
-            print("entool: recv for mac that is not me")
+            print("entool: recv for channel %d expected %d" % (pkt_channel, channel))
+        elif pkt_dmac != my_mac and pkt_dmac != broadcast_mac:
+            print("entool: recv for mac that is not me", pkt_dmac)
         else:
             return rx_packet_in2(psk, group, exptype, pkt_smac, pkt_data)
 
@@ -64,4 +64,16 @@ def rx_packet_in2(psk, group, exptype, smac, msg):
         return None
 
     msg = msg[2+group_size:]
-    return {"raw": msg}
+    res = {"raw": msg}
+
+    if pkttype == type_data:
+        timestamp, msg = msg[0:timestamp_size], msg[timestamp_size:]
+        tid, msg = msg[0:tid_size], msg[tid_size:]
+        data = msg
+        timestamp = decode_timestamp(timestamp)
+        diff = int(time.time() * 1000) - timestamp
+        tid = b2s(tid)
+        res = {"data": data}
+        print("entool: Data received", data, "timestamp", timestamp, diff, "tid", tid)
+
+    return res
