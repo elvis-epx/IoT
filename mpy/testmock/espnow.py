@@ -29,7 +29,7 @@ def test_mock():
         smac = rawdata[7:13]
         data = rawdata[13:]
 
-        if channel != machine._wifi.config('channel'):
+        if channel != 0 and channel != machine._wifi.config('channel'):
             print("espnow mock: recv for channel I am not listening")
         elif dmac != singleton.my_mac and dmac != singleton.bcast_mac:
             print("espnow mock: recv for mac that is not me")

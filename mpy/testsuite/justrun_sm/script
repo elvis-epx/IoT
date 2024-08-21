@@ -6,7 +6,10 @@ runme
 sleep 5
 
 wifi GOT_IP
-sleep 60
+
+./entool bla ble 0 rx 60 ts
+./entool bla ble 0 tx data payload "stat/LPScale/Weight\n7.0"
+./entool bla ble 0 rx 2 ts confirm 1 tid lasttx
 
 sleep 5
 quit
