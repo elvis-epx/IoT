@@ -63,7 +63,7 @@ class ESPNow:
         if role == "central":
             self.my_mac = b"\x00\x01\x02\x03\x04\x05"
         elif role == "peripheral":
-            self.my_mac = b"\x00\x01\x02\x03\x04\x06"
+            self.my_mac = b"\x00\x01\x02\x03\x04\x05"
         else:
             raise Exception("Create espnow_role with proper content")
         self.bcast_mac = b"\xff\xff\xff\xff\xff\xff"

@@ -3,7 +3,7 @@
 . testsuite/defs.sh
 
 runme
-sleep 60
 
-sleep 5
+./entool bla ble 5 rx 90 pairreq
+
 quit
