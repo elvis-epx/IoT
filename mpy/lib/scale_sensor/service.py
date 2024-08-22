@@ -37,4 +37,3 @@ class Service():
     def stop(self, _):
         print("Service.stop")
         hibernate(60 * MINUTES)
-        print("Service hibernated (should not print this...)")
