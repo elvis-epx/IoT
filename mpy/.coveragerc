@@ -3,4 +3,4 @@ source = ./
 concurrency = thread,multiprocessing
 
 [report]
-omit = ./testmock/*,./lib/third/*,./lib/uumqtt/*,test.py,utest.py
+omit = ./testmock/*,./lib/third/*,./lib/uumqtt/*,test.py,utest.py,espnowtool/*

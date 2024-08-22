@@ -36,7 +36,7 @@ def gen_ts(buf, args):
 def gen_data(buf, args):
     buf += gen_timestamp_peripheral()
     buf += gen_tid_peripheral()
-    buf += args["payload"].replace("\\n", "\n").encode()
+    buf += args["payload"].replace("\\n", "\n").encode(args.get('encoding', 'utf-8'))
     return buf
 
 pkttypes = {"ts": (type_timestamp, gen_ts, broadcast_mac),
