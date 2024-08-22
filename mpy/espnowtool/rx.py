@@ -2,7 +2,14 @@ from espnowtool.utils import *
 import time
 import os
 
-pkttypes = {"pairreq": type_pairreq, "data": type_data, "ts": type_timestamp}
+pkttypes = {"pairreq": type_pairreq, "data": type_data, "ts": type_timestamp, "wakeup": type_wakeup}
+
+def flush_rx_packets(args):
+    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
+    for f in sorted(os.listdir(folder)):
+        if not f.endswith(".tx"):
+            continue
+        os.unlink(folder + f)
 
 def rx_packet(psk, group, channel, timeout, pkttypename, args):
     folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
@@ -76,6 +83,8 @@ def rx_data(msg, args, res):
     diff = int(time.time() * 1000) - timestamp
     res["data"] = data
     print("entool: Data received", data, "timestamp", timestamp, diff, "tid", tid)
+    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
+    open(folder + "rx_tid", "w").write(tid)
     return res
 
 # as peripheral
@@ -125,4 +134,13 @@ def rx_pairreq(msg, args, res):
     print("entool: pairreq received")
     return res
 
-handlers = {type_pairreq: rx_pairreq, type_data: rx_data, type_timestamp: rx_timestamp}
+# as central
+def rx_wakeup(msg, args, res):
+    timestamp, msg = decode_timestamp(msg[0:timestamp_size]), msg[timestamp_size:]
+    tid = b2s(msg[0:tid_size])
+    print("entool: wakeup received, tid", tid)
+    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
+    open(folder + "rx_tid", "w").write(tid)
+    return res
+
+handlers = {type_pairreq: rx_pairreq, type_data: rx_data, type_timestamp: rx_timestamp, type_wakeup: rx_wakeup}

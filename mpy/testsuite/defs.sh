@@ -71,6 +71,10 @@ function pzemf () {
     echo $1 > ${TEST_FOLDER}/pzem.sim
 }
 
+function hx711f () {
+    echo $1 > ${TEST_FOLDER}/hx711f.sim
+}
+
 function pulse () {
     echo $2 > ${TEST_FOLDER}/pulse$1.sim
     while [ -e ${TEST_FOLDER}/pulse$1.sim ]; do

@@ -3,24 +3,17 @@ import machine
 import os
 import os.path
 
-failsim = 0
+failsim = ""
 
 def test_mock():
     global failsim
-    f = "hx711.sim"
+    f = "hx711f.sim"
     if not os.path.exists(f):
         return False
-    print("Got hx711.sim")
+    print("Got hx711f.sim")
     data = open(f).read().strip()
     os.remove(f)
-    if data == 'fail1':
-        failsim = 1
-    elif data == 'fail2':
-        failsim = 2
-    elif data == 'fail4':
-        failsim = 4
-    else:
-        failsim = 0
+    failsim = data
     return True
 
 class HX711Exception(Exception):
@@ -30,6 +23,8 @@ class HX711:
     def __init__(self, d_out, pd_sck):
         global singleton
         singleton = self
+        if failsim == "init":
+            raise HX711Exception()
         pass
 
     def read(self):

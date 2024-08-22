@@ -4,10 +4,23 @@
 
 runme
 
+./entool flush
 ./entool bla ble 5 rx 90 pairreq
 ./entool bla ble 5 tx ts
 ./entool bla ble 5 rx 60 data
 
-sleep 5
+sleep 3
+quit
 
+sleep 3
+
+hx711f init
+runme
+
+./entool flush
+./entool bla ble 5 rx 90 wakeup
+./entool bla ble 5 tx ts confirm lasttid
+./entool bla ble 5 rx 60 data
+
+sleep 3
 quit

@@ -38,6 +38,9 @@ def mac_b2s(mac):
 def b2s(data):
     return ':'.join([f"{b:02X}" for b in data])
 
+def s2b(s):
+    return bytes(int(x, 16) for x in s.split(':'))
+
 group_size = const(8)
 hmac_size = const(12)
 tid_size = const(12)

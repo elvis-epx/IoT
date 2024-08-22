@@ -6,6 +6,7 @@ from espnowtool.utils import group_hash, prepare_key
 def usage():
     print("Usage: entool <psk> <group> <channel> tx <packet type> [<arg1> <value1>]...")
     print("              <psk> <group> <channel> rx <timeout> <packet type> [<arg1> <value1>]...")
+    print("              flush [<arg1> <value1>]...")
     sys.exit(1)
 
 def find_args(n):
@@ -13,6 +14,10 @@ def find_args(n):
     for i in range(n, len(sys.argv), 2):
         args[sys.argv[i]] = sys.argv[i+1]
     return args
+
+def flush():
+    args = find_args(2)
+    flush_rx_packets(args)
 
 def rx():
     psk = prepare_key(sys.argv[1].encode())
@@ -43,5 +48,7 @@ def run():
         rx()
     elif len(sys.argv) >= 6 and sys.argv[4] == "tx":
         tx()
+    elif len(sys.argv) >= 2 and sys.argv[1] == "flush":
+        flush()
     else:
         usage()
