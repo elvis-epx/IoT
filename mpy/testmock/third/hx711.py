@@ -28,7 +28,11 @@ class HX711:
         pass
 
     def read(self):
+        if failsim == "read":
+            raise HX711Exception()
         return 50.0
 
     def power_off(self):
+        if failsim == "poweroff":
+            raise HX711Exception()
         pass
