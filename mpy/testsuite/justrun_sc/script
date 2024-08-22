@@ -47,3 +47,27 @@ runme
 
 sleep 3
 quit
+
+sleep 3
+hx711f unstable
+runme
+
+./entool flush
+./entool bla ble 5 rx 90 wakeup
+./entool bla ble 5 tx ts confirm lasttid
+./entool bla ble 5 rx 90 data
+
+sleep 3
+quit
+
+sleep 3
+hx711f unstable2
+runme
+
+./entool flush
+./entool bla ble 5 rx 90 wakeup
+./entool bla ble 5 tx ts confirm lasttid
+./entool bla ble 5 rx 120 data
+
+sleep 3
+quit
