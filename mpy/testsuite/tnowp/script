@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+
+touch ${TEST_FOLDER}/tnowpsend.sim
+./entool flush
+./entool bla ble 5 rx 90 pairreq
+./entool bla ble 5 tx ts
+./entool bla ble 5 rx 60 data
+
+quit

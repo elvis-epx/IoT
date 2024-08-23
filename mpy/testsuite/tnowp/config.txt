@@ -1,0 +1,3 @@
+espnowpsk bla
+espnowgroup ble
+watchdog 0

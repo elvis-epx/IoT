@@ -24,11 +24,7 @@ class Forwarder():
             return
 
         if data[0] == "stat/TNow/Value":
-            try:
-                self._value = float(data[1])
-            except ValueError:
-                print("recv_data: invalid value")
-                return
+            self._value = data[1]
             self.pub.forcepub()
             return
             
