@@ -14,6 +14,12 @@ def test_mock():
     if not singleton:
         return False
 
+    try:
+        os.mkdir('espnow_packets')
+    except OSError as e:
+        # Most probably existing folder
+        pass
+
     for f in sorted(os.listdir('espnow_packets/')):
         if not f.endswith(".rx"):
             continue
@@ -41,24 +47,12 @@ def test_mock():
 
     return False
 
-def clean_packets():
-    try:
-        os.mkdir('espnow_packets')
-    except OSError as e:
-        # Most probably existing folder
-        pass
-
-    for f in os.listdir('espnow_packets/'):
-        os.unlink("espnow_packets/" + f)
-
 def write_packet(data):
     f = "espnow_packets/%.9f.tx" % time.time()
     open(f, "wb").write(data)
 
 class ESPNow:
     def __init__(self):
-        clean_packets()
-
         f = "espnow_role"
         role = open(f).read().strip()
         if role == "central":
@@ -73,6 +67,8 @@ class ESPNow:
 
         global singleton
         singleton = self
+        # recv outstanding mocked packets immediately
+        test_mock()
 
     def fileno(self):
         return self.pipe_r.fileno()

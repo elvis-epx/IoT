@@ -1,4 +1,4 @@
-import sys, time
+import sys, time, os
 from espnowtool.rx import *
 from espnowtool.tx import *
 from espnowtool.utils import group_hash, prepare_key
@@ -43,12 +43,23 @@ def tx():
 
     tx_packet(psk, group, channel, pkttype, args)
 
+def mkdir():
+    try:
+        folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
+        os.mkdir(folder)
+    except OSError as e:
+        # Most probably existing folder
+        pass
+
 def run():
     if len(sys.argv) >= 7 and sys.argv[4] == "rx":
+        mkdir()
         rx()
     elif len(sys.argv) >= 6 and sys.argv[4] == "tx":
+        mkdir()
         tx()
     elif len(sys.argv) >= 2 and sys.argv[1] == "flush":
+        mkdir()
         flush()
     else:
         usage()

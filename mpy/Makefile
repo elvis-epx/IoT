@@ -6,7 +6,7 @@ PORT := $(shell cat serial.txt)
 all: scr
 
 clean: clean-coverage
-	rm -rf `find . -name __pycache__` `find . -name tmppiggy`
+	rm -rf `find . -name __pycache__` `find . -name tmppiggy` `find . -name espnow_packets`
 
 scr:
 	screen /dev/$(PORT) 115200

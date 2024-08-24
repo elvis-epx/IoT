@@ -2,6 +2,10 @@
 
 . testsuite/defs.sh
 
+# should be discarded
+./entool bla ble 0 tx ts
+touch $TEST_FOLDER/pair.txt
+
 runme
 
 ./entool flush
