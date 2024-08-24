@@ -31,7 +31,7 @@ class Service():
             packet = "stat/LPScale/Malfunction\n%d" % malfunction
 
         print("Sending", packet)
-        self.netnow.send_data_unconfirmed(packet.encode())
+        self.netnow.send_data(packet.encode(), confirm_mode=0)
         Task(False, "stop", self.stop, 1 * SECONDS)
 
     def stop(self, _):

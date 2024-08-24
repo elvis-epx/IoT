@@ -287,7 +287,10 @@ class NetNowPeripheral:
         buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
-        self.impl.send(self.manager, buf, False)
+        try:
+            self.impl.send(self.manager, buf, True)
+        except OSError as err:
+            pass
         print("sent wakeup tid", b2s(tid))
 
         def confirm(timestamp, my_timestamp):
@@ -340,9 +343,9 @@ class NetNowPeripheral:
     def timestamp_current(self):
         return self.timestamp_recv + self.timestamp_delay + self.timestamp_age.elapsed()
 
-    # TODO refactor to use on_tid_confirm
+    # TODO implement confirm_mode > 1 and add support to use on_tid_confirm
 
-    def send_data_unconfirmed(self, payload):
+    def send_data(self, payload, confirm_mode):
         if not self.is_ready():
             return False
 
@@ -356,33 +359,19 @@ class NetNowPeripheral:
         buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
 
-        self.impl.send(self.manager, buf, False)
-        print("sent data tid", b2s(tid))
-        return True
-
-    def send_data_confirmed(self, payload):
-        if not self.is_ready():
-            return False
-
-        tid = gen_tid()
-        buf = bytearray([version, type_data])
-        buf += self.group
-        buf += encode_timestamp(self.timestamp_current())
-        buf += tid
-        buf += payload
-
-        buf = encrypt(self.psk, buf)
-        buf += hmac(self.psk, buf)
+        # ESP-NOW inherent confirmation (retries up to 25ms)
+        espnow_confirm = (confirm_mode == 1)
 
         try:
-            # return ESP-NOW inherent confirmation (retries up to 25ms)
-            res = self.impl.send(self.manager, buf, True)
-            print("sent data tid", b2s(tid))
+            res = self.impl.send(self.manager, buf, espnow_confirm) \
+                    or not espnow_confirm
         except OSError as err:
             if err.errno == errno.ETIMEDOUT:
                 # observed in tests
-                res = False
-            else:
-                # should not happen
-                raise
+                return False
+            # should not happen
+            raise
+
+        if res:
+            print("sent data tid", b2s(tid))
         return res
