@@ -87,7 +87,7 @@ class NetNowPeripheral:
         self.implnet.config(channel=self.channel)
         self.recv_tasks()
         print("netnow: paired w/", manager, "channel", self.channel)
-        self.wakeup_task = self.sm.recurring_task("netnowp_wakeup", self.send_wakeup, 1 * SECONDS)
+        self.wakeup_task = self.sm.recurring_task("netnowp_wakeup", self.send_wakeup, 5 * SECONDS)
         self.wakeup_task.advance()
 
     def scan_channel(self, _):
@@ -290,7 +290,7 @@ class NetNowPeripheral:
         try:
             self.impl.send(self.manager, buf, True)
         except OSError as err:
-            pass
+            return
         print("sent wakeup tid", b2s(tid))
 
         def confirm(timestamp, my_timestamp):
@@ -367,7 +367,7 @@ class NetNowPeripheral:
                     or not espnow_confirm
         except OSError as err:
             if err.errno == errno.ETIMEDOUT:
-                # observed in tests
+                # observed in tests (when espnow_confirm is True)
                 return False
             # should not happen
             raise
