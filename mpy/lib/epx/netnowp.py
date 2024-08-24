@@ -91,9 +91,8 @@ class NetNowPeripheral:
         self.wakeup_task.advance()
 
     def scan_channel(self, _):
-        self.channel += 1
-        if self.channel > 13:
-            self.channel = 1
+        # increment channel and keep it in the range 1..13
+        self.channel = self.channel % 13 + 1
         self.implnet.config(channel=self.channel)
         print("netnow: now scanning channel",  self.channel)
 
