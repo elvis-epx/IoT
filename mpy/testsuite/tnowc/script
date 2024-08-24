@@ -11,6 +11,18 @@ wifi GOT_IP
 sleep 1
 ./entool bla ble 0 tx data payload "stat/TNow/Value\n1"
 ./entool bla ble 0 rx 5 ts confirm 1 tid lasttx
+sleep 1
+./entool bla ble 0 tx data payload "moo" badhmac 1
+sleep 1
+./entool bla ble 0 tx data payload "moo" badcrypt 1
+sleep 1
+./entool bla ble 0 tx data payload "moo" badgroup 1
+sleep 1
+./entool bla ble 0 tx data payload "moo" badlen 1
+sleep 1
+./entool bla ble 0 tx data payload "moo" badversion 1
+sleep 1
+./entool bla ble 0 tx badtype
 
 sleep 5
 quit
