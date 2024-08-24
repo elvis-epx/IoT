@@ -41,6 +41,8 @@ def gen_ts(buf, args):
         tid = args['confirm']
         if tid == "lasttid":
             tid = latest_received_tid()
+        else:
+            tid = s2b(tid)
     buf += bytearray([subtype])
     buf += gen_tid_central('sametid' in args)
     timestamp = int(time.time() * 1000)

@@ -11,6 +11,11 @@ touch ${TEST_FOLDER}/tnowpsend.sim
 sleep 1
 touch ${TEST_FOLDER}/tnowpsend.sim
 ./entool bla ble 5 rx 60 data
+./entool bla ble 5 tx ts confirm lasttid
+sleep 1
+./entool bla ble 5 tx ts confirm lasttid # repeated to detect replay
+sleep 1
+./entool bla ble 5 tx ts confirm lasttid badlen3 1
 sleep 1
 ./entool bla ble 5 tx ts badhmac 1
 sleep 1
@@ -23,8 +28,6 @@ sleep 1
 ./entool bla ble 5 tx ts badgroup 1
 sleep 1
 ./entool bla ble 5 tx ts badlen2 1
-sleep 1
-./entool bla ble 5 tx ts badlen3 1
 sleep 1
 ./entool bla ble 5 tx badtype
 sleep 1
