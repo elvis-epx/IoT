@@ -11,5 +11,26 @@ touch ${TEST_FOLDER}/tnowpsend.sim
 sleep 1
 touch ${TEST_FOLDER}/tnowpsend.sim
 ./entool bla ble 5 rx 60 data
+sleep 1
+./entool bla ble 5 tx ts badhmac 1
+sleep 1
+./entool bla ble 5 tx ts badcrypt 1
+sleep 1
+./entool bla ble 5 tx ts badlen 1
+sleep 1
+./entool bla ble 5 tx ts badversion 1
+sleep 1
+./entool bla ble 5 tx ts badgroup 1
+sleep 1
+./entool bla ble 5 tx ts badlen2 1
+sleep 1
+./entool bla ble 5 tx ts badlen3 1
+sleep 1
+./entool bla ble 5 tx badtype
+sleep 1
+./entool bla ble 5 tx ts
+sleep 1
+./entool bla ble 5 tx ts sametid 1
+sleep 2
 
 quit
