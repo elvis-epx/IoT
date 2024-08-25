@@ -63,6 +63,24 @@ def gen_data(buf, args):
     buf += args["payload"].replace("\\n", "\n").encode(args.get('encoding', 'utf-8'))
     return buf
 
+# When mocking a peripheral, generate a pair request
+def gen_pairreq(buf, args):
+    buf += encode_timestamp(0)
+    buf += bytearray([0 for _ in range(0, tid_size)])
+    return buf
+
+# When mocking a peripheral, generate a ping packet
+def gen_ping(buf, args):
+    buf += gen_timestamp_peripheral()
+    buf += gen_tid_peripheral()
+    return buf
+
+# When mocking a peripheral, generate a wakeup packet
+def gen_wakeup(buf, args):
+    buf += encode_timestamp(0)
+    buf += gen_tid_peripheral()
+    return buf
+
 # When mocking a peripheral (for now) generate a data packet with unsupported type
 def gen_badtype(buf, args):
     buf += b'01234567'
@@ -70,6 +88,9 @@ def gen_badtype(buf, args):
 
 pkttypes = {"ts": (type_timestamp, gen_ts, broadcast_mac),
             "data": (type_data, gen_data, other_mac),
+            "pairreq": (type_pairreq, gen_pairreq, broadcast_mac),
+            "ping": (type_ping, gen_ping, other_mac),
+            "wakeup": (type_wakeup, gen_wakeup, other_mac),
             "badtype": (66, gen_badtype, other_mac) }
 
 def tx_packet(psk, group, channel, pkttypename, args):

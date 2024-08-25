@@ -23,6 +23,20 @@ sleep 1
 ./entool bla ble 0 tx data payload "moo" badversion 1
 sleep 1
 ./entool bla ble 0 tx badtype
+sleep 1
+wifi UNDEF_ERROR
+advance 60000
+sleep 5
+wifi GOT_IP
+sleep 5
+./entool bla ble 0 tx pairreq
+./entool bla ble 0 rx 5 ts
+sleep 3
+./entool bla ble 0 tx wakeup
+./entool bla ble 0 rx 5 ts confirm 1 tid lasttx
+sleep 3
+./entool bla ble 0 tx ping
+./entool bla ble 0 rx 5 ts confirm 1 tid lasttx
 
 sleep 5
 quit
