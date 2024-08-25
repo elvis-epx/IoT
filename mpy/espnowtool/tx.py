@@ -2,17 +2,17 @@ from espnowtool.utils import *
 import time
 import os
 
+folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
+
 # When mocking a peripheral, generate timestamp as a peripheral should do
 # i.e. using last network-provided timestamp and add local clock advancement
 def gen_timestamp_peripheral(offset):
-    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
     net_ts, base = [int(n) for n in open(folder + "ts").read().split(" ")]
     t = int(time.time() * 1000) - base + net_ts + offset
     return encode_timestamp(t)
 
 # When mocking a peripheral, generate TID and save for later confirmation
 def gen_tid_peripheral(repeat_last):
-    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
     if repeat_last:
         tid = s2b(open(folder + "tx_tid").read())
     else:
@@ -22,7 +22,6 @@ def gen_tid_peripheral(repeat_last):
 
 # When mocking a center, generate TID and save for later usage
 def gen_tid_central(repeat_last):
-    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
     if repeat_last:
         tid = s2b(open(folder + "txc_tid").read())
     else:
@@ -32,7 +31,6 @@ def gen_tid_central(repeat_last):
 
 # When mocking a central, return latest TID sent by peripheral
 def latest_received_tid():
-    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
     return s2b(open(folder + "rx_tid", "r").read())
 
 # When mocking a central, generate a timestamp/confirm packet
@@ -48,7 +46,12 @@ def gen_ts(buf, args):
             tid = s2b(tid)
     buf += bytearray([subtype])
     buf += gen_tid_central('sametid' in args)
-    timestamp = int(time.time() * 1000) + int(args.get('tsoffset', 0))
+    if 'replay' in args:
+        timestamp = decode_timestamp(open(folder + "latest_ts", "rb").read())
+    else:
+        timestamp = int(time.time() * 1000)
+    timestamp += int(args.get('tsoffset', 0))
+    open(folder + "latest_ts", "wb").write(encode_timestamp(timestamp))
     buf += encode_timestamp(timestamp)
     if subtype == timestamp_subtype_confirm:
         buf += tid
