@@ -21,6 +21,7 @@ hx711f init
 runme
 
 ./entool flush
+./entool bla ble 5 tx ts # should be ignored by DUT
 ./entool bla ble 5 rx 90 wakeup
 ./entool bla ble 5 tx ts confirm lasttid
 ./entool bla ble 5 rx 60 data

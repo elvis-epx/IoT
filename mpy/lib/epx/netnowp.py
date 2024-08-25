@@ -183,20 +183,16 @@ class NetNowPeripheral:
             # network time unknown (device just started up)
 
             if self.sm.state == 'unpaired':
-                # trust right away
                 print("...timestamp trusted bc unpaired", timestamp % 1000000)
                 processing_delay = self.timestamp_current() - my_timestamp
                 self.rebase_timestamp(timestamp, processing_delay)
                 return True
 
             if subtype == timestamp_subtype_default:
-                # send ping to confirm it is legit
-                print("...timestamp untrusted", timestamp % 1000000)
-                self.send_ping(timestamp)
-                # (TID confirmation callback will fill timestamp_recv)
+                print("...timestamp untrusted bc waiting wakeup", timestamp % 1000000)
                 return False
 
-            # ping confirm comes through here
+            # wakeup confirm comes through here
             return True
 
         # timestamp already known
@@ -308,9 +304,6 @@ class NetNowPeripheral:
     def send_ping(self, putative_timestamp):
         if (self.last_ping is not None) and self.last_ping.elapsed() < 10 * SECONDS:
             print("ping still in flight, not sending another")
-            return
-        elif self.wakeup_task is not None:
-            print("still in wakeup phase, do not send ping")
             return
         self.last_ping = Shortcronometer()
 
