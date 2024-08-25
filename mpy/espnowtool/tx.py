@@ -4,10 +4,10 @@ import os
 
 # When mocking a peripheral, generate timestamp as a peripheral should do
 # i.e. using last network-provided timestamp and add local clock advancement
-def gen_timestamp_peripheral():
+def gen_timestamp_peripheral(offset):
     folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
     net_ts, base = [int(n) for n in open(folder + "ts").read().split(" ")]
-    t = int(time.time() * 1000) - base + net_ts
+    t = int(time.time() * 1000) - base + net_ts + offset
     return encode_timestamp(t)
 
 # When mocking a peripheral, generate TID and save for later confirmation
@@ -61,7 +61,7 @@ def gen_ts(buf, args):
 
 # When mocking a peripheral (for now) generate a data packet
 def gen_data(buf, args):
-    buf += gen_timestamp_peripheral()
+    buf += gen_timestamp_peripheral(int(args.get('tsoffset', 0)))
     buf += gen_tid_peripheral('sametid' in args)
     buf += args["payload"].replace("\\n", "\n").encode(args.get('encoding', 'utf-8'))
     return buf
@@ -74,7 +74,7 @@ def gen_pairreq(buf, args):
 
 # When mocking a peripheral, generate a ping packet
 def gen_ping(buf, args):
-    buf += gen_timestamp_peripheral()
+    buf += gen_timestamp_peripheral(int(args.get('tsoffset', 0)))
     buf += gen_tid_peripheral('sametid' in args)
     return buf
 
@@ -86,7 +86,7 @@ def gen_wakeup(buf, args):
 
 # When mocking a peripheral (for now) generate a data packet with unsupported type
 def gen_badtype(buf, args):
-    buf += gen_timestamp_peripheral()
+    buf += gen_timestamp_peripheral(int(args.get('tsoffset', 0)))
     buf += gen_tid_peripheral('sametid' in args)
     return buf
 
