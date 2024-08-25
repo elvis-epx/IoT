@@ -40,6 +40,7 @@ sleep 1
 ./entool bla ble 5 tx ts replay 1
 sleep 1
 ./entool bla ble 5 tx ts tsoffset 1000000
+./entool bla ble 5 tx ts tsoffset 1000000 # DUT should send only one ping
 sleep 1
 ./entool bla ble 5 rx 2 ping
 ./entool bla ble 5 tx ts confirm lasttid tsoffset 1000000
