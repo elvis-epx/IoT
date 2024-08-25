@@ -290,14 +290,12 @@ class NetNowPeripheral:
         print("sent wakeup tid", b2s(tid))
 
         def confirm(timestamp, my_timestamp):
-            if self.wakeup_task is None:
-                # another wakeup tid already confirmed
-                return
-            print("timestamp confirmed by wakeup:", timestamp % 1000000)
-            processing_delay = self.timestamp_current() - my_timestamp
-            self.rebase_timestamp(timestamp, processing_delay)
-            self.wakeup_task.cancel()
-            self.wakeup_task = None
+            if self.wakeup_task is not None:
+                print("timestamp confirmed by wakeup:", timestamp % 1000000)
+                processing_delay = self.timestamp_current() - my_timestamp
+                self.rebase_timestamp(timestamp, processing_delay)
+                self.wakeup_task.cancel()
+                self.wakeup_task = None
 
         self.on_tid_confirm(1 * SECONDS, tid, confirm)
 
@@ -362,7 +360,7 @@ class NetNowPeripheral:
                 # observed in tests (when espnow_confirm is True)
                 return not espnow_confirm
             # should not happen
-            raise
+            raise # pragma: no cover
 
         if res:
             print("sent data tid", b2s(tid))
