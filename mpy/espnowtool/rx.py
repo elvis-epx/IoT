@@ -2,7 +2,7 @@ from espnowtool.utils import *
 import time
 import os
 
-pkttypes = {"pairreq": type_pairreq, "data": type_data, "ts": type_timestamp, "wakeup": type_wakeup}
+pkttypes = {"pairreq": type_pairreq, "data": type_data, "ts": type_timestamp, "wakeup": type_wakeup, "any": 0}
 
 def flush_rx_packets(args):
     folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
@@ -66,7 +66,7 @@ def rx_packet_in2(psk, group, exptype, smac, msg, args):
     if pktgroup != group:
         print("entool: pkt group", pktgroup, "expected", group)
         return None
-    if exptype != pkttype:
+    if exptype != 0 and exptype != pkttype:
         print("entool: type expected", exptype, "received", pkttype)
         return None
 

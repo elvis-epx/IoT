@@ -6,6 +6,7 @@ from espnowtool.utils import group_hash, prepare_key
 def usage():
     print("Usage: entool <psk> <group> <channel> tx <packet type> [<arg1> <value1>]...")
     print("              <psk> <group> <channel> rx <timeout> <packet type> [<arg1> <value1>]...")
+    print("              <psk> <group> <channel> norx <timeout>")
     print("              flush [<arg1> <value1>]...")
     sys.exit(1)
 
@@ -34,6 +35,20 @@ def rx():
     print("entool: failed to receive expected packet")
     sys.exit(1)
 
+def norx():
+    psk = prepare_key(sys.argv[1].encode())
+    group = group_hash(sys.argv[2].encode())
+    channel = int(sys.argv[3])
+    timeout = int(sys.argv[5]) + time.time()
+    args = find_args(6)
+
+    pkt = rx_packet(psk, group, channel, timeout, "any", args)
+    if pkt:
+        print("entool: received unexpected packet")
+        sys.exit(1)
+    print("entool: no packet received (good)")
+    sys.exit(0)
+
 def tx():
     psk = prepare_key(sys.argv[1].encode())
     group = group_hash(sys.argv[2].encode())
@@ -55,6 +70,9 @@ def run():
     if len(sys.argv) >= 7 and sys.argv[4] == "rx":
         mkdir()
         rx()
+    if len(sys.argv) >= 6 and sys.argv[4] == "norx":
+        mkdir()
+        norx()
     elif len(sys.argv) >= 6 and sys.argv[4] == "tx":
         mkdir()
         tx()
