@@ -35,5 +35,14 @@ sleep 1
 sleep 1
 ./entool bla ble 5 tx ts sametid 1
 sleep 2
+./entool bla ble 5 tx ts
+sleep 1
+./entool bla ble 5 tx ts replay 1
+sleep 1
+./entool bla ble 5 tx ts tsoffset 1000000
+sleep 1
+./entool bla ble 5 rx 2 ping
+./entool bla ble 5 tx ts confirm lasttid tsoffset 1000000
+sleep 5
 
 quit

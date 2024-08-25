@@ -48,7 +48,7 @@ def gen_ts(buf, args):
             tid = s2b(tid)
     buf += bytearray([subtype])
     buf += gen_tid_central('sametid' in args)
-    timestamp = int(time.time() * 1000)
+    timestamp = int(time.time() * 1000) + int(args.get('tsoffset', 0))
     buf += encode_timestamp(timestamp)
     if subtype == timestamp_subtype_confirm:
         buf += tid

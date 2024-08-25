@@ -2,7 +2,7 @@ from espnowtool.utils import *
 import time
 import os
 
-pkttypes = {"pairreq": type_pairreq, "data": type_data, "ts": type_timestamp, "wakeup": type_wakeup, "any": 0}
+pkttypes = {"pairreq": type_pairreq, "data": type_data, "ts": type_timestamp, "wakeup": type_wakeup, "ping": type_ping, "any": 0}
 
 def flush_rx_packets(args):
     folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
@@ -143,4 +143,13 @@ def rx_wakeup(msg, args, res):
     open(folder + "rx_tid", "w").write(tid)
     return res
 
-handlers = {type_pairreq: rx_pairreq, type_data: rx_data, type_timestamp: rx_timestamp, type_wakeup: rx_wakeup}
+# as central
+def rx_ping(msg, args, res):
+    timestamp, msg = decode_timestamp(msg[0:timestamp_size]), msg[timestamp_size:]
+    tid = b2s(msg[0:tid_size])
+    print("entool: ping received, tid", tid)
+    folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
+    open(folder + "rx_tid", "w").write(tid)
+    return res
+
+handlers = {type_pairreq: rx_pairreq, type_data: rx_data, type_timestamp: rx_timestamp, type_wakeup: rx_wakeup, type_ping: rx_ping}
