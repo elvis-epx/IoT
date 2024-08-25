@@ -30,7 +30,7 @@ sleep 1
 sleep 1
 ./entool bla ble 0 tx data payload "moo" badversion 1
 sleep 1
-./entool bla ble 0 tx badtype
+./entool bla ble 0 tx badtypep
 sleep 1
 
 wifi UNDEF_ERROR

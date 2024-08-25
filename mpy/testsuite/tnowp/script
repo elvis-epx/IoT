@@ -29,7 +29,7 @@ sleep 1
 sleep 1
 ./entool bla ble 5 tx ts badlen2 1
 sleep 1
-./entool bla ble 5 tx badtype
+./entool bla ble 5 tx badtypec
 sleep 1
 ./entool bla ble 5 tx ts
 sleep 1

@@ -84,10 +84,15 @@ def gen_wakeup(buf, args):
     buf += gen_tid_peripheral('sametid' in args)
     return buf
 
-# When mocking a peripheral (for now) generate a data packet with unsupported type
-def gen_badtype(buf, args):
+# When mocking a peripheral generate a data packet with unsupported type
+def gen_badtypep(buf, args):
     buf += gen_timestamp_peripheral(int(args.get('tsoffset', 0)))
     buf += gen_tid_peripheral('sametid' in args)
+    return buf
+
+# When mocking a central generate a data packet with unsupported type
+def gen_badtypec(buf, args):
+    buf += b'01234567'
     return buf
 
 pkttypes = {"ts": (type_timestamp, gen_ts, broadcast_mac),
@@ -95,7 +100,8 @@ pkttypes = {"ts": (type_timestamp, gen_ts, broadcast_mac),
             "pairreq": (type_pairreq, gen_pairreq, broadcast_mac),
             "ping": (type_ping, gen_ping, other_mac),
             "wakeup": (type_wakeup, gen_wakeup, other_mac),
-            "badtype": (66, gen_badtype, other_mac) }
+            "badtypep": (66, gen_badtypep, other_mac),
+            "badtypec": (66, gen_badtypec, other_mac) }
 
 def tx_packet(psk, group, channel, pkttypename, args):
     badpsk = list(psk)
