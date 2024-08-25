@@ -343,8 +343,6 @@ class NetNowPeripheral:
     def timestamp_current(self):
         return self.timestamp_recv + self.timestamp_delay + self.timestamp_age.elapsed()
 
-    # TODO implement confirm_mode > 1 and add support to use on_tid_confirm
-
     def send_data(self, payload, confirm_mode):
         if not self.is_ready():
             return False
@@ -361,6 +359,7 @@ class NetNowPeripheral:
 
         # ESP-NOW inherent confirmation (retries up to 25ms)
         espnow_confirm = (confirm_mode == 1)
+        # TODO implement confirm_mode > 1 and add support to use on_tid_confirm
 
         try:
             res = self.impl.send(self.manager, buf, espnow_confirm) \
@@ -368,7 +367,7 @@ class NetNowPeripheral:
         except OSError as err:
             if err.errno == errno.ETIMEDOUT:
                 # observed in tests (when espnow_confirm is True)
-                return False
+                return not espnow_confirm
             # should not happen
             raise
 
