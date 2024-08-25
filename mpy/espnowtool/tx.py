@@ -11,10 +11,13 @@ def gen_timestamp_peripheral():
     return encode_timestamp(t)
 
 # When mocking a peripheral, generate TID and save for later confirmation
-def gen_tid_peripheral():
+def gen_tid_peripheral(repeat_last):
     folder = os.environ["TEST_FOLDER"] + "/espnow_packets/"
-    tid = gen_tid()
-    open(folder + "tx_tid", "w").write(b2s(tid))
+    if repeat_last:
+        tid = s2b(open(folder + "tx_tid").read())
+    else:
+        tid = gen_tid()
+        open(folder + "tx_tid", "w").write(b2s(tid))
     return tid
 
 # When mocking a center, generate TID and save for later usage
@@ -59,7 +62,7 @@ def gen_ts(buf, args):
 # When mocking a peripheral (for now) generate a data packet
 def gen_data(buf, args):
     buf += gen_timestamp_peripheral()
-    buf += gen_tid_peripheral()
+    buf += gen_tid_peripheral('sametid' in args)
     buf += args["payload"].replace("\\n", "\n").encode(args.get('encoding', 'utf-8'))
     return buf
 
@@ -72,13 +75,13 @@ def gen_pairreq(buf, args):
 # When mocking a peripheral, generate a ping packet
 def gen_ping(buf, args):
     buf += gen_timestamp_peripheral()
-    buf += gen_tid_peripheral()
+    buf += gen_tid_peripheral('sametid' in args)
     return buf
 
 # When mocking a peripheral, generate a wakeup packet
 def gen_wakeup(buf, args):
     buf += encode_timestamp(0)
-    buf += gen_tid_peripheral()
+    buf += gen_tid_peripheral('sametid' in args)
     return buf
 
 # When mocking a peripheral (for now) generate a data packet with unsupported type

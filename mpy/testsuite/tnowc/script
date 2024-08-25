@@ -37,6 +37,8 @@ sleep 3
 sleep 3
 ./entool bla ble 0 tx ping
 ./entool bla ble 0 rx 5 ts confirm 1 tid lasttx
+./entool bla ble 0 tx data payload "stat/TNow/Value\n1" sametid 1
+# ./entool bla ble 0 norx 1
 
 sleep 5
 quit

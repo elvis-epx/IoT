@@ -64,6 +64,7 @@ class ESPNow:
         self.bcast_mac = b"\xff\xff\xff\xff\xff\xff"
         self._active = False
         self.pipe_r, self.pipe_w = socket.socketpair()
+        self.peers = {}
 
         global singleton
         singleton = self
@@ -81,10 +82,13 @@ class ESPNow:
         return bool(r)
 
     def add_peer(self, mac):
-        pass
+        self.peers[mac] = 1
 
     def del_peer(self, mac):
-        pass
+        try:
+            del self.peers[mac]
+        except KeyError:
+            raise OSError("del_peer")
 
     def send(self, mac, data, confirmed):
         packet = bytes([machine._wifi.config('channel')]) + \
