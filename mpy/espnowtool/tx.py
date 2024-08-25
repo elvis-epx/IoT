@@ -86,7 +86,8 @@ def gen_wakeup(buf, args):
 
 # When mocking a peripheral (for now) generate a data packet with unsupported type
 def gen_badtype(buf, args):
-    buf += b'01234567'
+    buf += gen_timestamp_peripheral()
+    buf += gen_tid_peripheral('sametid' in args)
     return buf
 
 pkttypes = {"ts": (type_timestamp, gen_ts, broadcast_mac),
