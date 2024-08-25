@@ -358,7 +358,7 @@ class NetNowPeripheral:
         except OSError as err:
             if err.errno == errno.ETIMEDOUT:
                 # observed in tests (when espnow_confirm is True)
-                return not espnow_confirm
+                return False
             # should not happen
             raise # pragma: no cover
 
