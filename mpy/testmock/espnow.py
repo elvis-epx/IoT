@@ -3,6 +3,7 @@ import os.path
 import time
 import socket
 from select import select
+import errno
 
 import machine
 
@@ -91,11 +92,22 @@ class ESPNow:
             raise OSError("del_peer")
 
     def send(self, mac, data, confirmed):
+        if confirmed:
+            f = "espnow_sendfail.sim"
+            if os.path.exists(f):
+                fail = open(f).read().strip()
+                os.unlink(f)
+                if fail == "false":
+                    return False
+                elif fail == "exception":
+                    raise OSError(errno.ETIMEDOUT, "Timeout")
+
         packet = bytes([machine._wifi.config('channel')]) + \
                 mac + \
                 self.my_mac + \
                 data
         write_packet(packet)
+        return True
 
     def recv(self):
         self.pipe_r.recv(1)

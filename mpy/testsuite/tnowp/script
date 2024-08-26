@@ -44,6 +44,15 @@ sleep 1
 sleep 1
 ./entool bla ble 5 rx 2 ping
 ./entool bla ble 5 tx ts confirm lasttid tsoffset 1000000
+sleep 1
+echo "confirm" > ${TEST_FOLDER}/tnowpsend.sim
+./entool bla ble 5 rx 60 data
+./entool bla ble 5 tx ts confirm lasttid tsoffset 1000000
+sleep 1
+echo "exception" > ${TEST_FOLDER}/espnow_sendfail.sim
+echo "confirm" > ${TEST_FOLDER}/tnowpsend.sim
+./entool bla ble 5 norx 1
+
 sleep 5
 
 quit
