@@ -53,6 +53,17 @@ echo "exception" > ${TEST_FOLDER}/espnow_sendfail.sim
 echo "confirm" > ${TEST_FOLDER}/tnowpsend.sim
 ./entool bla ble 5 norx 1
 
-sleep 5
+sleep 3
+quit
 
+sleep 3
+# make first wakeup packet send to fail
+echo "exception" > ${TEST_FOLDER}/espnow_sendfail.sim
+runme
+
+./entool flush
+./entool bla ble 5 rx 90 wakeup
+./entool bla ble 5 tx ts confirm lasttid
+
+sleep 5
 quit
