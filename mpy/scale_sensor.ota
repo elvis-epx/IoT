@@ -6,6 +6,7 @@ lib/epx/netnow.py
 lib/epx/netnowp.py
 lib/epx/watchdog.py
 lib/epx/loop.py
+lib/epx/nvram.py
 
 lib/third/__init__.py
 lib/third/hx711.py

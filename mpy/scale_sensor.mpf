@@ -6,6 +6,7 @@ put lib/epx/netnow.py /lib/epx/netnow.py
 put lib/epx/netnowp.py /lib/epx/netnowp.py
 put lib/epx/watchdog.py /lib/epx/watchdog.py
 put lib/epx/loop.py /lib/epx/loop.py
+put lib/epx/nvram.py /lib/epx/nvram.py
 
 md /lib/third
 put lib/third/__init__.py /lib/third/__init__.py
