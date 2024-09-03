@@ -4,54 +4,63 @@ from epx.loop import Task, SECONDS, MINUTES, StateMachine, Shortcronometer
 
 if hasattr(machine, 'TEST_ENV'):
     READ_EVERY = 1 * SECONDS
-    ENERGY_PUB_TIMEOUT = 60 * SECONDS
+    PUB_TIMEOUT = 60 * SECONDS
     STARTUP_TIMEOUT = 1 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 20 * SECONDS
 else: # pragma: no cover
     READ_EVERY = 1 * SECONDS
-    ENERGY_PUB_TIMEOUT = 6 * MINUTES
+    PUB_TIMEOUT = 60 * SECONDS
     STARTUP_TIMEOUT = 20 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 10 * MINUTES
 
+agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
+                  "Aavg": 0.0, "Amin": 999999.9, "Amax": 0.0, \
+                  "Wavg": 0.0, "Wmin": 999999.9, "Wmax": 0.0, \
+                  "pfavg": 0.0, "pfmin": 1.0, "pfmax": 0.0, \
+                  "n": 0}
+
 class Sensor:
     def __init__(self):
-        self.data = {"V": None, "A": None, "W": None, "Wh": None, "pf": None, "t": None, "Malfunction": 0}
-        self.energy_observer = None
-        self.energy_timer = None
+        self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
+                        "A": None, "Aavg": None, "Amin": None, "Amax": None, \
+                        "W": None, "Wavg": None, "Wmin": None, "Wmax": None, \
+                        "pf": None, "pfavg": None, "pfmin": None, "pfmax": None, \
+                        "Malfunction": 0, "t": None, "n": None}
+        self.agg_data = None
+        self.pub_list = []
+        self.pub_timer = None
         self.uart = machine.UART(2, baudrate=9600)
         sm = self.sm = StateMachine("sensor")
 
         sm.add_state("start", self.on_start)
         sm.add_state("startcompletion", self.on_startcompletion)
-        sm.add_state("resetenergy", self.on_resetenergy)
-        sm.add_state("resetenergycompletion", self.on_resetenergycompletion)
+        sm.add_state("startaggregation", self.on_startaggregation)
         sm.add_state("read", self.on_read)
         sm.add_state("readcompletion", self.on_readcompletion)
         sm.add_state("idle", self.on_idle)
-        sm.add_state("pubenergy", self.on_pubenergy)
+        sm.add_state("pubaggregate", self.on_pubaggregate)
         sm.add_state("failure", self.on_failure)
 
         sm.add_transition("initial", "start")
         sm.add_transition("start", "startcompletion")
         sm.add_transition("startcompletion", "failure")
-        sm.add_transition("startcompletion", "resetenergy")
-        sm.add_transition("resetenergy", "resetenergycompletion")
-        sm.add_transition("resetenergycompletion", "failure")
-        sm.add_transition("resetenergycompletion", "read")
+        sm.add_transition("startcompletion", "startaggregation")
+        sm.add_transition("startaggregation", "read")
         sm.add_transition("read", "readcompletion")
         sm.add_transition("readcompletion", "failure")
         sm.add_transition("readcompletion", "idle")
         sm.add_transition("idle", "read")
-        sm.add_transition("idle", "pubenergy")
-        sm.add_transition("pubenergy", "resetenergy")
+        sm.add_transition("idle", "pubaggregate")
+        sm.add_transition("pubaggregate", "startaggregation")
         sm.add_transition("failure", "start")
 
         self.sm.schedule_trans("start", STARTUP_TIMEOUT)
 
-    def register_energy_observer(self, observer):
-        self.energy_observer = observer
+    def pub_add(self, pub):
+        if pub not in self.pub_list:
+            self.pub_list.append(pub)
 
     def on_start(self):
         self.impl = PZEM(uart=self.uart)
@@ -61,24 +70,14 @@ class Sensor:
     def on_startcompletion(self):
         if not self.impl.complete_trans():
             print("Error while starting pzem")
-            self.data['Malfunction'] = 1
+            self.visible_data['Malfunction'] = 1
             self.sm.schedule_trans_now("failure")
             return
+        self.sm.schedule_trans_now("startaggregation")
 
-        self.sm.schedule_trans_now("resetenergy")
-
-    def on_resetenergy(self):
-        self.impl.reset_energy_start()
-        self.sm.schedule_trans("resetenergycompletion", RESPONSE_TIMEOUT)
-
-    def on_resetenergycompletion(self):
-        if not self.impl.complete_trans():
-            print("Error while resetting energy") 
-            self.data['Malfunction'] = 2
-            self.sm.schedule_trans_now("failure")
-            return
-
-        self.energy_timer = Shortcronometer()
+    def on_startaggregation(self):
+        self.agg_data = agg_data_clean.copy()
+        self.pub_timer = Shortcronometer()
         self.sm.schedule_trans_now("read")
 
     def on_read(self):
@@ -88,56 +87,50 @@ class Sensor:
     def on_readcompletion(self):
         if not self.impl.complete_trans():
             print("Error while reading energy") 
-            self.data['Malfunction'] = 4 
+            self.visible_data['Malfunction'] = 4 
             self.sm.schedule_trans_now("failure")
             return
 
-        self.data['Malfunction'] = 0
-        self.data.update(self.impl.get_data())
-        self.data['t'] = int(self.energy_timer.elapsed() / 1000)
+        self.visible_data['Malfunction'] = 0
+        sensor_data = self.impl.get_data()
+
+        self.visible_data.update(sensor_data)
+        self.visible_data['t'] = int(self.pub_timer.elapsed() / 1000)
+        self.update_aggregates(sensor_data)
+
         self.sm.schedule_trans_now("idle")
 
+    def update_aggregates(self, sensor_data):
+        w = self.agg_data["n"]
+        for k in ("V", "A", "W", "pf"):
+            self.agg_data[k + "avg"] = (self.agg_data[k + "avg"] * w + sensor_data[k]) / (w + 1.0)
+            self.agg_data[k + "min"] = min(self.agg_data[k + "min"], sensor_data[k])
+            self.agg_data[k + "max"] = max(self.agg_data[k + "max"], sensor_data[k])
+        self.agg_data["n"] += 1
+
     def on_idle(self):
-        if self.energy_timer.elapsed() > ENERGY_PUB_TIMEOUT:
-            self.sm.schedule_trans_now("pubenergy")
+        if self.pub_timer.elapsed() > PUB_TIMEOUT:
+            self.sm.schedule_trans_now("pubaggregate")
             return
         self.sm.schedule_trans("read", READ_EVERY)
 
-    def on_pubenergy(self):
-        if self.energy_observer:
-            self.energy_observer.please_publish()
-        self.sm.schedule_trans_now("resetenergy")
+    def on_pubaggregate(self):
+        if self.agg_data["n"] > 0:
+            self.visible_data.update(self.agg_data)
+            for pub in self.pub_list:
+                pub.forcepub()
+        self.sm.schedule_trans_now("startaggregation")
 
     def on_failure(self):
         self.sm.schedule_trans("start", FAILURE_TIMEOUT)
 
-    def voltage(self):
-        if self.data['Malfunction']:
+    def get_data(self, k):
+        if self.visible_data['Malfunction']:
             return None
-        return self.data['V']
-
-    def current(self):
-        if self.data['Malfunction']:
-            return None
-        return self.data['A']
-
-    def power(self):
-        if self.data['Malfunction']:
-            return None
-        return self.data['W']
-
-    def powerfactor(self):
-        if self.data['Malfunction']:
-            return None
-        return self.data['pf']
-
-    def energy(self):
-        if self.data['Malfunction'] or self.data['Wh'] is None:
-            return None # pragma: no cover
-        return (self.data['Wh'] + 0.0)
+        return self.visible_data[k]
 
     def malfunction(self):
-        return self.data['Malfunction']
+        return self.visible_data['Malfunction']
 
     def jsonish(self):
-        return str(self.data) + "\r\n"
+        return str(self.visible_data) + "\r\n"

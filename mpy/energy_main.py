@@ -7,7 +7,7 @@ from epx.net import Net
 from energy.sensor import Sensor
 from epx.mqtt import MQTT
 from epx.ota import mqtt_ota_start
-from energy.service import Voltage, Current, Power, PowerFactor, Energy, Malfunction, Ticker
+from energy.service import *
 
 config = Config()
 config.data['flavor'] = 'energy'
@@ -18,10 +18,17 @@ net = Net(config)
 mqtt = MQTT(config, net, watchdog)
 mqtt_ota_start(mqtt, config)
 mqtt.pub(Voltage(sensor))
+mqtt.pub(VoltageMin(sensor))
+mqtt.pub(VoltageMax(sensor))
 mqtt.pub(Current(sensor))
+mqtt.pub(CurrentMin(sensor))
+mqtt.pub(CurrentMax(sensor))
 mqtt.pub(Power(sensor))
+mqtt.pub(PowerMin(sensor))
+mqtt.pub(PowerMax(sensor))
 mqtt.pub(PowerFactor(sensor))
-mqtt.pub(Energy(sensor))
+mqtt.pub(PowerFactorMin(sensor))
+mqtt.pub(PowerFactorMax(sensor))
 mqtt.pub(Malfunction(sensor))
 ticker = Ticker(sensor)
 

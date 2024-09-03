@@ -11,7 +11,6 @@ sleep 60
 assert mqtt stat/Energy/V 222.1
 assert mqtt stat/Energy/A 4.8
 assert mqtt stat/Energy/PowerFactor 0.70
-assert mqtt stat/Energy/Wh 150.0
 assert mqtt stat/Energy/W 0.0
 assert mqtt stat/Energy/Malfunction 0
 
@@ -26,12 +25,6 @@ pzemf fail1 # init failure
 sleep 15
 
 assert mqtt stat/Energy/Malfunction 1
-
-pzemf fail2 # reset energy failure
-
-sleep 20
-
-assert mqtt stat/Energy/Malfunction 2
 
 pzemf clean
 
