@@ -5,7 +5,7 @@ from epx.loop import MILISSECONDS, SECONDS, MINUTES, Task, StateMachine
 
 class Voltage(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/V", 60 * SECONDS, 60 * SECONDS, False)
+        MQTTPub.__init__(self, "stat/%s/V", 0, 60 * SECONDS, False)
         self.sensor = sensor
 
     def gen_msg(self):
@@ -17,7 +17,7 @@ class Voltage(MQTTPub):
 
 class Current(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/A", 60 * SECONDS, 60 * SECONDS, False)
+        MQTTPub.__init__(self, "stat/%s/A", 0, 60 * SECONDS, False)
         self.sensor = sensor
 
     def gen_msg(self):
@@ -29,7 +29,7 @@ class Current(MQTTPub):
 
 class Power(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/W", 60 * SECONDS, 60 * SECONDS, False)
+        MQTTPub.__init__(self, "stat/%s/W", 0, 60 * SECONDS, False)
         self.sensor = sensor
 
     def gen_msg(self):
@@ -42,7 +42,7 @@ class Power(MQTTPub):
 
 class PowerFactor(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/PowerFactor", 60 * SECONDS, 60 * SECONDS, False)
+        MQTTPub.__init__(self, "stat/%s/PowerFactor", 0, 60 * SECONDS, False)
         self.sensor = sensor
 
     def gen_msg(self):
