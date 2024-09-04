@@ -25,6 +25,5 @@ mqtt.pub(CurrentMax(sensor))
 mqtt.pub(Power(sensor))
 mqtt.pub(PowerFactor(sensor))
 mqtt.pub(Malfunction(sensor))
-ticker = Ticker(sensor)
 
 loop.run()
