@@ -10,9 +10,8 @@ class Voltage(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('Vavg') is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.get_data('Vavg')
 
 class VoltageMin(MQTTPub):
@@ -22,9 +21,8 @@ class VoltageMin(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('Vmin') is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.get_data('Vmin')
 
 class VoltageMax(MQTTPub):
@@ -34,9 +32,8 @@ class VoltageMax(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('Vmax') is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.get_data('Vmax')
 
 
@@ -47,9 +44,8 @@ class Current(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('Aavg') is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.get_data('Aavg')
 
 class CurrentMax(MQTTPub):
@@ -59,9 +55,8 @@ class CurrentMax(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('Amax') is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.get_data('Amax')
 
 
@@ -72,9 +67,8 @@ class Power(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('Wavg') is None:
-            return None
+            return None # pragma: no cover
         return "%.1f" % self.sensor.get_data('Wavg')
 
 
@@ -85,15 +79,13 @@ class PowerFactor(MQTTPub):
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        # as float
         if self.sensor.get_data('pfavg') is None:
-            return None
+            return None # pragma: no cover
         return "%.2f" % self.sensor.get_data('pfavg')
 
 
 class Malfunction(MQTTPub):
     def __init__(self, sensor):
-        # as integer (bitmap)
         MQTTPub.__init__(self, "stat/%s/Malfunction", 5 * SECONDS, 30 * MINUTES, False)
         self.sensor = sensor
 

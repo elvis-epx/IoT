@@ -129,7 +129,7 @@ class Sensor:
 
     def get_data(self, k):
         if self.visible_data['Malfunction']:
-            return None
+            return None # pragma: no cover
         return self.visible_data[k]
 
     def malfunction(self):
