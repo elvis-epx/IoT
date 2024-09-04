@@ -52,18 +52,6 @@ class Current(MQTTPub):
             return None
         return "%.1f" % self.sensor.get_data('Aavg')
 
-class CurrentMin(MQTTPub):
-    def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/Amin", 0, 0, False)
-        self.sensor = sensor
-        self.sensor.pub_add(self)
-
-    def gen_msg(self):
-        # as float
-        if self.sensor.get_data('Amin') is None:
-            return None
-        return "%.1f" % self.sensor.get_data('Amin')
-
 class CurrentMax(MQTTPub):
     def __init__(self, sensor):
         MQTTPub.__init__(self, "stat/%s/Amax", 0, 0, False)
@@ -89,30 +77,6 @@ class Power(MQTTPub):
             return None
         return "%.1f" % self.sensor.get_data('Wavg')
 
-class PowerMin(MQTTPub):
-    def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/Wmin", 0, 0, False)
-        self.sensor = sensor
-        self.sensor.pub_add(self)
-
-    def gen_msg(self):
-        # as float
-        if self.sensor.get_data('Wmin') is None:
-            return None
-        return "%.1f" % self.sensor.get_data('Wmin')
-
-class PowerMax(MQTTPub):
-    def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/Wmax", 0, 0, False)
-        self.sensor = sensor
-        self.sensor.pub_add(self)
-
-    def gen_msg(self):
-        # as float
-        if self.sensor.get_data('Wmax') is None:
-            return None
-        return "%.1f" % self.sensor.get_data('Wmax')
-
 
 class PowerFactor(MQTTPub):
     def __init__(self, sensor):
@@ -125,30 +89,6 @@ class PowerFactor(MQTTPub):
         if self.sensor.get_data('pfavg') is None:
             return None
         return "%.2f" % self.sensor.get_data('pfavg')
-
-class PowerFactorMin(MQTTPub):
-    def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/PowerFactormin", 0, 0, False)
-        self.sensor = sensor
-        self.sensor.pub_add(self)
-
-    def gen_msg(self):
-        # as float
-        if self.sensor.get_data('pfmin') is None:
-            return None
-        return "%.2f" % self.sensor.get_data('pfmin')
-
-class PowerFactorMax(MQTTPub):
-    def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/PowerFactormax", 0, 0, False)
-        self.sensor = sensor
-        self.sensor.pub_add(self)
-
-    def gen_msg(self):
-        # as float
-        if self.sensor.get_data('pfmax') is None:
-            return None
-        return "%.2f" % self.sensor.get_data('pfmax')
 
 
 class Malfunction(MQTTPub):

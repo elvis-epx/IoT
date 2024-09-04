@@ -16,17 +16,17 @@ else: # pragma: no cover
     FAILURE_TIMEOUT = 10 * MINUTES
 
 agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
-                  "Aavg": 0.0, "Amin": 999999.9, "Amax": 0.0, \
-                  "Wavg": 0.0, "Wmin": 999999.9, "Wmax": 0.0, \
-                  "pfavg": 0.0, "pfmin": 1.0, "pfmax": 0.0, \
+                  "Aavg": 0.0, "Amax": 0.0, \
+                  "Wavg": 0.0, \
+                  "pfavg": 0.0, \
                   "n": 0}
 
 class Sensor:
     def __init__(self):
         self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
-                        "A": None, "Aavg": None, "Amin": None, "Amax": None, \
-                        "W": None, "Wavg": None, "Wmin": None, "Wmax": None, \
-                        "pf": None, "pfavg": None, "pfmin": None, "pfmax": None, \
+                        "A": None, "Aavg": None, "Amax": None, \
+                        "W": None, "Wavg": None, \
+                        "pf": None, "pfavg": None, \
                         "Malfunction": 0, "t": None, "n": None}
         self.agg_data = None
         self.pub_list = []
@@ -103,9 +103,12 @@ class Sensor:
     def update_aggregates(self, sensor_data):
         w = self.agg_data["n"]
         for k in ("V", "A", "W", "pf"):
-            self.agg_data[k + "avg"] = (self.agg_data[k + "avg"] * w + sensor_data[k]) / (w + 1.0)
-            self.agg_data[k + "min"] = min(self.agg_data[k + "min"], sensor_data[k])
-            self.agg_data[k + "max"] = max(self.agg_data[k + "max"], sensor_data[k])
+            if (k + "avg") in self.agg_data:
+                self.agg_data[k + "avg"] = (self.agg_data[k + "avg"] * w + sensor_data[k]) / (w + 1.0)
+            if (k + "min") in self.agg_data:
+                self.agg_data[k + "min"] = min(self.agg_data[k + "min"], sensor_data[k])
+            if (k + "max") in self.agg_data:
+               self.agg_data[k + "max"] = max(self.agg_data[k + "max"], sensor_data[k])
         self.agg_data["n"] += 1
 
     def on_idle(self):
