@@ -8,10 +8,10 @@ sleep 5
 wifi GOT_IP
 sleep 60
 
-assert mqtt stat/Energy/V 222.1
-assert mqtt stat/Energy/A 4.8
-assert mqtt stat/Energy/PowerFactor 0.70
-assert mqtt stat/Energy/W 0.0
+assert mqtt stat/Energy/V 220.0
+assert mqtt stat/Energy/A 4.0
+assert mqtt stat/Energy/VA 880.0
+assert mqtt stat/Energy/W 1.0
 assert mqtt stat/Energy/Malfunction 0
 
 pzemf fail4 # read energy failure 
@@ -36,10 +36,10 @@ mqttsub cmnd/Energy/Ticker on
 
 sleep 5
 
-assert mqtt stat/Energy/Vnow 222.1
-assert mqtt stat/Energy/Anow 4.8
-assert mqtt stat/Energy/PFnow 0.70
-assert mqtt stat/Energy/Wnow 0.0
+assert mqtt stat/Energy/Vnow 220.0
+assert mqtt stat/Energy/Anow 4.0
+assert mqtt stat/Energy/VAnow 880.0
+assert mqtt stat/Energy/Wnow 1.0
 
 mqttsub cmnd/Energy/Ticker off
 sleep 5

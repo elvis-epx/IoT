@@ -49,9 +49,9 @@ class PZEM:
         return self.res
 
     def get_data(self):
-        return {"V": 222.1,
-                "A": 4.8,
-                "W": 0.0,
+        return {"V": 220.0,
+                "A": 4.0,
+                "W": 1.0,
                 "Wh": 150,
                 "Hz": 60.0,
                 "pf": 0.7}

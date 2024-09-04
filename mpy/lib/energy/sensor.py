@@ -20,7 +20,7 @@ else: # pragma: no cover
 agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
                   "Aavg": 0.0, "Amax": 0.0, \
                   "Wavg": 0.0, \
-                  "pfavg": 0.0, \
+                  "VAavg": 0.0, \
                   "n": 0}
 
 class Sensor:
@@ -28,7 +28,7 @@ class Sensor:
         self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
                         "A": None, "Aavg": None, "Amax": None, \
                         "W": None, "Wavg": None, \
-                        "pf": None, "pfavg": None, \
+                        "VA": None, "VAavg": None, \
                         "Malfunction": 0, "n": None}
         self.agg_data = None
         self.pub_list = []
@@ -102,6 +102,7 @@ class Sensor:
 
         self.visible_data['Malfunction'] = 0
         sensor_data = self.impl.get_data()
+        sensor_data["VA"] = sensor_data["V"] * sensor_data["A"]
 
         self.visible_data.update(sensor_data)
         # Instantaneous values ("ticker") have been requested by someone
@@ -115,7 +116,7 @@ class Sensor:
 
     def update_aggregates(self, sensor_data):
         w = self.agg_data["n"]
-        for k in ("V", "A", "W", "pf"):
+        for k in ("V", "A", "W", "VA"):
             if (k + "avg") in self.agg_data:
                 self.agg_data[k + "avg"] = (self.agg_data[k + "avg"] * w + sensor_data[k]) / (w + 1.0)
             if (k + "min") in self.agg_data:

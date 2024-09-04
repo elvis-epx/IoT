@@ -105,27 +105,27 @@ class PowerNow(MQTTPub):
         return "%.1f" % self.sensor.get_data('W')
 
 
-class PowerFactor(MQTTPub):
+class VA(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/PowerFactor", 0, 0, False)
+        MQTTPub.__init__(self, "stat/%s/VA", 0, 0, False)
         self.sensor = sensor
         self.sensor.pub_add(self)
 
     def gen_msg(self):
-        if self.sensor.get_data('pfavg') is None:
+        if self.sensor.get_data('VAavg') is None:
             return None # pragma: no cover
-        return "%.2f" % self.sensor.get_data('pfavg')
+        return "%.1f" % self.sensor.get_data('VAavg')
 
-class PowerFactorNow(MQTTPub):
+class VANow(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/PFnow", 0, 0, False)
+        MQTTPub.__init__(self, "stat/%s/VAnow", 0, 0, False)
         self.sensor = sensor
         self.sensor.pub_now_add(self)
 
     def gen_msg(self):
-        if self.sensor.get_data('pf') is None:
+        if self.sensor.get_data('VA') is None:
             return None # pragma: no cover
-        return "%.2f" % self.sensor.get_data('pf')
+        return "%.1f" % self.sensor.get_data('VA')
 
 
 class Malfunction(MQTTPub):
