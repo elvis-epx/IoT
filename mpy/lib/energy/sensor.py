@@ -5,12 +5,14 @@ from epx.loop import Task, SECONDS, MINUTES, StateMachine, Shortcronometer
 if hasattr(machine, 'TEST_ENV'):
     READ_EVERY = 1 * SECONDS
     PUB_TIMEOUT = 60 * SECONDS
+    PUB_NOW_TIMEOUT = 15 * SECONDS
     STARTUP_TIMEOUT = 1 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 20 * SECONDS
 else: # pragma: no cover
     READ_EVERY = 1 * SECONDS
     PUB_TIMEOUT = 60 * SECONDS
+    PUB_NOW_TIMEOUT = 5 * MINUTES
     STARTUP_TIMEOUT = 20 * SECONDS
     RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 10 * MINUTES
@@ -27,10 +29,12 @@ class Sensor:
                         "A": None, "Aavg": None, "Amax": None, \
                         "W": None, "Wavg": None, \
                         "pf": None, "pfavg": None, \
-                        "Malfunction": 0, "t": None, "n": None}
+                        "Malfunction": 0, "n": None}
         self.agg_data = None
         self.pub_list = []
+        self.pub_now_list = []
         self.pub_timer = None
+        self.pub_now_timer = None
         self.uart = machine.UART(2, baudrate=9600)
         sm = self.sm = StateMachine("sensor")
 
@@ -59,8 +63,13 @@ class Sensor:
         self.sm.schedule_trans("start", STARTUP_TIMEOUT)
 
     def pub_add(self, pub):
-        if pub not in self.pub_list:
-            self.pub_list.append(pub)
+        self.pub_list.append(pub)
+
+    def pub_now_add(self, pub):
+        self.pub_now_list.append(pub)
+
+    def ticker(self, active):
+        self.pub_now_timer = active and Shortcronometer() or None
 
     def on_start(self):
         self.impl = PZEM(uart=self.uart)
@@ -95,7 +104,11 @@ class Sensor:
         sensor_data = self.impl.get_data()
 
         self.visible_data.update(sensor_data)
-        self.visible_data['t'] = int(self.pub_timer.elapsed() / 1000)
+        # Instantaneous values ("ticker") have been requested by someone
+        if self.pub_now_timer and self.pub_now_timer.elapsed() < PUB_NOW_TIMEOUT:
+            for pub in self.pub_now_list:
+                pub.forcepub()
+
         self.update_aggregates(sensor_data)
 
         self.sm.schedule_trans_now("idle")
@@ -134,6 +147,3 @@ class Sensor:
 
     def malfunction(self):
         return self.visible_data['Malfunction']
-
-    def jsonish(self):
-        return str(self.visible_data) + "\r\n"
