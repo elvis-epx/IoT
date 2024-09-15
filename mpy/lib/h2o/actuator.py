@@ -31,11 +31,19 @@ class Display:
 
         self.blink = not self.blink
         if flowrate <= 0.0 or self.blink:
-            w = m and 6 or 12
-            self.impl.rect(0, 0, 12, 63, 1)
+            w = m and 5 or 12
+            self.impl.rect(0, 0, 12, 64, 1)
             vol_pct = self.levelmeter.coarse_level_pct()
             if vol_pct is not None:
                 self.impl.fill_rect(0, 63 - int(62.0 * vol_pct / 100.0), w, 63, 1)
+
+            if m:
+                smap = self.levelmeter.sensormap()
+                slen = len(smap)
+                dy = 64 / slen
+                for i, bit in enumerate(smap):
+                    if bit:
+                        self.impl.fill_rect(8, 64 - int((i + 1) * dy), 2, int(dy), 1)
 
         netstatus, ifconfig = self.net.ifconfig()
         if ifconfig and netstatus == 'connected':

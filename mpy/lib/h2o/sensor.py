@@ -160,3 +160,12 @@ class LevelMeter:
 
     def malfunction(self):
         return self.malfunction_bitmap
+
+    def sensormap(self):
+        smap = []
+        for i, pct in enumerate(self.sensors):
+            mask = 1 << i
+            bit = self.latest_bitmap & mask
+            bit = not bit # pull-up logic
+            smap.append(bit and 1 or 0)
+        return smap
