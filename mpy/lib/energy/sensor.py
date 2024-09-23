@@ -1,20 +1,20 @@
 import machine
 from third.pzem import PZEM
-from epx.loop import Task, SECONDS, MINUTES, StateMachine, Shortcronometer
+from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES, StateMachine, Shortcronometer
 
 if hasattr(machine, 'TEST_ENV'):
-    READ_EVERY = 1 * SECONDS
+    READ_EVERY = 500 * MILISSECONDS
+    RESPONSE_TIMEOUT = 500 * MILISSECONDS
     PUB_TIMEOUT = 60 * SECONDS
     PUB_NOW_TIMEOUT = 15 * SECONDS
     STARTUP_TIMEOUT = 1 * SECONDS
-    RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 20 * SECONDS
 else: # pragma: no cover
-    READ_EVERY = 1 * SECONDS
+    READ_EVERY = 500 * MILISSECONDS
+    RESPONSE_TIMEOUT = 500 * MILISSECONDS
     PUB_TIMEOUT = 60 * SECONDS
     PUB_NOW_TIMEOUT = 5 * MINUTES
     STARTUP_TIMEOUT = 20 * SECONDS
-    RESPONSE_TIMEOUT = 1 * SECONDS
     FAILURE_TIMEOUT = 10 * MINUTES
 
 agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
