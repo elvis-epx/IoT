@@ -92,3 +92,12 @@ class Malfunction(MQTTPub):
 
     def gen_msg(self):
         return "%d" % self.levelmeter.malfunction()
+
+
+class LevelSensorMap(MQTTPub):
+    def __init__(self, levelmeter):
+        self.levelmeter = levelmeter
+        MQTTPub.__init__(self, "stat/%s/LevelSensorMap", 1 * SECONDS, 30 * MINUTES, False)
+
+    def gen_msg(self):
+        return ",".join(["%d" % n for n in self.levelmeter.sensormap()])

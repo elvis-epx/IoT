@@ -19,6 +19,7 @@ sleep 3
 advance $(( 10 * 60 * 1000 ))
 sleep 3
 assert mqtt stat/H2OControl/Malfunction 0
+assert mqtt stat/H2OControl/LevelSensorMap 1,1,1,1,1
 sleep 5
 mcp23017f
 sleep 5
@@ -37,7 +38,9 @@ mcp23017 251
 sleep 7 # 4 seconds of debounce
 assert mqtt stat/H2OControl/CoarseLevelPct 60
 assert mqtt stat/H2OControl/Malfunction 1
+assert mqtt stat/H2OControl/LevelSensorMap 0,0,1,0,0
 mcp23017 248
 sleep 7
 assert mqtt stat/H2OControl/CoarseLevelPct 60
 assert mqtt stat/H2OControl/Malfunction 0
+assert mqtt stat/H2OControl/LevelSensorMap 1,1,1,0,0
