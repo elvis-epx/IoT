@@ -1,3 +1,4 @@
+import random, os
 from epx.loop import SECONDS, MINUTES, Task
 from tnowc.service import TNowPub
 
@@ -9,6 +10,20 @@ class Forwarder():
 
         self.pub = mqtt.pub(TNowPub(self))
         self._value = None
+
+        Task(True, "eval", self.eval, 1 * SECONDS)
+
+    def eval(self, _):
+        try:
+            f = open("tnowcsend.sim")
+            f.close()
+        except OSError:
+            return
+
+        os.unlink("tnowcsend.sim")
+
+        packet = "stat/TNowP/Value\n%d" % int(random.random() * 1000)
+        self.netnow.send_backdata(packet.encode())
 
     def recv_data(self, mac, data):
         print("Forwarder.recv_data")

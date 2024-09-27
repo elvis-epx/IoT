@@ -10,6 +10,7 @@ type_data = const(0x01)
 type_timestamp = const(0x02)
 timestamp_subtype_default = const(0x00)
 timestamp_subtype_confirm = const(0x01)
+timestamp_subtype_backdata = const(0x02)
 
 type_ping = const(0x03)
 type_pairreq = const(0x04)

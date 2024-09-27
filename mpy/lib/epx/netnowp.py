@@ -16,6 +16,7 @@ class NetNowPeripheral:
         self.last_ping = None
         self.tids = {}
         self.ttid_history = {}
+        self.data_recv_observers = []
 
         self.group = group_hash(self.cfg.data['espnowgroup'].encode())
         self.psk = prepare_key(self.cfg.data['espnowpsk'].encode())
@@ -37,6 +38,10 @@ class NetNowPeripheral:
 
     def is_ready(self):
         return self.sm.state == 'paired' and self.timestamp_recv != 0
+
+    def register_recv_data(self, observer):
+        if observer not in self.data_recv_observers:
+            self.data_recv_observers.append(observer)
 
     def clean_rx_buffer(self):
         while self.impl.any():
@@ -136,14 +141,11 @@ class NetNowPeripheral:
 
         msg = msg[2+group_size:]
 
-        if pkttype == type_timestamp:
-            self.handle_timestamp(mac_b2s(mac), msg, my_timestamp)
+        if pkttype != type_timestamp:
+            print("...unknown type", pkttype)
             return
 
-        print("...unknown type", pkttype)
-
-    def handle_timestamp(self, mac, msg, my_timestamp):
-        print("netnow: handle_timestamp")
+        mac = mac_b2s(mac)
 
         if len(msg) < (1 + tid_size + timestamp_size):
             print("... invalid len")
@@ -172,7 +174,10 @@ class NetNowPeripheral:
             tid = msg
             print("... confirmed", b2s(tid))
             self.tid_confirm(tid, timestamp, my_timestamp)
-            return
+
+        elif subtype == timestamp_subtype_backdata:
+            for observer in self.data_recv_observers:
+                observer.recv_data(ttid, msg)
 
     def trust_timestamp(self, subtype, ttid, timestamp, my_timestamp):
         if self.is_ttid_repeated(ttid):
@@ -188,7 +193,7 @@ class NetNowPeripheral:
                 self.rebase_timestamp(timestamp, processing_delay)
                 return True
 
-            if subtype == timestamp_subtype_default:
+            if subtype != timestamp_subtype_confirm:
                 print("...timestamp untrusted bc waiting wakeup", timestamp % 1000000)
                 return False
 
@@ -214,7 +219,7 @@ class NetNowPeripheral:
         # replay attack, or central may have rebooted
         # keep current timestamp and ping to confirm new one
 
-        if subtype == timestamp_subtype_default:
+        if subtype != timestamp_subtype_confirm:
             print("...timestamp gap", diff, diff2)
             self.send_ping(timestamp)
             # (TID confirmation callback will fill timestamp_recv)

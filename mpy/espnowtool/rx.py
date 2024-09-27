@@ -114,6 +114,12 @@ def rx_timestamp(msg, args, res):
                 good = True
         else:
             good = True
+    elif 'backdata' in args:
+        if subtype != timestamp_subtype_backdata:
+            print("entool: ts not backdata type")
+        else:
+            print("entool: ts backdata", msg)
+            good = True
     else:
         if subtype != timestamp_subtype_default:
             print("entool: ts not default type")

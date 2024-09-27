@@ -67,7 +67,7 @@ class NetNowCentral:
             self.timestamp_base += 1
         return self.timestamp_base
 
-    def broadcast_timestamp(self, subtype, tid=None):
+    def broadcast_timestamp(self, subtype, tid=None, msg=None):
         # makes sure consecutive broadcasts will send different timestamps
         current_timestamp = self.current_timestamp(True)
         print("Sending timestamp", current_timestamp % 1000000)
@@ -80,6 +80,9 @@ class NetNowCentral:
         if subtype == timestamp_subtype_confirm:
             buf += tid
             print("...and confirming tid", b2s(tid))
+        elif subtype == timestamp_subtype_backdata:
+            buf += msg
+            print("...plus back data")
 
         buf = encrypt(self.psk, buf)
         buf += hmac(self.psk, buf)
@@ -192,6 +195,12 @@ class NetNowCentral:
     def send_confirm(self, tid):
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_confirm, tid), \
+                0 * SECONDS)
+        self.timestamp_task.restart()
+
+    def send_backdata(self, msg):
+        self.sm.onetime_task("netnowc_conf", \
+                lambda _: self.broadcast_timestamp(timestamp_subtype_backdata, None, msg), \
                 0 * SECONDS)
         self.timestamp_task.restart()
 
