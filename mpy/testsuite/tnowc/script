@@ -32,6 +32,8 @@ sleep 1
 sleep 1
 ./entool bla ble 0 tx badtypep
 sleep 1
+touch ${TEST_FOLDER}/tnowcsend.sim
+./entool bla ble 0 rx 5 ts backdata 1
 
 wifi UNDEF_ERROR
 sleep 3

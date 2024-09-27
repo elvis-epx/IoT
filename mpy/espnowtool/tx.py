@@ -35,15 +35,18 @@ def latest_received_tid():
 
 # When mocking a central, generate a timestamp/confirm packet
 def gen_ts(buf, args):
-    if 'confirm' not in args:
-        subtype = timestamp_subtype_default
-    else:
+    if 'confirm' in args:
         subtype = timestamp_subtype_confirm
         tid = args['confirm']
         if tid == "lasttid":
             tid = latest_received_tid()
         else:
             tid = s2b(tid)
+    elif 'backdata' in args:
+        subtype = timestamp_subtype_backdata
+        msg = args['backdata']
+    else:
+        subtype = timestamp_subtype_default
     buf += bytearray([subtype])
     buf += gen_tid_central('sametid' in args)
     if 'replay' in args:
@@ -57,6 +60,8 @@ def gen_ts(buf, args):
         buf += tid
         if 'badlen3' in args:
             buf = buf[:-1]
+    elif subtype == timestamp_subtype_backdata:
+        buf += msg.encode('utf-8')
     else:
         if 'badlen2' in args:
             buf = buf[:-1]
