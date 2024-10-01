@@ -3,8 +3,8 @@ from third.pzem import PZEM
 from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES, StateMachine, Shortcronometer
 
 if hasattr(machine, 'TEST_ENV'):
-    READ_EVERY = 500 * MILISSECONDS
-    RESPONSE_TIMEOUT = 500 * MILISSECONDS
+    READ_EVERY = 750 * MILISSECONDS
+    RESPONSE_TIMEOUT = 750 * MILISSECONDS
     PUB_TIMEOUT = 60 * SECONDS
     PUB_NOW_TIMEOUT = 15 * SECONDS
     STARTUP_TIMEOUT = 1 * SECONDS

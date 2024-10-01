@@ -92,7 +92,7 @@ class PZEM:
     def complete_trans(self):
         # Read the response, maximum 25 bytes
         # (25 bytes = (2 * 10 + 1 + 1 + 1 ) + 2 CRC )
-        rcvFrame = self.uart.read(self.buf)
+        rcvFrame = self.uart.read()
         if not rcvFrame:
             return False
         frame = list(rcvFrame)
