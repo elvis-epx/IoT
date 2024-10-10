@@ -1,4 +1,5 @@
 # Based on PZEM v3.0 driver by Jacopo Rodeschini
+# https://github.com/jacopoRodeschini/PZEM-004T
 
 import ustruct as struct
 import time
