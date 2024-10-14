@@ -31,6 +31,9 @@ class NetNowCentral:
 
         self.sm.schedule_trans_now("idle")
 
+    def is_active(self):
+        return self.sm.state == 'active'
+
     def on_idle(self):
         self.net.observe("netnow", "connected", lambda: self.sm.schedule_trans_now("active"))
 
@@ -199,6 +202,8 @@ class NetNowCentral:
         self.timestamp_task.restart()
 
     def send_backdata(self, msg):
+        if not self.is_active():
+            return
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_backdata, None, msg), \
                 0 * SECONDS)
