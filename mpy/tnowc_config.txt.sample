@@ -1,0 +1,9 @@
+ssid <SSID>
+password <password or None>
+channel <optional fixed Wi-Fi channel to be used by ESP-NOW>
+mqttbroker <address or DNS name>
+mqttname TNowC
+watchdog <0|1>
+
+espnowgroup <ESP-NOW group with 1 manager and n sensors>
+espnowpsk <ESP-NOW pre-shared key>

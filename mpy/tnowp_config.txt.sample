@@ -1,0 +1,3 @@
+espnowpsk <ESP-NOW pre-shared key>
+espnowgroup <ESP-NOW group of the manager>
+watchdog <0|1>

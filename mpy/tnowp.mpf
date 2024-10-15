@@ -1,0 +1,19 @@
+md /lib
+md /lib/epx
+put lib/epx/__init__.py /lib/epx/__init__.py
+put lib/epx/config.py /lib/epx/config.py
+put lib/epx/netnow.py /lib/epx/netnow.py
+put lib/epx/netnowp.py /lib/epx/netnowp.py
+put lib/epx/watchdog.py /lib/epx/watchdog.py
+put lib/epx/loop.py /lib/epx/loop.py
+put lib/epx/nvram.py /lib/epx/nvram.py
+
+md /lib/third
+put lib/third/__init__.py /lib/third/__init__.py
+
+md /lib/tnowp
+put lib/tnowp/__init__.py /lib/tnowp/__init__.py
+put lib/tnowp/service.py /lib/tnowp/service.py
+
+put tnowp_boot.py boot.py
+put tnowp_main.py main.py
