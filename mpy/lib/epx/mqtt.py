@@ -251,6 +251,10 @@ class Log(MQTTPub):
         self.logmsg = msg
         self.forcepub()
 
+    def getversion(self):
+        self.logmsg = str(os.uname())
+        self.forcepub()
+
 
 # TODO allow to decrease how often it is pinged
 class Uptime(MQTTPub):

@@ -286,6 +286,9 @@ sleep 2
 mqttsub cmnd/TempSensor/OTA stats
 sleep 2
 
+mqttsub cmnd/TempSensor/OTA getversion
+sleep 2
+
 mqttsub cmnd/TempSensor/OTA msg_rm 
 sleep 2
 
