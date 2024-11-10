@@ -79,7 +79,8 @@ def irq(p):
             # Export ongoing sequence
             to_parse += 1
             i = (i + 1) % RING_BUF
-            schedule(parse_sequence, None)
+            if to_parse == 1:
+                schedule(parse_sequence, None)
 
             if to_parse >= RING_BUF:
                 # Must not overwrite the buffer pointed by "i" for now
