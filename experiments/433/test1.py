@@ -61,37 +61,39 @@ def irq(p):
             trans_length[i] = 0
         return
 
-    if state == DATA:
-        if dt > DATA_MIN and dt < DATA_MAX:
-            # chirps of data
-            trans_sequence[i][trans_length[i]][0] = v
-            trans_sequence[i][trans_length[i]][1] = dt
-            trans_length[i] += 1
-            if trans_length[i] >= TRANS_MAX:
-                # overflow, discard
-                state = IDLE
+    # state == DATA
+
+    if dt > DATA_MIN and dt < DATA_MAX:
+        # chirps of data
+        trans_sequence[i][trans_length[i]][0] = v
+        trans_sequence[i][trans_length[i]][1] = dt
+        trans_length[i] += 1
+        if trans_length[i] >= TRANS_MAX:
+            # overflow, discard
+            state = IDLE
+        return
+
+    # Sequence terminated by silence or bad transition
+    state = IDLE
+
+    if trans_length[i] > TRANS_COUNT_MIN:
+        # Export ongoing sequence
+        to_parse += 1
+        i = (i + 1) % RING_BUF
+        if to_parse == 1:
+            schedule(parse_sequence, None)
+
+        if to_parse >= RING_BUF:
+            # Must not overwrite the buffer pointed by "i" for now
+            state = FULL
             return
 
-        # Sequence terminated by silence or bad transition
-        state = IDLE
+    if dt > PREAMBLE_MIN and dt < PREAMBLE_MAX and v == 0:
+        # new preamble (back-to-back packet)
+        # short-circuit state machine to DATA
+        trans_length[i] = 0
+        state = DATA
 
-        if trans_length[i] > TRANS_COUNT_MIN:
-            # Export ongoing sequence
-            to_parse += 1
-            i = (i + 1) % RING_BUF
-            if to_parse == 1:
-                schedule(parse_sequence, None)
-
-            if to_parse >= RING_BUF:
-                # Must not overwrite the buffer pointed by "i" for now
-                state = FULL
-                return
-
-        if dt > PREAMBLE_MIN and dt < PREAMBLE_MAX and v == 0:
-            # new preamble (back-to-back packet)
-            # short-circuit state machine to DATA
-            trans_length[i] = 0
-            state = DATA
 
 pin = Pin(14, Pin.IN)
 pin.irq(trigger = Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=irq)
