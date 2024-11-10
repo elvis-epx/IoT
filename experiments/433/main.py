@@ -76,7 +76,7 @@ def irq(p):
         state = IDLE
 
         if trans_length[i] > TRANS_COUNT_MIN:
-            # Export sequence
+            # Export ongoing sequence
             to_parse += 1
             i = (i + 1) % RING_BUF
             schedule(parse_sequence, None)
