@@ -3,7 +3,14 @@
 import sys
 
 class OOKParser:
+    # Generic ASK/OOK parser for 433MHz keyfobs
+    # Assumptions:
+    # - every bit is composed of two level transitions
+    # - every bit has around the same total time length (i.e. the sum of the two transitions)
+
     name = ""
+    bit_tolerance = 0.15
+    group_tolerance = 0.20
 
     def __init__(self, sequence):
         self.sequence = sequence[:]
@@ -16,8 +23,7 @@ class OOKParser:
     def res(self):
         return "%s:%s" % (self.name, self.code)
 
-    # Transitions that are not 0-1 or 1-0, possibly due to some delay in
-    # interrupt handling
+    # Transitions that are not 0-1 or 1-0
     def false_transition(self):
         for i in range(0, len(self.sequence) - 1):
             if self.sequence[i][0] == self.sequence[i+1][0]:
@@ -44,8 +50,8 @@ class OOKParser:
                 return (i, bit_time)
         return None
 
-    # Find whether the length of a chirp is off
-    def anomalous_chirp(self, short, shortdev, long, longdev):
+    # Find whether the length of a chirp group is off
+    def anomalous_group(self, short, shortdev, long, longdev):
         for i in range(0, len(self.sequence)):
             chirplen = self.sequence[i][1]
             if (chirplen >= (short - shortdev) and chirplen <= (short + shortdev)) or \
@@ -55,88 +61,85 @@ class OOKParser:
                 return (i, chirplen)
         return None
 
-class HT6P20(OOKParser):
-    name = "HT6P20"
-
     def do_parse(self):
         code = 0
         bitcount = len(self.sequence) // 2
         for i in range(0, bitcount):
             code <<= 1
             if self.sequence[i*2][1] > self.sequence[i*2+1][1]:
-                # 1110 = bit 1
-                code |= 1
+                if self.bit1 == "LS":
+                    code |= 1
+            else:
+                if self.bit1 == "SL":
+                    code |= 1
         return code
 
     def run(self):
         false_trans = self.false_transition()
         if false_trans:
             print("> false trans %d-%d" % false_trans)
-            return
-        if len(self.sequence) != 57:
+            return False
+
+        if len(self.sequence) != self.exp_sequence_len:
             print("> unexpected len")
-            return
+            return False
+
         if self.sequence[0][0] != 1:
             print("> unexpected first chirp")
-            return
-        self.sequence = self.sequence[1:57]
+            return False
+
+        if self.bitseq == "LH":
+            # the first H transition is a delimiter
+            self.sequence = self.sequence[1:]
+        else:
+            # bits are HL; the last H transition is a delimiter
+            self.sequence = self.sequence[:-1]
+
         bit_time, bit_time_dev = self.bit_timing()
         print("> bit timing %dus stddev %dus" % (bit_time, bit_time_dev))
-        anom = self.anomalous_bit_timing(bit_time, bit_time * 0.25)
+
+        anom = self.anomalous_bit_timing(bit_time, bit_time * self.bit_tolerance)
         if anom:
             print("> bit timing anomaly %d timing %d" % anom)
-            return
-        anom = self.anomalous_chirp(bit_time * 0.33, bit_time * 0.33 * 0.25,
-                                    bit_time * 0.66, bit_time * 0.33 * 0.25)
+            return False
+
+        chirp_length = bit_time / self.chirp_length
+        short_group = chirp_length * self.short_group
+        long_group = chirp_length * self.long_group
+
+        anom = self.anomalous_group(short_group, short_group * self.group_tolerance,
+                                    long_group, short_group * self.group_tolerance)
         if anom:
             print("> chirp timing anomaly %d timing %d" % anom)
-            return
+            return False
+
         code = self.do_parse()
         self.code = "%d" % code
         self._ok = True
+        
+
+class HT6P20(OOKParser):
+    name = "HT6P20"
+    exp_sequence_len = 57
+    bitseq = "LH" # low then high (011, 001)
+    bit1 = "LS" # long then short (001)
+    chirp_length = 3 # 1/x of a bit
+    short_group = 1
+    long_group = 2
 
 
 class EV1527(OOKParser):
     name = "EV1527"
+    exp_sequence_len = 49
+    bitseq = "HL" # high then low (1000 and 1110)
+    bit1 = "LS" # long then short (1110)
+    chirp_length = 4 # 1/x of a bit
+    short_group = 1
+    long_group = 3
 
-    def do_parse(self):
-        code = 0
-        bitcount = len(self.sequence) // 2
-        for i in range(0, bitcount):
-            code <<= 1
-            if self.sequence[i*2][1] > self.sequence[i*2+1][1]:
-                # 1110 = bit 1
-                code |= 1
-        return code
-
-    def run(self):
-        false_trans = self.false_transition()
-        if false_trans:
-            print("> false trans %d-%d" % false_trans)
-            return
-        if len(self.sequence) != 49:
-            print("> unexpected len")
-            return
-        self.sequence = self.sequence[:48]
-        if self.sequence[0][0] != 1:
-            print("> unexpected first chirp")
-            return
-        bit_time, bit_time_dev = self.bit_timing()
-        print("> bit timing %dus stddev %dus" % (bit_time, bit_time_dev))
-        anom = self.anomalous_bit_timing(bit_time, bit_time * 0.25)
-        if anom:
-            print("> bit timing anomaly %d timing %d" % anom)
-            return
-        anom = self.anomalous_chirp(bit_time * 0.25, bit_time * 0.25 * 0.25,
-                                    bit_time * 0.75, bit_time * 0.25 * 0.25)
-        if anom:
-            print("> chirp timing anomaly %d timing %d" % anom)
-            return
-        code = self.do_parse()
-        self.code = "%d" % code
-        self._ok = True
 
 parsers = [EV1527, HT6P20]
+
 
 def parse(sequence):
     for parser_class in parsers:
@@ -147,6 +150,7 @@ def parse(sequence):
             break
     else:
         print("Failed to parse")
+
 
 for row in open(sys.argv[1]).readlines():
     row = row.strip()
