@@ -61,6 +61,8 @@ class OOKParser:
                 return (i, glen)
         return None
 
+    # Do the final conversion from transitions to bits
+    # Assumes the transition list is sane
     def do_parse(self):
         code = 0
         bitcount = len(self.sequence) // 2
@@ -74,6 +76,7 @@ class OOKParser:
                     code |= 1
         return code
 
+    # Parsing routine
     def run(self):
         false_trans = self.false_transition()
         if false_trans:
