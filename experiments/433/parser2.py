@@ -77,30 +77,34 @@ class OOKParser:
     def run(self):
         false_trans = self.false_transition()
         if false_trans:
-            print("> false trans %d-%d" % false_trans)
+            print(self.name, "> false trans %d-%d" % false_trans)
             return False
 
-        if len(self.sequence) != self.exp_sequence_len:
-            print("> unexpected len")
+        if len(self.sequence) > self.exp_sequence_len:
+            print(self.name, "> len too long")
+            return False
+
+        if len(self.sequence) < self.exp_sequence_len:
+            print(self.name, "> len too short")
             return False
 
         if self.sequence[0][0] != 1:
-            print("> unexpected first chirp")
+            print(self.name, "> unexpected first chirp")
             return False
 
         if self.bitseq == "LH":
             # the first H transition is a delimiter
-            self.sequence = self.sequence[1:]
+            self.sequence = self.sequence[1:self.exp_sequence_len + 1]
         else:
             # bits are HL; the last H transition is a delimiter
-            self.sequence = self.sequence[:-1]
+            self.sequence = self.sequence[0:self.exp_sequence_len - 1]
 
         bit_time, bit_time_dev = self.bit_timing()
-        print("> bit timing %dus stddev %dus" % (bit_time, bit_time_dev))
+        print(self.name, "> bit timing %dus stddev %dus" % (bit_time, bit_time_dev))
 
         anom = self.anomalous_bit_timing(bit_time, bit_time * self.bit_tolerance)
         if anom:
-            print("> bit timing anomaly %d timing %d" % anom)
+            print(self.name, "> bit timing anomaly %d timing %d" % anom)
             return False
 
         chirp_length = bit_time / self.chirp_length
@@ -110,7 +114,7 @@ class OOKParser:
         anom = self.anomalous_group(short_group, short_group * self.group_tolerance,
                                     long_group, short_group * self.group_tolerance)
         if anom:
-            print("> chirp timing anomaly %d timing %d" % anom)
+            print(self.name, "> chirp timing anomaly %d timing %d" % anom)
             return False
 
         code = self.do_parse()
