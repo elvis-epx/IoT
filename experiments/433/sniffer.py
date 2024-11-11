@@ -12,7 +12,7 @@ class OOKParser:
 
     name = ""
     bit_tolerance = 0.15
-    group_tolerance = 0.20
+    group_tolerance = 0.25
 
     def __init__(self, sequence):
         self.sequence = sequence[:]
@@ -115,9 +115,11 @@ class OOKParser:
         chirp_length = bit_time / self.chirp_length
         short_group = chirp_length * self.short_group
         long_group = chirp_length * self.long_group
+        print(self.name, "> chirp timing %dus short %dus long %dus" % \
+                (chirp_length, short_group, long_group))
 
         anom = self.anomalous_group(short_group, short_group * self.group_tolerance,
-                                    long_group, short_group * self.group_tolerance)
+                                    long_group, long_group * self.group_tolerance)
         if anom:
             print(self.name, "> chirp timing anomaly %d timing %d" % anom)
             return False
@@ -151,7 +153,7 @@ parsers = [EV1527, HT6P20]
 
 def parse(sequence):
     print("----------------")
-    print(row)
+    print(sequence)
     for parser_class in parsers:
         parser = parser_class(sequence)
         parser.run()
