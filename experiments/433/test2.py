@@ -53,12 +53,12 @@ class OOKParser:
     # Find whether the length of a chirp group is off
     def anomalous_group(self, short, shortdev, long, longdev):
         for i in range(0, len(self.sequence)):
-            chirplen = self.sequence[i][1]
-            if (chirplen >= (short - shortdev) and chirplen <= (short + shortdev)) or \
-               (chirplen >= (long  - longdev)  and chirplen <= (long  + longdev)):
+            glen = self.sequence[i][1]
+            if (glen >= (short - shortdev) and glen <= (short + shortdev)) or \
+               (glen >= (long  - longdev)  and glen <= (long  + longdev)):
                 pass
             else:
-                return (i, chirplen)
+                return (i, glen)
         return None
 
     def do_parse(self):
