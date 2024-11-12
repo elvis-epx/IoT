@@ -9,6 +9,8 @@ class OOKParser:
     # Assumption: every bit is composed of two level transitions
 
     name = ""
+    bit_len_tolerance = 0.15
+
     # bitseq LH = bit is formed by a transition to low, then a transition to high
     #             and first transition is a delimiter
     #             Chirp examples: 001=1, 011=0
@@ -32,10 +34,8 @@ class OOKParser:
         return "%s:%d" % (self.name, self.code)
 
     # Calculate average timing of each bit
-    def bit_timing(self):
+    def bit_timing(self, bitcount, lh):
         tot = totsq = 0
-        bitcount = len(self.sequence) // 2
-        lh = (self.bitseq == "LH") and 1 or 0
         for i in range(0, bitcount):
             bittime = self.sequence[i*2+lh][1] + self.sequence[i*2+1+lh][1]
             tot += bittime
@@ -44,9 +44,7 @@ class OOKParser:
         return mean, (totsq / bitcount - mean * mean) ** 0.5
 
     # Find if timing of a single bit is off
-    def anomalous_bit_timing(self, std, dev):
-        bitcount = len(self.sequence) // 2
-        lh = (self.bitseq == "LH") and 1 or 0
+    def anomalous_bit_timing(self, bitcount, lh, std, dev):
         for i in range(0, bitcount):
             bit_time = self.sequence[i*2+lh][1] + self.sequence[i*2+1+lh][1]
             if bit_time < (std - dev) or bit_time > (std + dev):
@@ -58,19 +56,20 @@ class OOKParser:
         if len(self.sequence) != self.exp_sequence_len:
             return False
 
-        bit_time, bit_time_dev = self.bit_timing()
+        bitcount = len(self.sequence) // 2
+        lh = (self.bitseq == "LH") and 1 or 0
+        ls = (self.bitseq == "LS") and 1 or 0
+
+        bit_time, bit_time_dev = self.bit_timing(bitcount, lh)
         print(self.name, "> bit timing %dus stddev %dus" % (bit_time, bit_time_dev))
 
-        anom = self.anomalous_bit_timing(bit_time, bit_time * 0.15)
+        anom = self.anomalous_bit_timing(bitcount, lh, bit_time, bit_time * self.bit_len_tolerance)
         if anom:
             print(self.name, "> bit timing anomaly %d timing %d" % anom)
             return False
 
-        lh = (self.bitseq == "LH") and 1 or 0
-        ls = (self.bitseq == "LS") and 1 or 0
-        bitcount = len(self.sequence) // 2
+        # Parse sane sequence
         self.code = 0
-
         for i in range(0, bitcount):
             lsbit = (self.sequence[i*2+lh][1] > self.sequence[i*2+1+lh][1]) and 1 or 0
             self.code = (self.code << 1) | (lsbit ^ ls)
@@ -84,13 +83,20 @@ class HT6P20(OOKParser):
     bitseq = "LH" # low then high (011, 001)
     bit1 = "LS" # long then short (001)
 
+    def parse(self):
+        if not super().parse():
+            return False
+        if (self.code & 0xf) != 0b0101:
+            print(self.name, "> suffix 0101 not found")
+            return False
+        return True
+
 
 class EV1527(OOKParser):
     name = "EV1527"
     exp_sequence_len = 49
     bitseq = "HL" # high then low (1000 and 1110)
     bit1 = "LS" # long then short (1110)
-
 
 parsers = [EV1527, HT6P20]
 
