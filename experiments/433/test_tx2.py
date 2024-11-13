@@ -8,12 +8,12 @@ class OOKEncoder:
     # Generic ASK/OOK generator for 433MHz protocols
     chirp_time = 500 # µs
     chirps = ("011", "001") # 0 and 1 respectively
-    preamble0 = "1" # ping/calibrate tx (generally 1's)
+    preamble0 = "111111111111111" # ping/calibrate tx (generally 1's)
     preamble1 = "000000000" # preamble before and between packets (generally 0's)
     preamble2 = "1" # low-then-high codes should have a "1" at the end of preamble
     trailer = "" # high-then-low codes should have an "1" trailer
     code_bits = 24  # number of bits spanned by the code word
-    repeat = 2 # send the code "n" times to increase chance of reception
+    repeat = 1 # send the code "n" times to increase chance of reception
 
     def __init__(self):
         pass
