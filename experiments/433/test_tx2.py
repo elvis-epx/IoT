@@ -70,7 +70,7 @@ code = 1234567
 
 while True:
     print("Sending", code)
-    rmtwaveform, trans = encoder.encode(code)
+    rmtwaveform = encoder.encode(code)
     print(rmtwaveform)
     rmt.write_pulses(tuple(rmtwaveform), 0)
     time.sleep(2)
