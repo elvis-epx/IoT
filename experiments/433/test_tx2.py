@@ -13,7 +13,7 @@ class OOKEncoder:
     preamble2 = "1" # low-then-high codes should have a "1" at the end of preamble
     trailer = "" # high-then-low codes should have an "1" trailer
     code_bits = 24  # number of bits spanned by the code word
-    repeat = 1 # send the code "n" times to increase chance of reception
+    repeat = 3 # send the code "n" times to increase chance of reception
 
     def __init__(self):
         pass
