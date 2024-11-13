@@ -72,7 +72,7 @@ def parse(sequence):
         print("Failed to parse")
 
 
-for row in open(sys.argv[1]).readlines():
+for row in sys.stdin.readlines():
     row = row.strip()
     if not row:
         continue
