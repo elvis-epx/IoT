@@ -8,30 +8,32 @@ class OOKEncoder:
     # Generic ASK/OOK generator for 433MHz protocols
     chirp_time = 500 # µs
     chirps = ("011", "001") # 0 and 1 respectively
-    preamble0 = "1" # ping/calibrate tx
-    preamble1 = "000000000" # preamble before and between packets
+    preamble0 = "1" # ping/calibrate tx (generally 1's)
+    preamble1 = "000000000" # preamble before and between packets (generally 0's)
     preamble2 = "1" # low-then-high codes should have a "1" at the end of preamble
     trailer = "" # high-then-low codes should have an "1" trailer
     code_bits = 24  # number of bits spanned by the code word
-    repeat = 3 # send the code "n" times to increase chance of reception
+    repeat = 2 # send the code "n" times to increase chance of reception
 
     def __init__(self):
         pass
 
     def encode(self, code):
         # Convert bits to chirps
-        chirp_seq_pre = "0" + self.preamble0 + self.preamble1
-        chirp_seq = self.preamble2
-        for i in range(self.code_bits - 1, -1, -1):
-            bit = (code & (1 << i)) and 1 or 0
-            chirp_seq += self.chirps[bit]
-        chirp_seq += self.trailer
-        chirp_seq_pos = "0"
+        chirp_seq = "0" + self.preamble0
+        for _ in range(0, self.repeat):
+            chirp_seq += self.preamble1
+            chirp_seq += self.preamble2
+            for i in range(self.code_bits - 1, -1, -1):
+                bit = (code & (1 << i)) and 1 or 0
+                chirp_seq += self.chirps[bit]
+            chirp_seq += self.trailer
+            chirp_seq += "0"
 
         # Convert chirps to RMT waveform
         rmtwaveform = []
         current_level = -1
-        for chirp in chirp_seq_pre + chirp_seq + chirp_seq_pos:
+        for chirp in chirp_seq:
             if chirp != current_level:
                 rmtwaveform.append(self.chirp_time)
                 current_level = chirp
@@ -60,18 +62,19 @@ class EV1527(OOKEncoder):
     trailer = "1"
     code_bits = 24
 
-pin = Pin(14)
+pin = Pin(2)
 # Resolution 80 MHz / 80 = 1 MHz = 1µs
 rmt = RMT(0, pin=pin, clock_div=80, idle_level=0)
-# encoder = HT6P20()
-# code = 12345669
-encoder = EV1527()
-code = 1234567
+encoder = HT6P20()
+code = 12345669
+# encoder = EV1527()
+# code = 1234567
 
 while True:
     print("Sending", code)
     rmtwaveform = encoder.encode(code)
-    print(rmtwaveform)
+    # print(rmtwaveform)
     rmt.write_pulses(tuple(rmtwaveform), 0)
-    time.sleep(2)
-    code += 1
+    time.sleep(5)
+    code += 16
+    # code += 1
