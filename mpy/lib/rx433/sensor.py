@@ -97,12 +97,13 @@ class EV1527(OOKParser):
     bitseq = "HL" # high then low (1000 and 1110)
     bit1 = "LS" # long then short (1110)
 
+parsers = [EV1527, HT6P20]
+
 ### OOK decoding - bottom half
 
 class OOKReceiver:
     IDLE = const(0)
     DATA = const(1)
-    FULL = const(2)
     TRANS_MAX = const(100)
     RING_BUF = const(10)
     # Typical preamble length is 10k-12kµs
@@ -119,70 +120,83 @@ class OOKReceiver:
         self.trans_sequence = [ [ [0, 0] for _ in range(0, self.TRANS_MAX) ] for _ in range(0, self.RING_BUF) ]
         self.trans_length = [ 0 for _ in range(0, self.RING_BUF) ]
 
-        self.last_timestamp = 0
+        self.last_t = 0
         self.last_v = -1
         self.i = 0
         self.to_parse = 0
         self.state = self.IDLE
-
         self.pin = Pin(14, Pin.IN)
-        self.pin.irq(trigger = Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.irq)
 
-    def irq(self, p):
-        # if value is 1, it means it has been 0
-        v = (p.value() + 1) % 2
-        if v == self.last_v:
-            # false transition, ignore
-            return
-        self.last_v = v
-    
-        # Calculate pulse length
-        t = ticks_us()
-        dt = ticks_diff(t, self.last_timestamp)
-        self.last_timestamp = t
-    
-        if self.state == self.FULL:
-            if self.to_parse >= self.RING_BUF:
+        # optimization
+        self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
+
+        Task(False, "eval", self.eval, 500 * MILISSECONDS)
+
+    def eval(self, _):
+        # reinsert itself at the end of task list
+        Task(False, "eval", self.eval, 1 * MILISSECONDS)
+
+        t0 = ticks_us()
+
+        while True:
+            t = ticks_us()
+            if ticks_diff(t, t0) > 500000:
+                # yield
                 return
+
+            v = self.pin.value()
+            if v == self.last_v:
+                continue
+            self.last_v = v
+
+            # if current value is 1, it means it has been 0 (and vice-versa)
+            # and we are interested in the past value
+            v ^= 1
+    
+            # Calculate pulse length
+            dt = ticks_diff(t, self.last_t)
+            self.last_t = t
+    
+            if self.to_parse >= self.RING_BUF:
+                # yield
+                return
+    
+            if self.state == self.IDLE:
+                if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
+                    # detected preamble
+                    self.state = self.DATA
+                    self.trans_length[self.i] = 0
+                continue
+    
+            # state == DATA at this point
+    
+            if dt > self.DATA_MIN and dt < self.DATA_MAX:
+                # chirps of data
+                self.trans_sequence[self.i][self.trans_length[self.i]][0] = v
+                self.trans_sequence[self.i][self.trans_length[self.i]][1] = dt
+                self.trans_length[self.i] += 1
+                if self.trans_length[self.i] >= self.TRANS_MAX:
+                    # overflow, discard
+                    self.state = self.IDLE
+                continue
+    
+            # Sequence terminated by silence or bad transition
             self.state = self.IDLE
     
-        if self.state == self.IDLE:
-            if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
-                # detected preamble
-                self.state = self.DATA
-                self.trans_length[self.i] = 0
-            return
-    
-        # state == DATA
-    
-        if dt > self.DATA_MIN and dt < self.DATA_MAX:
-            # chirps of data
-            self.trans_sequence[self.i][self.trans_length[self.i]][0] = v
-            self.trans_sequence[self.i][self.trans_length[self.i]][1] = dt
-            self.trans_length[self.i] += 1
-            if self.trans_length[self.i] >= self.TRANS_MAX:
-                # overflow, discard
-                self.state = self.IDLE
-            return
-    
-        # Sequence terminated by silence or bad transition
-        self.state = self.IDLE
-    
-        if self.trans_length[self.i] > self.TRANS_COUNT_MIN:
-            # Export ongoing sequence
-            self.to_parse += 1
-            self.i = (self.i + 1) % self.RING_BUF
-    
-            if self.to_parse >= self.RING_BUF:
-                # Must not overwrite the buffer pointed by "i" for now
-                self.state = self.FULL
+            if self.trans_length[self.i] in self.expected_lengths:
+                # apparently good sequence
+                # TODO observability of bad sequences
+                # Export ongoing sequence
+                self.to_parse += 1
+                self.i = (self.i + 1) % self.RING_BUF
+                # yield for faster processing of good sequence
                 return
     
-        if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
+            if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
                 # new preamble (back-to-back packet)
-            # short-circuit state machine to DATA
-            self.trans_length[self.i] = 0
-            self.state = self.DATA
+                # short-circuit state machine to DATA
+                self.trans_length[self.i] = 0
+                self.state = self.DATA
     
     def get_data(self):
         if self.to_parse == 0:
@@ -200,23 +214,23 @@ class OOKReceiver:
 class KeyfobRX:
     def __init__(self, mqttpub):
         self.mqttpub = mqttpub
-        self.eval_task = Task(True, "eval", self.eval, 500 * MILISSECONDS)
-        self.parsers = [EV1527, HT6P20]
+        self.eval_task = Task(True, "eval", self.eval, 50 * MILISSECONDS)
         self.receiver = OOKReceiver()
 
     def eval(self, _):
-        data = self.receiver.get_data()
-        if not data:
-            return
-        print("----------------")
-        print(data)
-        print("length %d" % len(data))
-        for parser_class in self.parsers:
-            parser = parser_class(data)
-            if parser.parse():
-                res = parser.res()
-                print(res)
-                self.mqttpub.new_value(res)
-                break
-        else:
-            print("Failed to parse")
+        while True:
+            data = self.receiver.get_data()
+            if not data:
+                return
+            print("----------------")
+            print(data)
+            print("length %d" % len(data))
+            for parser_class in parsers:
+                parser = parser_class(data)
+                if parser.parse():
+                    res = parser.res()
+                    print(res)
+                    self.mqttpub.new_value(res)
+                    break
+            else:
+                print("Failed to parse")
