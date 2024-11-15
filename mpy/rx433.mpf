@@ -1,0 +1,22 @@
+md /lib
+md /lib/epx
+put lib/epx/__init__.py /lib/epx/__init__.py
+put lib/epx/config.py /lib/epx/config.py
+put lib/epx/mqtt.py /lib/epx/mqtt.py
+put lib/epx/net.py /lib/epx/net.py
+put lib/epx/watchdog.py /lib/epx/watchdog.py
+put lib/epx/loop.py /lib/epx/loop.py
+put lib/epx/ota.py /lib/epx/ota.py
+
+md /lib/uumqtt
+put lib/uumqtt/__init__.py  /lib/uumqtt/__init__.py 
+put lib/uumqtt/simple2.py  /lib/uumqtt/simple2.py 
+put lib/uumqtt/errno.py /lib/uumqtt/errno.py
+
+md /lib/rx433
+put lib/rx433/__init__.py /lib/rx433/__init__.py
+put lib/rx433/service.py /lib/rx433/service.py
+put lib/rx433/sensor.py /lib/rx433/sensor.py
+
+put rx433_boot.py boot.py
+put rx433_main.py main.py
