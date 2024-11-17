@@ -104,6 +104,7 @@ parsers = [EV1527, HT6P20]
 class OOKReceiver:
     IDLE = const(0)
     DATA = const(1)
+    FULL = const(2)
     TRANS_MAX = const(100)
     RING_BUF = const(10)
     # Typical preamble length is 10k-12kµs
@@ -126,6 +127,13 @@ class OOKReceiver:
         self.to_parse = 0
         self.state = self.IDLE
         self.pin = Pin(14, Pin.IN)
+
+        self.stats_restart = 0
+        self.stats_start = 0
+        self.stats_ok = 0
+        self.stats_nok = 0
+        self.stats_overflow = 0
+        self.stats_full = 0
 
         # optimization
         self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
@@ -156,8 +164,13 @@ class OOKReceiver:
             # Calculate pulse length
             dt = ticks_diff(t, self.last_t)
             self.last_t = t
-    
+
+            if self.state == self.FULL and self.to_parse < self.RING_BUF:
+                self.state = self.IDLE
+
             if self.to_parse >= self.RING_BUF:
+                self.stats_full += 1
+                self.state = self.FULL
                 # yield
                 return
     
@@ -166,6 +179,7 @@ class OOKReceiver:
                     # detected preamble
                     self.state = self.DATA
                     self.trans_length[self.i] = 0
+                    self.stats_start += 1
                 continue
     
             # state == DATA at this point
@@ -178,12 +192,14 @@ class OOKReceiver:
                 if self.trans_length[self.i] >= self.TRANS_MAX:
                     # overflow, discard
                     self.state = self.IDLE
+                    self.stats_overflow += 1
                 continue
     
             # Sequence terminated by silence or bad transition
             self.state = self.IDLE
     
             if self.trans_length[self.i] in self.expected_lengths:
+                self.stats_ok += 1
                 # apparently good sequence
                 # TODO observability of bad sequences
                 # Export ongoing sequence
@@ -191,12 +207,15 @@ class OOKReceiver:
                 self.i = (self.i + 1) % self.RING_BUF
                 # yield for faster processing of good sequence
                 return
-    
+            else:
+                self.stats_nok += 1
+
             if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
                 # new preamble (back-to-back packet)
                 # short-circuit state machine to DATA
                 self.trans_length[self.i] = 0
                 self.state = self.DATA
+                self.stats_restart += 1
     
     def get_data(self):
         if self.to_parse == 0:
@@ -216,21 +235,32 @@ class KeyfobRX:
         self.mqttpub = mqttpub
         self.eval_task = Task(True, "eval", self.eval, 50 * MILISSECONDS)
         self.receiver = OOKReceiver()
+        self.received = 0
+        self.good = 0
+        self.bad = 0
 
     def eval(self, _):
         while True:
             data = self.receiver.get_data()
             if not data:
                 return
-            print("----------------")
-            print(data)
-            print("length %d" % len(data))
+            self.received += 1
+            print("--- received data, length %d" % len(data))
             for parser_class in parsers:
                 parser = parser_class(data)
                 if parser.parse():
+                    self.good += 1
                     res = parser.res()
                     print(res)
                     self.mqttpub.new_value(res)
                     break
             else:
-                print("Failed to parse")
+                print("... failed to parse")
+                self.bad += 1
+
+    def stats(self):
+        return "recv=%d good=%d bad=%d ook_start=%d ook_restart=%d ook_ok=%d " \
+                "ook_nok=%d ook_overflow=%d ook_full=%d" % \
+                (self.received, self.good, self.bad, \
+                self.receiver.stats_start, self.receiver.stats_restart, self.receiver.stats_ok, \
+                self.receiver.stats_nok, self.receiver.stats_overflow, self.receiver.stats_full)

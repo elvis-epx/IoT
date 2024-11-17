@@ -17,9 +17,10 @@ net = Net(config)
 mqtt = MQTT(config, net, watchdog)
 mqtt_ota_start(mqtt, config)
 
-mqttservice = KeyfobService(mqtt)
+mqttservice = KeyfobService()
 sensor = KeyfobRX(mqttservice)
 
 mqtt.pub(mqttservice)
+mqtt.pub(KeyfobStats(sensor))
 
 loop.run()
