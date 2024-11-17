@@ -58,13 +58,13 @@ class StateMachine:
     def deattach(self, task):
         self.tasks.remove(task)
 
-    # FIXME not detattached if cancelled by client
+    # FIXME not detached if cancelled by client
     def recurring_task(self, name, cb, to, fudge=0):
         tsk = Task(True, name, cb, to, fudge)
         self.attach(tsk)
         return tsk
 
-    # FIXME not detattached if cancelled by client
+    # FIXME not detached if cancelled by client
     def onetime_task(self, name, cb, to, fudge=0):
         def cb_in(task):
             self.deattach(task)
