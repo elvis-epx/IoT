@@ -242,13 +242,18 @@ def run(led_pin=2, led_inverse=0):
     
         if hasattr(machine, 'TEST_ENV'):
             test_task = Task(True, "testh", machine.test_mock, 250 * MILISSECONDS)
+
+        # Makes sure poll.poll() is called regularly,
+        # even if there are overdue (t < 0) tasks all the time
+        yield_to_poll = 0
     
         while running:
+            yield_to_poll ^= 1
             task, t = next_task()
 
-            if t > 0:
+            if t > 0 or yield_to_poll:
                 try:
-                    poll_res = opoll.poll(t)
+                    poll_res = opoll.poll(max(t, 0))
                 except OSError: # pragma: no cover
                     # "Should not happen", seems to be a MicroPython-only behavior
                     # when the underlying network interface fails
