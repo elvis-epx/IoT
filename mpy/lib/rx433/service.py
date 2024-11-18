@@ -1,16 +1,16 @@
 from epx.mqtt import MQTTPub
-from epx.loop import SECONDS, MINUTES, Shortcronometer, Longcronometer
+from epx.loop import MILISSECONDS, SECONDS, MINUTES, Shortcronometer, Longcronometer
 
 
 class KeyfobService(MQTTPub):
     def __init__(self):
         # client must call forcepub() manually
         MQTTPub.__init__(self, "stat/%s/Keyfob", 0, 0, False)
-        self.value = ""
-        self.last_update = Longcronometer()
+        self.value = None
+        self.last_update = Shortcronometer()
 
     def new_value(self, value):
-        if self.last_update.elapsed() < (1 * SECONDS):
+        if self.last_update.elapsed() < (250 * MILISSECONDS):
             return
         self.value = value
         self.forcepub()
