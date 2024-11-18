@@ -1,5 +1,6 @@
 from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES
 from epx import loop
+import machine
 from machine import Pin
 from time import ticks_us, ticks_add, ticks_diff
 
@@ -138,7 +139,9 @@ class OOKReceiver:
         # optimization
         self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
 
-        Task(False, "eval", self.eval, 500 * MILISSECONDS)
+        # Delay startup to after the watchdog is active (10s)
+        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
+        Task(False, "eval", self.eval, startup_time * SECONDS)
 
     def eval(self, _):
         # reinsert itself at the end of task list
