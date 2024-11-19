@@ -22,7 +22,7 @@ class KeyfobService(MQTTPub):
 
 class KeyfobStats(MQTTPub):
     def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/Statistics", 10 * MINUTES, 10 * MINUTES, False)
+        MQTTPub.__init__(self, "stat/%s/Statistics", 60 * MINUTES, 60 * MINUTES, False)
         self.sensor = sensor
 
     def gen_msg(self):
