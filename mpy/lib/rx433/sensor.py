@@ -1,8 +1,7 @@
 from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES
 from epx import loop
-import machine
-from machine import Pin
-from time import ticks_us, ticks_add, ticks_diff
+import machine, esp32
+# Uses custom MP https://github.com/elvis-epx/micropython/blob/rmt_rx/ports/esp32/esp32_rmt2.c
 
 ### OOK decoder - Upper half
 
@@ -103,110 +102,58 @@ parsers = [EV1527, HT6P20]
 ### OOK decoding - bottom half
 
 class OOKReceiver:
-    IDLE = const(0)
-    DATA = const(1)
-    TRANS_MAX = const(100)
     # Typical preamble length is 10k-12kµs
-    PREAMBLE_MIN = const(5000)
-    PREAMBLE_MAX = const(20000)
+    PREAMBLE_MIN_NS = const(5000 * 1000)
     # EV1527 = 230µs, HT6P20 = 500µs
     DATA_MIN_US = const(150)
     # EV1527 = 3x min, HT6P20 = 2x min
     DATA_MAX_US = const(1500)
     # 24 bits = 48 transitions for EV1527, 28 bits for HT6P20
-    TRANS_COUNT_MIN = const(40)
 
     def __init__(self, observer):
-        self.sequence = []
-        self.last_t = 0
-        self.last_v = -1
-        self.state = self.IDLE
-        self.pin = Pin(14, Pin.IN)
-
-        self.stats_restart = 0
-        self.stats_start = 0
         self.stats_ok = 0
-        self.stats_nok = 0
-        self.stats_overflow = 0
-
+        self.stats_nok1 = 0
+        self.stats_nok2 = 0
         self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
         self.observer = observer
+        self.rmt = None
 
         # Delay startup to after the watchdog is active (10s)
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
-        Task(False, "eval", self.eval, startup_time * SECONDS)
+        Task(False, "start", self.start, startup_time * SECONDS)
 
-    def eval(self, _):
-        # reinsert itself at the end of task list
-        Task(False, "eval", self.eval, 1 * MILISSECONDS)
+    def start(self, _):
+        pin = machine.Pin(14, machine.Pin.IN)
+        # ideally min_ns would be DATA_MIN_US * 1000 / 4 or so for better filtering,
+        # but current RMT API does not support bigger values
+        self.rmt = esp32.RMT2(pin=pin, cb=self.recv, buf=64, \
+                              min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
+                              resolution_hz=1000000)
+        self.rmt.read_pulses()
 
-        t0 = ticks_us()
-
-        while True:
-            t = ticks_us()
-            if ticks_diff(t, t0) > 500000:
-                # yield
+    def recv(self, data):
+        for sample in data:
+            abs_sample = abs(sample)
+            if abs_sample < self.DATA_MIN_US or abs_sample > self.DATA_MAX_US:
+                self.stats_nok1 += 1
                 return
 
-            v = self.pin.value()
-            if v == self.last_v:
-                continue
-            self.last_v = v
+        if len(data) not in self.expected_lengths:
+            self.stats_nok2 += 1
+            return
+    
+        self.stats_ok += 1
+        self.observer.recv(data)
 
-            # if current value is 1, it means it has been 0 (and vice-versa)
-            # and we are interested in the past value
-            v ^= 1
-    
-            # Calculate pulse length
-            dt = ticks_diff(t, self.last_t)
-            self.last_t = t
-
-            if self.state == self.IDLE:
-                if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
-                    # detected preamble
-                    self.state = self.DATA
-                    self.sequence = []
-                    self.stats_start += 1
-                continue
-    
-            # state == DATA at this point
-    
-            if dt > self.DATA_MIN_US and dt < self.DATA_MAX_US:
-                # chirps of data
-                self.sequence.append(dt * (v and 1 or -1))
-                if len(self.sequence) >= self.TRANS_MAX:
-                    # overflow, discard
-                    self.state = self.IDLE
-                    self.stats_overflow += 1
-                continue
-    
-            # Sequence terminated by silence or bad transition
-            self.state = self.IDLE
-    
-            if len(self.sequence) in self.expected_lengths:
-                self.stats_ok += 1
-                # apparently good sequence
-                self.observer.recv(self.sequence)
-                # yield for faster processing of good sequence
-                return
-            else:
-                self.stats_nok += 1
-
-            if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
-                # new preamble (back-to-back packet)
-                # short-circuit state machine to DATA
-                self.sequence = []
-                self.state = self.DATA
-                self.stats_restart += 1
-    
     def stop(self):
-        pass
-
+        if not self.rmt:
+            return
+        self.rmt.stop_read_pulses()
+        self.rmt = None
+    
     def stats(self):
-        return "ook_start=%d ook_restart=%d ook_ok=%d " \
-                "ook_nok=%d ook_overflow=%d" % \
-                (self.stats_start, self.stats_restart, self.stats_ok, \
-                self.stats_nok, self.stats_overflow)
+        return "ook_ok=%d ook_nok1=%d ook_nok2=%d" % \
+                (self.receiver.stats_ok, self.receiver.stats_nok1, self.receiver.stats_nok2)
 
 ### OOK decoding - glue and front-end class
 
