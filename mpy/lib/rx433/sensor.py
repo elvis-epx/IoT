@@ -126,12 +126,17 @@ class OOKReceiver:
         pin = machine.Pin(14, machine.Pin.IN)
         # ideally min_ns would be DATA_MIN_US * 1000 / 4 or so for better filtering,
         # but current RMT API does not support bigger values
-        self.rmt = esp32.RMT2(pin=pin, cb=self.recv, buf=64, \
+        self.rmt = esp32.RMT2(pin=pin, buf=64, \
                               min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
                               resolution_hz=1000000)
+        loop.poll_object("RMT", self.rmt, loop.POLLIN, self.recv)
         self.rmt.read_pulses()
 
-    def recv(self, data):
+    def recv(self, _):
+        data = self.rmt.get_data()
+        if not data:
+            return
+
         for sample in data:
             abs_sample = abs(sample)
             if abs_sample < self.DATA_MIN_US or abs_sample > self.DATA_MAX_US:
