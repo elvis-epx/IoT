@@ -1,7 +1,6 @@
 from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES
 from epx import loop
-import machine
-from machine import Pin
+import machine, esp32
 from time import ticks_us, ticks_add, ticks_diff
 
 ### OOK decoder - Upper half
@@ -121,7 +120,7 @@ class OOKReceiver:
         self.last_t = 0
         self.last_v = -1
         self.state = self.IDLE
-        self.pin = Pin(14, Pin.IN)
+        self.pin = machine.Pin(14, machine.Pin.IN)
 
         self.stats_restart = 0
         self.stats_start = 0
