@@ -158,7 +158,7 @@ class OOKReceiver:
     
     def stats(self):
         return "ook_ok=%d ook_nok1=%d ook_nok2=%d" % \
-                (self.receiver.stats_ok, self.receiver.stats_nok1, self.receiver.stats_nok2)
+                (self.stats_ok, self.stats_nok1, self.stats_nok2)
 
 ### OOK decoding - glue and front-end class
 
