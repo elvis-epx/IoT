@@ -110,9 +110,9 @@ class OOKReceiver:
     PREAMBLE_MIN = const(5000)
     PREAMBLE_MAX = const(20000)
     # EV1527 = 230µs, HT6P20 = 500µs
-    DATA_MIN = const(150)
+    DATA_MIN_US = const(150)
     # EV1527 = 3x min, HT6P20 = 2x min
-    DATA_MAX = const(1500)
+    DATA_MAX_US = const(1500)
     # 24 bits = 48 transitions for EV1527, 28 bits for HT6P20
     TRANS_COUNT_MIN = const(40)
 
@@ -171,7 +171,7 @@ class OOKReceiver:
     
             # state == DATA at this point
     
-            if dt > self.DATA_MIN and dt < self.DATA_MAX:
+            if dt > self.DATA_MIN_US and dt < self.DATA_MAX_US:
                 # chirps of data
                 self.sequence.append(dt * (v and 1 or -1))
                 if len(self.sequence) >= self.TRANS_MAX:
