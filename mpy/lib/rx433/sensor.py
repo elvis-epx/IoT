@@ -105,9 +105,7 @@ parsers = [EV1527, HT6P20]
 class OOKReceiver:
     IDLE = const(0)
     DATA = const(1)
-    FULL = const(2)
     TRANS_MAX = const(100)
-    RING_BUF = const(10)
     # Typical preamble length is 10k-12kµs
     PREAMBLE_MIN = const(5000)
     PREAMBLE_MAX = const(20000)
@@ -119,13 +117,9 @@ class OOKReceiver:
     TRANS_COUNT_MIN = const(40)
 
     def __init__(self, observer):
-        self.trans_sequence = [ [ 0 for _ in range(0, self.TRANS_MAX) ] for _ in range(0, self.RING_BUF) ]
-        self.trans_length = [ 0 for _ in range(0, self.RING_BUF) ]
-
+        self.sequence = []
         self.last_t = 0
         self.last_v = -1
-        self.i = 0
-        self.to_parse = 0
         self.state = self.IDLE
         self.pin = Pin(14, Pin.IN)
 
@@ -134,7 +128,6 @@ class OOKReceiver:
         self.stats_ok = 0
         self.stats_nok = 0
         self.stats_overflow = 0
-        self.stats_full = 0
 
         self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
         self.observer = observer
@@ -168,20 +161,11 @@ class OOKReceiver:
             dt = ticks_diff(t, self.last_t)
             self.last_t = t
 
-            if self.state == self.FULL and self.to_parse < self.RING_BUF:
-                self.state = self.IDLE
-
-            if self.to_parse >= self.RING_BUF:
-                self.stats_full += 1
-                self.state = self.FULL
-                # yield
-                return
-    
             if self.state == self.IDLE:
                 if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
                     # detected preamble
                     self.state = self.DATA
-                    self.trans_length[self.i] = 0
+                    self.sequence = []
                     self.stats_start += 1
                 continue
     
@@ -189,9 +173,8 @@ class OOKReceiver:
     
             if dt > self.DATA_MIN and dt < self.DATA_MAX:
                 # chirps of data
-                self.trans_sequence[self.i][self.trans_length[self.i]] = dt * (v and 1 or -1)
-                self.trans_length[self.i] += 1
-                if self.trans_length[self.i] >= self.TRANS_MAX:
+                self.sequence.append(dt * (v and 1 or -1))
+                if len(self.sequence) >= self.TRANS_MAX:
                     # overflow, discard
                     self.state = self.IDLE
                     self.stats_overflow += 1
@@ -200,13 +183,10 @@ class OOKReceiver:
             # Sequence terminated by silence or bad transition
             self.state = self.IDLE
     
-            if self.trans_length[self.i] in self.expected_lengths:
+            if len(self.sequence) in self.expected_lengths:
                 self.stats_ok += 1
                 # apparently good sequence
-                # TODO observability of bad sequences
-                # Export ongoing sequence
-                self.to_parse += 1
-                self.i = (self.i + 1) % self.RING_BUF
+                self.observer.recv(self.sequence)
                 # yield for faster processing of good sequence
                 return
             else:
@@ -215,28 +195,18 @@ class OOKReceiver:
             if dt > self.PREAMBLE_MIN and dt < self.PREAMBLE_MAX and v == 0:
                 # new preamble (back-to-back packet)
                 # short-circuit state machine to DATA
-                self.trans_length[self.i] = 0
+                self.sequence = []
                 self.state = self.DATA
                 self.stats_restart += 1
     
-    def get_data(self):
-        if self.to_parse == 0:
-            return None
-
-        j = (self.i - self.to_parse) % self.RING_BUF
-        data = self.trans_sequence[j][0:self.trans_length[j]]
-        self.to_parse -= 1
-
-        return data
-
     def stop(self):
         pass
 
     def stats(self):
         return "ook_start=%d ook_restart=%d ook_ok=%d " \
-                "ook_nok=%d ook_overflow=%d ook_full=%d" % \
+                "ook_nok=%d ook_overflow=%d" % \
                 (self.stats_start, self.stats_restart, self.stats_ok, \
-                self.stats_nok, self.stats_overflow, self.stats_full)
+                self.stats_nok, self.stats_overflow)
 
 ### OOK decoding - glue and front-end class
 
