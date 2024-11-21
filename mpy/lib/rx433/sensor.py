@@ -236,7 +236,11 @@ class OOKReceiverRMT:
         # but current RMT API does not support bigger values
         self.rmt = esp32.RMT2(pin=pin, buf=64, \
                               min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
-                              resolution_hz=1000000)
+                              resolution_hz=1000000,
+                              soft_min_value=DATA_MIN_US,
+                              soft_max_value=DATA_MAX_US,
+                              soft_min_len=min(self.expected_lengths),
+                              soft_max_len=max(self.expected_lengths))
         loop.poll_object("RMT", self.rmt, loop.POLLIN, self.recv)
         self.rmt.read_pulses()
 
@@ -248,7 +252,8 @@ class OOKReceiverRMT:
         if len(data) not in self.expected_lengths:
             self.stats_nok2 += 1
             return
-    
+   
+        # unnecessary since we use soft_{min,max}_value
         for sample in data:
             abs_sample = abs(sample)
             if abs_sample < self.DATA_MIN_US or abs_sample > self.DATA_MAX_US:
