@@ -137,16 +137,16 @@ class OOKReceiver:
         if not data:
             return
 
+        if len(data) not in self.expected_lengths:
+            self.stats_nok2 += 1
+            return
+    
         for sample in data:
             abs_sample = abs(sample)
             if abs_sample < self.DATA_MIN_US or abs_sample > self.DATA_MAX_US:
                 self.stats_nok1 += 1
                 return
 
-        if len(data) not in self.expected_lengths:
-            self.stats_nok2 += 1
-            return
-    
         self.stats_ok += 1
         self.observer.recv(data)
 
