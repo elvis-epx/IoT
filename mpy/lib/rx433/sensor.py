@@ -39,7 +39,7 @@ class OOKParser:
     def bit_timing(self, bitcount, lh):
         tot = totsq = 0
         for i in range(0, bitcount):
-            bittime = self.sequence[i*2+lh][1] + self.sequence[i*2+1+lh][1]
+            bittime = abs(self.sequence[i*2+lh]) + abs(self.sequence[i*2+1+lh])
             tot += bittime
             totsq += bittime * bittime
         mean = tot / bitcount
@@ -48,7 +48,7 @@ class OOKParser:
     # Find if timing of a single bit is off
     def anomalous_bit_timing(self, bitcount, lh, std, dev):
         for i in range(0, bitcount):
-            bit_time = self.sequence[i*2+lh][1] + self.sequence[i*2+1+lh][1]
+            bit_time = abs(self.sequence[i*2+lh]) + abs(self.sequence[i*2+1+lh])
             if bit_time < (std - dev) or bit_time > (std + dev):
                 return (i, bit_time)
         return None
@@ -73,7 +73,7 @@ class OOKParser:
         # Parse sane sequence
         self.code = 0
         for i in range(0, bitcount):
-            lsbit = (self.sequence[i*2+lh][1] > self.sequence[i*2+1+lh][1]) and 1 or 0
+            lsbit = (abs(self.sequence[i*2+lh]) > abs(self.sequence[i*2+1+lh])) and 1 or 0
             self.code = (self.code << 1) | (lsbit ^ ls)
 
         return True
@@ -119,7 +119,7 @@ class OOKReceiver:
     TRANS_COUNT_MIN = const(40)
 
     def __init__(self):
-        self.trans_sequence = [ [ [0, 0] for _ in range(0, self.TRANS_MAX) ] for _ in range(0, self.RING_BUF) ]
+        self.trans_sequence = [ [ 0 for _ in range(0, self.TRANS_MAX) ] for _ in range(0, self.RING_BUF) ]
         self.trans_length = [ 0 for _ in range(0, self.RING_BUF) ]
 
         self.last_t = 0
@@ -189,8 +189,7 @@ class OOKReceiver:
     
             if dt > self.DATA_MIN and dt < self.DATA_MAX:
                 # chirps of data
-                self.trans_sequence[self.i][self.trans_length[self.i]][0] = v
-                self.trans_sequence[self.i][self.trans_length[self.i]][1] = dt
+                self.trans_sequence[self.i][self.trans_length[self.i]] = dt * (v and 1 or -1)
                 self.trans_length[self.i] += 1
                 if self.trans_length[self.i] >= self.TRANS_MAX:
                     # overflow, discard
@@ -226,7 +225,6 @@ class OOKReceiver:
 
         j = (self.i - self.to_parse) % self.RING_BUF
         data = self.trans_sequence[j][0:self.trans_length[j]]
-        data = [ a[:] for a in data ]
         self.to_parse -= 1
 
         return data
