@@ -144,7 +144,7 @@ class OOKReceiverBusy:
 
         while True:
             t = ticks_us()
-            if ticks_diff(t, t0) > 500000:
+            if ticks_diff(t, t0) > 125000:
                 # yield
                 return
 
