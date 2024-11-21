@@ -118,7 +118,7 @@ class OOKReceiver:
     # 24 bits = 48 transitions for EV1527, 28 bits for HT6P20
     TRANS_COUNT_MIN = const(40)
 
-    def __init__(self):
+    def __init__(self, observer):
         self.trans_sequence = [ [ 0 for _ in range(0, self.TRANS_MAX) ] for _ in range(0, self.RING_BUF) ]
         self.trans_length = [ 0 for _ in range(0, self.RING_BUF) ]
 
@@ -136,8 +136,8 @@ class OOKReceiver:
         self.stats_overflow = 0
         self.stats_full = 0
 
-        # optimization
         self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
+        self.observer = observer
 
         # Delay startup to after the watchdog is active (10s)
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
@@ -243,30 +243,25 @@ class OOKReceiver:
 class KeyfobRX:
     def __init__(self, mqttpub):
         self.mqttpub = mqttpub
-        self.eval_task = Task(True, "eval", self.eval, 50 * MILISSECONDS)
-        self.receiver = OOKReceiver()
+        self.receiver = OOKReceiver(self)
         self.received = 0
         self.good = 0
         self.bad = 0
 
-    def eval(self, _):
-        while True:
-            data = self.receiver.get_data()
-            if not data:
-                return
-            self.received += 1
-            print("--- received data, length %d" % len(data))
-            for parser_class in parsers:
-                parser = parser_class(data)
-                if parser.parse():
-                    self.good += 1
-                    res = parser.res()
-                    print(res)
-                    self.mqttpub.new_value(res)
-                    break
-            else:
-                print("... failed to parse")
-                self.bad += 1
+    def recv(self, data):
+        self.received += 1
+        print("--- received data, length %d" % len(data))
+        for parser_class in parsers:
+            parser = parser_class(data)
+            if parser.parse():
+                self.good += 1
+                res = parser.res()
+                print(res)
+                self.mqttpub.new_value(res)
+                break
+        else:
+            print("... failed to parse")
+            self.bad += 1
 
     def stop(self):
         self.receiver.stop()
