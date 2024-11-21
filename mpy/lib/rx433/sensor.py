@@ -232,6 +232,12 @@ class OOKReceiver:
     def stop(self):
         pass
 
+    def stats(self):
+        return "ook_start=%d ook_restart=%d ook_ok=%d " \
+                "ook_nok=%d ook_overflow=%d ook_full=%d" % \
+                (self.stats_start, self.stats_restart, self.stats_ok, \
+                self.stats_nok, self.stats_overflow, self.stats_full)
+
 ### OOK decoding - glue and front-end class
 
 class KeyfobRX:
@@ -262,9 +268,9 @@ class KeyfobRX:
                 print("... failed to parse")
                 self.bad += 1
 
+    def stop(self):
+        self.receiver.stop()
+
     def stats(self):
-        return "recv=%d good=%d bad=%d ook_start=%d ook_restart=%d ook_ok=%d " \
-                "ook_nok=%d ook_overflow=%d ook_full=%d" % \
-                (self.received, self.good, self.bad, \
-                self.receiver.stats_start, self.receiver.stats_restart, self.receiver.stats_ok, \
-                self.receiver.stats_nok, self.receiver.stats_overflow, self.receiver.stats_full)
+        return ("recv=%d good=%d bad=%d " % (self.received, self.good, self.bad)) + \
+               self.receiver.stats()
