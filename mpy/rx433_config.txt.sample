@@ -3,3 +3,4 @@ password <password or None>
 mqttbroker <address or DNS name>
 mqttname KeyfobReceiver
 watchdog <0|1>
+rmt <0|1>

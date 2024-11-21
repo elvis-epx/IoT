@@ -2,6 +2,7 @@ from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES
 from epx import loop
 import machine, esp32
 from time import ticks_us, ticks_add, ticks_diff
+# Uses OOKReceiverRMT custom MP https://github.com/elvis-epx/micropython/blob/rmt_rx/ports/esp32/esp32_rmt2.c
 
 ### OOK decoder - Upper half
 
@@ -101,7 +102,7 @@ parsers = [EV1527, HT6P20]
 
 ### OOK decoding - bottom half
 
-class OOKReceiver:
+class OOKReceiverBusy:
     IDLE = const(0)
     DATA = const(1)
     TRANS_MAX = const(100)
@@ -109,9 +110,9 @@ class OOKReceiver:
     PREAMBLE_MIN = const(5000)
     PREAMBLE_MAX = const(20000)
     # EV1527 = 230µs, HT6P20 = 500µs
-    DATA_MIN_US = const(150)
+    DATA_MIN = const(150)
     # EV1527 = 3x min, HT6P20 = 2x min
-    DATA_MAX_US = const(1500)
+    DATA_MAX = const(1500)
     # 24 bits = 48 transitions for EV1527, 28 bits for HT6P20
     TRANS_COUNT_MIN = const(40)
 
@@ -170,7 +171,7 @@ class OOKReceiver:
     
             # state == DATA at this point
     
-            if dt > self.DATA_MIN_US and dt < self.DATA_MAX_US:
+            if dt > self.DATA_MIN and dt < self.DATA_MAX:
                 # chirps of data
                 self.sequence.append(dt * (v and 1 or -1))
                 if len(self.sequence) >= self.TRANS_MAX:
@@ -207,12 +208,75 @@ class OOKReceiver:
                 (self.stats_start, self.stats_restart, self.stats_ok, \
                 self.stats_nok, self.stats_overflow)
 
+
+class OOKReceiverRMT:
+    # Typical preamble length is 10k-12kµs
+    PREAMBLE_MIN_NS = const(5000 * 1000)
+    # EV1527 = 230µs, HT6P20 = 500µs
+    DATA_MIN_US = const(150)
+    # EV1527 = 3x min, HT6P20 = 2x min
+    DATA_MAX_US = const(1500)
+    # 24 bits = 48 transitions for EV1527, 28 bits for HT6P20
+
+    def __init__(self, observer):
+        self.stats_ok = 0
+        self.stats_nok1 = 0
+        self.stats_nok2 = 0
+        self.expected_lengths = [ c.exp_sequence_len for c in parsers ]
+        self.observer = observer
+        self.rmt = None
+
+        # Delay startup to after the watchdog is active (10s)
+        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
+        Task(False, "start", self.start, startup_time * SECONDS)
+
+    def start(self, _):
+        pin = machine.Pin(14, machine.Pin.IN)
+        # ideally min_ns would be DATA_MIN_US * 1000 / 4 or so for better filtering,
+        # but current RMT API does not support bigger values
+        self.rmt = esp32.RMT2(pin=pin, buf=64, \
+                              min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
+                              resolution_hz=1000000)
+        loop.poll_object("RMT", self.rmt, loop.POLLIN, self.recv)
+        self.rmt.read_pulses()
+
+    def recv(self, _):
+        data = self.rmt.get_data()
+        if not data:
+            return
+
+        if len(data) not in self.expected_lengths:
+            self.stats_nok2 += 1
+            return
+    
+        for sample in data:
+            abs_sample = abs(sample)
+            if abs_sample < self.DATA_MIN_US or abs_sample > self.DATA_MAX_US:
+                self.stats_nok1 += 1
+                return
+
+        self.stats_ok += 1
+        self.observer.recv(data)
+
+    def stop(self):
+        if not self.rmt:
+            return
+        self.rmt.stop_read_pulses()
+        self.rmt = None
+    
+    def stats(self):
+        return "ook_ok=%d ook_nok1=%d ook_nok2=%d" % \
+                (self.stats_ok, self.stats_nok1, self.stats_nok2)
 ### OOK decoding - glue and front-end class
 
 class KeyfobRX:
-    def __init__(self, mqttpub):
+    def __init__(self, config, mqttpub):
         self.mqttpub = mqttpub
-        self.receiver = OOKReceiver(self)
+
+        if 'rmt' in config.data and config.data['rmt'] == "1":
+            self.receiver = OOKReceiverRMT(self)
+        else:
+            self.receiver = OOKReceiverBusy(self)
         self.received = 0
         self.good = 0
         self.bad = 0
