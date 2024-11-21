@@ -23,4 +23,8 @@ sensor = KeyfobRX(mqttservice)
 mqtt.pub(mqttservice)
 mqtt.pub(KeyfobStats(sensor))
 
-loop.run()
+try:
+    loop.run()
+except:
+    sensor.stop()
+    raise

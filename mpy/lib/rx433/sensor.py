@@ -231,6 +231,9 @@ class OOKReceiver:
 
         return data
 
+    def stop(self):
+        pass
+
 ### OOK decoding - glue and front-end class
 
 class KeyfobRX:
