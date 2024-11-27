@@ -234,7 +234,7 @@ class OOKReceiverRMT:
         pin = machine.Pin(14, machine.Pin.IN)
         # ideally min_ns would be DATA_MIN_US * 1000 / 4 or so for better filtering,
         # but current RMT API does not support bigger values
-        self.rmt = esp32.RMT2(pin=pin, buf=64, \
+        self.rmt = esp32.RMT2(pin=pin, num_symbols=64, \
                               min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
                               resolution_hz=1000000,
                               soft_min_value=DATA_MIN_US,
