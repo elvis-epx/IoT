@@ -9,6 +9,8 @@ class FlowMeter:
         self.pulserate = float(config.data['flowpulserate'])
         print("config: flow pulse rate %f" % self.pulserate)
         self.single_pulse_vol = (1.0 / 60.0) / self.pulserate # volume of a single pulse
+        # maximum valid flow, convert L/min to pulses/s
+        self.maxflow = float(config.data['maxflow']) * self.pulserate
         self._pulses = 0
         self.pulses = 0
         self.pulses_since_level_change = 0
@@ -25,6 +27,10 @@ class FlowMeter:
 
     def eval(self, _):
         p, self._pulses = self._pulses, 0
+        # Note: the following test depends on eval() being called every 1s
+        if p > self.maxflow:
+            # TODO signal malfunction
+            p = 0
         self.pulses += p
         self.pulses_since_level_change += p
 
