@@ -25,6 +25,7 @@ class Display:
             return
 
         flowrate = self.flowmeter.rate()
+        flowrate_malfunction = self.flowmeter.malfunction()
         m = self.levelmeter.malfunction()
 
         self.impl.fill(0)
@@ -71,6 +72,8 @@ class Display:
 
         if flowrate > 0.0:
             flowrate = "%.1f%s/min" % (flowrate, self.unit)
+        elif flowrate_malfunction:
+            flowrate = "Flow meter MF"
         else:
             flowrate = "No flow"
         self.impl.text(flowrate, 20, 48)
