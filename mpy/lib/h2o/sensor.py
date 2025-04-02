@@ -15,8 +15,10 @@ class FlowMeter:
         self.pulses = 0
         self.pulses_since_level_change = 0
         self.latest_rate = 0.0 # in units/minute
+        self.malfunction_value = 0
 
         self.task = Task(True, "flowmeter", self.eval, 1 * SECONDS)
+        self.task_m = Task(True, "flowmeter", self.clear_malfunction, 30 * MINUTES)
         self.cronometer = Shortcronometer()
 
         self.pin = Pin(14, Pin.IN)
@@ -25,11 +27,14 @@ class FlowMeter:
     def irq(self, _):
         self._pulses += 1
 
+    def clear_malfunction(self, _):
+        self.malfunction_value = 0
+
     def eval(self, _):
         p, self._pulses = self._pulses, 0
         # Note: the following test depends on eval() being called every 1s
         if p > self.maxflow:
-            # TODO signal malfunction
+            self.malfunction_value = 0x10
             p = 0
         self.pulses += p
         self.pulses_since_level_change += p
@@ -49,6 +54,8 @@ class FlowMeter:
     def level_changed(self):
         self.pulses_since_level_change = 0
 
+    def malfunction(self):
+        return self.malfunction_value
 
 class LevelMeter:
     def __init__(self, config, i2c, flowmeter):

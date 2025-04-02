@@ -29,7 +29,7 @@ mqtt.pub(PumpedAfterLevelChange(flowmeter))
 mqtt.pub(EstimatedLevelVol(levelmeter))
 mqtt.pub(EstimatedLevelStr(levelmeter))
 mqtt.pub(Flow(flowmeter))
-mqtt.pub(Malfunction(levelmeter))
+mqtt.pub(Malfunction(levelmeter, flowmeter))
 mqtt.pub(LevelSensorMap(levelmeter))
 
 display = Display(config, i2c, net, mqtt, levelmeter, flowmeter)

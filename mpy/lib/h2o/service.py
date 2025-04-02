@@ -86,12 +86,13 @@ class PumpedAfterLevelChange(MQTTPub):
 
 
 class Malfunction(MQTTPub):
-    def __init__(self, levelmeter):
+    def __init__(self, levelmeter, flowmeter):
         self.levelmeter = levelmeter
+        self.flowmeter = flowmeter
         MQTTPub.__init__(self, "stat/%s/Malfunction", 1 * SECONDS, 30 * MINUTES, False)
 
     def gen_msg(self):
-        return "%d" % self.levelmeter.malfunction()
+        return "%d" % (self.levelmeter.malfunction() | self.flowmeter.malfunction())
 
 
 class LevelSensorMap(MQTTPub):
