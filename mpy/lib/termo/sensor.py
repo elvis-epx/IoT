@@ -11,7 +11,7 @@ class Sensor:
         self.schedule_restart()
 
         self.impl = ds18x20.DS18X20(onewire.OneWire(machine.Pin(14)))
-        Task(True, "sensor_scan", self.scan, 30 * SECONDS)
+        Task(True, "sensor_scan", self.scan, 15 * SECONDS)
 
     def schedule_restart(self):
         if not self.malfunction_restart:
@@ -47,7 +47,8 @@ class Sensor:
 
         # TODO add/remove sensors as we go, not only once?
 
-        Task(True, "sensor_eval", self.eval, 60 * SECONDS)
+        task = Task(True, "sensor_eval", self.eval, 60 * SECONDS)
+        task.advance()
 
     def eval(self, _):
         try:
