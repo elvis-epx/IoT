@@ -18,7 +18,7 @@ net = Net(config)
 
 mqtt = MQTT(config, net, watchdog)
 mqtt_ota_start(mqtt, config)
-sensor = Sensor(mqtt, Temperatures)
+sensor = Sensor(mqtt.pub, Temperatures)
 mqtt.pub(Malfunction(sensor))
 
 loop.run()
