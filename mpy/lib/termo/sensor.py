@@ -6,7 +6,7 @@ class Sensor:
         self.mqttpubadd = mqttpubadd
         self.mqttpubclass = mqttpubclass
         self.roms = {}
-        self._malfunction = 0
+        self._malfunction = None
         self.malfunction_restart = None
         self.schedule_restart()
 
@@ -23,7 +23,7 @@ class Sensor:
             self.malfunction_restart = None
 
     def restart(self, _):
-        loop.reboot("Unrecoverable sensor malfunction")
+        reboot("Unrecoverable sensor malfunction")
 
     def scan(self, tsk):
         roms = self.impl.scan()
