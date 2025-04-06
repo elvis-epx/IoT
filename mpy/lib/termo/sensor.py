@@ -1,4 +1,4 @@
-from epx.loop import Task, SECONDS, reboot
+from epx.loop import Task, SECONDS, MINUTES, reboot
 import machine, onewire, ds18x20, binascii
 
 class Sensor:
@@ -7,9 +7,10 @@ class Sensor:
         self.mqttpubclass = mqttpubclass
         self.roms = {}
         self._malfunction = 0
+        self.malfunction_restart = None
         self.schedule_restart()
 
-        self.impl = ds18x20.DS18X20(onewire.OneWire(14))
+        self.impl = ds18x20.DS18X20(onewire.OneWire(machine.Pin(14)))
         Task(True, "sensor_scan", self.scan, 30 * SECONDS)
 
     def schedule_restart(self):
@@ -28,31 +29,32 @@ class Sensor:
         roms = self.impl.scan()
 
         if not roms:
-            self.malfunction_ = 1
+            print('No devices found in scan')
+            self._malfunction = 1
             return
 
         tsk.cancel()
         self.cancel_restart()
 
         for rom in roms:
-            name = binascii.hexlify(rom)
+            name = binascii.hexlify(rom).decode('ascii')
             print('Found device', name)
             self.roms[name] = {}
-            self.roms['raw'] = rom
-            self.roms['temp'] = None           
-            self.roms['mqtt'] = self.mqttpubclass(self, name)
-            self.mqttpubadd(self.roms['mqtt'])
+            self.roms[name]['raw'] = rom
+            self.roms[name]['temp'] = None           
+            self.roms[name]['mqtt'] = self.mqttpubclass(self, name)
+            self.mqttpubadd(self.roms[name]['mqtt'])
 
         # TODO add/remove sensors as we go, not only once?
 
-        Task(True, "sensor_eval", self.eval, 30 * SECONDS)
+        Task(True, "sensor_eval", self.eval, 60 * SECONDS)
 
     def eval(self, _):
         try:
             self.impl.convert_temp()
             Task(False, "sensor_eval2", self.eval_in, 1 * SECONDS)
         except onewire.OneWireError:
-            self.malfunction_ = 2
+            self._malfunction = 2
             print("OneWireError in convert_temp")
             self.schedule_restart()
 
@@ -63,34 +65,35 @@ class Sensor:
         for name in self.roms.keys():
             t = None
             try:
-                t = ds_sensor.read_temp(self.roms[name]['raw'])
+                t = self.impl.read_temp(self.roms[name]['raw'])
                 success = True
                 print("read_temp", name, t)
             except onewire.OneWireError:
                 malfunction *= 3 # factor the malfunction code to count how many errors of this type
                 self.schedule_restart()
                 print("OneWireError in read_temp", name)
-            except Exception:
+            except Exception as e:
                 # CRC error
                 malfunction *= 5
                 self.schedule_restart()
                 print("Exception in read_temp", name)
-            self.roms[addr]['temp'] = t
+                print(e)
+            self.roms[name]['temp'] = t
 
         # TODO handle partial success more thoroughly e.g. resetting after some time, or rescan?
 
         if success:
             # At least one reading was successful
-            self.malfunction_ = 0
+            self._malfunction = 0
             self.cancel_restart()
             return
 
-        self.malfunction_ = malfunction
+        self._malfunction = malfunction
             
-    def temperature(self, addr):
-        if addr not in self.roms:
+    def temperature(self, name):
+        if name not in self.roms:
             return None
-        return self.roms[addr]['temp']
+        return self.roms[name]['temp']
 
     def malfunction(self):
         return self._malfunction

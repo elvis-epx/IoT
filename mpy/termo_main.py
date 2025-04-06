@@ -8,7 +8,7 @@ from epx.mqtt import MQTT
 from epx.ota import mqtt_ota_start
 
 from termo.sensor import Sensor
-from termo.service import Temperatures
+from termo.service import Temperatures, Malfunction
 
 config = Config()
 config.data['flavor'] = 'termo'
