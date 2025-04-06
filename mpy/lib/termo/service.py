@@ -22,4 +22,7 @@ class Malfunction(MQTTPub):
         self.sensor = sensor
 
     def gen_msg(self):
-        return "%d" % self.sensor.malfunction()
+        v = self.sensor.malfunction()
+        if v is None:
+            return None
+        return "%d" % v
