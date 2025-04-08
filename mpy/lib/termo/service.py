@@ -12,7 +12,7 @@ class Temperatures(MQTTPub):
         temp = self.sensor.temperature(self.addr)
         if temp is None:
             return None
-        return "%.1f" % temp
+        return "%.3f" % temp
 
 
 class Malfunction(MQTTPub):
