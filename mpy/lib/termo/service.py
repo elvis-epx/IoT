@@ -15,8 +15,9 @@ class Temperatures(MQTTPub):
             return None
         if self.last_temp is not None and abs(temp - self.last_temp) < 0.1:
             # Avoid dithering
-            return None
-        self.last_temp = temp
+            temp = self.last_temp
+        else:
+            self.last_temp = temp
         return "%.1f" % temp
 
 
