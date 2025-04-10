@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+
+wifi GOT_IP
+sleep 60
+
+assert mqtt stat/Temperature/Malfunction 0
+
+sleep 300
+
+quit

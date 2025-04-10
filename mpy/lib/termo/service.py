@@ -6,13 +6,18 @@ class Temperatures(MQTTPub):
         MQTTPub.__init__(self, "stat/%s/Temperature/" + addr, 1 * MINUTES, 10 * MINUTES, False)
         self.addr = addr
         self.sensor = sensor
+        self.last_temp = None
 
     def gen_msg(self):
         # as float
         temp = self.sensor.temperature(self.addr)
         if temp is None:
             return None
-        return "%.3f" % temp
+        if self.last_temp is not None and abs(temp - self.last_temp) < 0.1:
+            # Avoid dithering
+            return None
+        self.last_temp = temp
+        return "%.1f" % temp
 
 
 class Malfunction(MQTTPub):

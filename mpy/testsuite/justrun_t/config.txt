@@ -1,0 +1,5 @@
+ssid SSID
+password PASSWORD
+mqttbroker 1.2.3.4
+mqttname Temperature
+watchdog 0
