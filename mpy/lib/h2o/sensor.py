@@ -18,7 +18,7 @@ class FlowMeter:
         self.malfunction_value = 0
 
         self.task = Task(True, "flowmeter", self.eval, 1 * SECONDS)
-        self.task_m = Task(True, "flowmeter", self.clear_malfunction, 30 * MINUTES)
+        self.task_m = Task(True, "flowmeter", self.clear_malfunction, 10 * MINUTES)
         self.cronometer = Shortcronometer()
 
         self.pin = Pin(14, Pin.IN)
