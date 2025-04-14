@@ -2,6 +2,7 @@ from epx.loop import Task, SECONDS, MINUTES, Shortcronometer
 from epx import loop
 from third import mcp23017
 from machine import Pin
+from time import ticks_us
 
 class FlowMeter:
     def __init__(self, config):
@@ -9,8 +10,9 @@ class FlowMeter:
         self.pulserate = float(config.data['flowpulserate'])
         print("config: flow pulse rate %f" % self.pulserate)
         self.single_pulse_vol = (1.0 / 60.0) / self.pulserate # volume of a single pulse
-        # maximum valid flow, convert L/min to pulses/s
+        # maximum valid flow, convert L/min to pulses/s and half-pulse width
         self.maxflow = float(config.data['maxflow']) * self.pulserate
+        self.min_pulse_width_us = int(500000 / self.maxflow)
         self._pulses = 0
         self.pulses = 0
         self.pulses_since_level_change = 0
@@ -22,10 +24,21 @@ class FlowMeter:
         self.cronometer = Shortcronometer()
 
         self.pin = Pin(14, Pin.IN)
-        self.pin.irq(trigger = Pin.IRQ_RISING, handler=self.irq)
+        self.pin.irq(trigger = Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.irq)
+        self.last_pin_time = 0
+        self.last_pin_state = 0
 
     def irq(self, _):
-        self._pulses += 1
+        t = ticks_us()
+        if (t - self.last_pin_time) < self.min_pulse_width_us:
+            # ignore this transition and the next
+            self.last_pin_state = -1
+        self.last_pin_time = t
+        if self.last_pin_state >= 1:
+            self._pulses += 1
+            self.last_pin_state = 0
+        else:
+            self.last_pin_state += 1
 
     def clear_malfunction(self, _):
         self.malfunction_value = 0
@@ -34,7 +47,7 @@ class FlowMeter:
         p, self._pulses = self._pulses, 0
         # Note: the following test depends on eval() being called every 1s
         if p > self.maxflow:
-            self.malfunction_value = 0x10
+            # self.malfunction_value = 0x10
             p = 0
         self.pulses += p
         self.pulses_since_level_change += p
