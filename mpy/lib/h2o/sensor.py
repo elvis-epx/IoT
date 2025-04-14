@@ -23,6 +23,7 @@ class FlowMeter:
 
         self.pin = Pin(14, Pin.IN)
         if 'softirq' in config.data:
+            print("config: flowmeter will use softirq implementation")
             # Software detection of pulses to mitigate problems with hard IRQ sensitivity to noise
             # TODO use RMT RX in the future, that can filter noise based on maxflow value
             self.last_pin_value = 0
