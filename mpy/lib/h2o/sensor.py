@@ -1,4 +1,4 @@
-from epx.loop import Task, SECONDS, MINUTES, Shortcronometer
+from epx.loop import Task, MILISSECONDS, SECONDS, MINUTES, Shortcronometer
 from epx import loop
 from third import mcp23017
 from machine import Pin
@@ -22,7 +22,20 @@ class FlowMeter:
         self.cronometer = Shortcronometer()
 
         self.pin = Pin(14, Pin.IN)
-        self.pin.irq(trigger = Pin.IRQ_RISING, handler=self.irq)
+        if 'softirq' in config.data:
+            # Software detection of pulses to mitigate problems with hard IRQ sensitivity to noise
+            # TODO use RMT RX in the future, that can filter noise based on maxflow value
+            self.last_pin_value = 0
+            self.task_irq = Task(True, "flowmeter", self.soft_irq, 5 * MILISSECONDS)
+        else:
+            self.pin.irq(trigger = Pin.IRQ_RISING, handler=self.irq)
+
+    def soft_irq(self, _):
+        v = self.pin.value()
+        if v != self.last_pin_value:
+            if v:
+                self._pulses += 1
+            self.last_pin_value = v
 
     def irq(self, _):
         self._pulses += 1
