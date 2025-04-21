@@ -57,7 +57,7 @@ class Current(MQTTPub):
     def gen_msg(self):
         if self.sensor.get_data('Aavg') is None:
             return None # pragma: no cover
-        return "%.1f" % self.sensor.get_data('Aavg')
+        return "%.2f" % self.sensor.get_data('Aavg')
 
 class CurrentNow(MQTTPub):
     def __init__(self, sensor):
@@ -68,7 +68,7 @@ class CurrentNow(MQTTPub):
     def gen_msg(self):
         if self.sensor.get_data('A') is None:
             return None # pragma: no cover
-        return "%.1f" % self.sensor.get_data('A')
+        return "%.2f" % self.sensor.get_data('A')
 
 class CurrentMax(MQTTPub):
     def __init__(self, sensor):
@@ -79,7 +79,7 @@ class CurrentMax(MQTTPub):
     def gen_msg(self):
         if self.sensor.get_data('Amax') is None:
             return None # pragma: no cover
-        return "%.1f" % self.sensor.get_data('Amax')
+        return "%.2f" % self.sensor.get_data('Amax')
 
 
 class Power(MQTTPub):
