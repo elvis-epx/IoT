@@ -6,6 +6,7 @@ from epx.loop import StateMachine, Task, SECONDS, MILISSECONDS, MINUTES
 import os
 from hashlib import sha1
 import binascii
+from esp32 import Partition
 
 flavor = 'unknown'
 
@@ -52,6 +53,17 @@ def ota_commit():
         return "OTA inactive"
     return ota_handler.commit()
 
+# Keep current firmware instead of automatically reverting it next reboot
+def ota_commit_fw():
+    Partition.mark_app_valid_cancel_rollback()
+    return "Currently running firmware is kept."
+
+# List app partitions
+def ota_fw_partitions():
+    parts = [p.info()[4] for p in Partition.find(Partition.TYPE_APP)]
+    cur = Partition(Partition.RUNNING).info()[4]
+    return "available partitions " + (','.join(parts)) + ", running " + cur
+
 ### Publish the OTA status with IP address, when open
 
 class OTAPub(MQTTPub):
@@ -93,6 +105,12 @@ class OTASub(MQTTSub):
         elif msg == b'commit':
             res = ota_commit()
             self.log_pub.dumpmsg(res)
+        elif msg == b'keepversion':
+            res = ota_commit_fw()
+            self.log_pub.dumpmsg(res)
+        elif msg == b'partitions':
+            res = ota_fw_partitions()
+            self.log_pub.dumpmsg(res)
         elif msg == b'msg_reboot':
             self.log_pub.dump('reboot.txt')
         elif msg == b'msg_exception':
@@ -128,8 +146,11 @@ class OTAHandler:
         sm.add_state("listen", self.on_listen)
         sm.add_state("header", self.on_header)
         sm.add_state("payload", self.on_payload)
+        sm.add_state("payload_fw", self.on_payload_fw)
         sm.add_state("eof", self.on_eof)
+        sm.add_state("eof_fw", self.on_eof_fw)
         sm.add_state("done", self.on_done)
+        sm.add_state("done_fw", self.on_done_fw)
         sm.add_state("connlost", self.on_connlost)
 
         sm.add_transition("initial", "listen")
@@ -137,11 +158,17 @@ class OTAHandler:
         sm.add_transition("header", "connlost")
         sm.add_transition("header", "done")
         sm.add_transition("header", "payload")
+        sm.add_transition("header", "payload_fw")
         sm.add_transition("payload", "connlost")
+        sm.add_transition("payload_fw", "connlost")
         sm.add_transition("payload", "eof")
+        sm.add_transition("payload_fw", "eof_fw")
         sm.add_transition("eof", "connlost")
+        sm.add_transition("eof_fw", "connlost")
         sm.add_transition("eof", "done")
+        sm.add_transition("eof_fw", "done_fw")
         sm.add_transition("done", "listen")
+        sm.add_transition("done_fw", "listen")
         sm.add_transition("connlost", "listen")
         
         self.connection = None
@@ -211,7 +238,7 @@ class OTAHandler:
             return
 
         self.buf += data
-        res, ptype = self.parse_packet({1: 6, 5: 4, 7: 4, 9: 3})
+        res, ptype = self.parse_packet({1: 6, 5: 4, 7: 4, 9: 3, 101: 5})
         if res <= 0:
             return
 
@@ -223,6 +250,8 @@ class OTAHandler:
             self.header_to_rm()
         elif ptype == 9:
             self.header_to_flavor()
+        elif ptype == 101:
+            self.header_to_firmware_upload()
         else: # pragma: no cover
             self.sm.schedule_trans_now("connlost")
 
@@ -251,6 +280,25 @@ class OTAHandler:
             return
 
         self.sm.schedule_trans_now("payload")
+
+    def header_to_firmware_payload(self):
+        self.fwblklen = self.buf[2] * 256 + self.buf[3]
+        self.fwblkrecv = 0
+        self.fwblkhash = bytearray([0 for _ in range(40)])
+        self.fwpart = Partition(Partition.RUNNING).get_next_update()
+
+        print("OTA firmware upload, expecting %d blocks" % (self.fwblklen))
+        self.buf = b''
+        gc.collect()
+
+        try:
+            self.connection.send(b'1')
+        except sockerror as e:
+            print("Failure while acking header")
+            self.sm.schedule_trans_now("connlost")
+            return
+
+        self.sm.schedule_trans_now("payload_fw")
 
     def header_to_hash(self):
         filename = self.buf[2:-1].decode('ascii')
@@ -343,6 +391,10 @@ class OTAHandler:
         self.sm.recurring_task("ota_payload", self.payload_poll, 50 * MILISSECONDS)
         self.sm.schedule_trans("connlost", 30 * SECONDS)
 
+    def on_payload_fw(self):
+        self.sm.recurring_task("ota_payload_fw", self.payload_fw_poll, 10 * MILISSECONDS)
+        self.fw_timeout_task = self.sm.schedule_trans("connlost", 30 * SECONDS)
+
     def payload_poll(self, _):
         res, data = self.read()
         if res <= 0:
@@ -376,6 +428,63 @@ class OTAHandler:
         if segm_len == 0:
             self.sm.schedule_trans_now("eof")
 
+    def payload_fw_poll(self, _):
+        res, data = self.read()
+        if res <= 0:
+            return
+
+        self.buf += data
+        del data
+        if len(self.buf) < (40 + 2 + 4096 + 40):
+            return
+
+        self.fw_timeout_task.restart()
+
+        data = None
+        prevhash = self.buf[:40]
+        rawpktno = self.buf[40:42]
+        pktno = rawpktno[0] * 256 + rawpktno[1]
+        payload = self.buf[42:42+4096]
+        neuhash = self.buf[42+4096:42+4096+40]
+        self.buf = b''
+        gc.collect()
+
+        print("OTA firmware #pkt %d" % pktno)
+
+        if pktno != self.fwblkrecv:
+            print("Unexp OTA firmware #pkt")
+            self.sm.schedule_trans_now("connlost")
+            return
+        self.fwblkrecv += 1
+
+        if prevhash != self.fwblkhash:
+            print("Unexp OTA firmware prev hash")
+            self.sm.schedule_trans_now("connlost")
+            return
+
+        h = sha1()
+        h.update(prevhash)
+        h.update(rawpktno)
+        h.update(payload)
+        if h.digest() != neuhash:
+            print("Invalid OTA pkt hash")
+            self.sm.schedule_trans_now("connlost")
+            return
+        self.fwblkhash = neuhash
+
+        # Write block to flash
+        self.fwpart.writeblocks(blkno, payload)
+
+        try:
+            self.connection.send(b'2')
+        except sockerror as e:
+            print("Failure while acking payload")
+            self.sm.schedule_trans_now("connlost")
+            return
+
+        if self.fwblkrecv == self.fwblklen:
+            self.sm.schedule_trans_now("eof_fw")
+
     def on_eof(self):
         self.tmpfile.close()
         self.tmpfile = None
@@ -394,7 +503,21 @@ class OTAHandler:
 
         self.sm.schedule_trans_now("done")
 
+    def on_eof_fw(self):
+        print("OTA firmware completed upload")
+        try:
+            self.connection.send(b'3')
+        except sockerror as e: # pragma: no cover
+            pass
+
+        self.sm.schedule_trans_now("done_fw")
+
     def on_done(self):
+        self.sm.schedule_trans_now("listen")
+
+    def on_done_fw(self):
+        self.fwpart.set_boot()
+        print("OTA firmware marked to run at next boot")
         self.sm.schedule_trans_now("listen")
 
     def commit(self):
