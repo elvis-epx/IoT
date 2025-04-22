@@ -281,7 +281,7 @@ class OTAHandler:
 
         self.sm.schedule_trans_now("payload")
 
-    def header_to_firmware_payload(self):
+    def header_to_firmware_upload(self):
         self.fwblklen = self.buf[2] * 256 + self.buf[3]
         self.fwblkrecv = 0
         self.fwblkhash = bytearray([0 for _ in range(40)])
