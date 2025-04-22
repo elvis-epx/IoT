@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. testsuite/defs.sh
+
+runme
+sleep 5
+wifi GOT_IP
+sleep 10 
+mqttsub cmnd/TempSensor/OTA open
+sleep 1
+
+TESTFILE=$TEST_FOLDER/testbase.sim
+TARGETFILE=$TEST_FOLDER/fwupload.sim
+
+rm -f $TARGETFILE
+
+# Top-folder new file
+
+dd if=/dev/urandom of=$TESTFILE bs=$((4096 * (10 + $RANDOM % 10))) count=1
+chmod 400 $TESTFILE
+./otafwtool 127.0.0.1 $TESTFILE
+
+sleep 3
+if ! cmp $TESTFILE $TARGETFILE; then
+    echo "Source and destination file different"
+    chmod 644 $TESTFILE
+    exit 1
+fi
+
+chmod 644 $TESTFILE
+
+mqttsub cmnd/TempSensor/OTA getversion
+sleep 2
+
+mqttsub cmnd/TempSensor/OTA keepversion
+sleep 2
+
+mqttsub cmnd/TempSensor/OTA partitions
+sleep 2

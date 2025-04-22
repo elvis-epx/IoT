@@ -64,12 +64,14 @@ class Partition:
         if not self.output:
             self.output = open("fwupload.sim", "wb")
             self.blk = 0
-        assert(blkno != self.blk)
+        assert(blkno == self.blk)
         assert(len(payload) == 4096)
         self.output.write(payload)
         self.blk += 1
 
     def set_boot(self):
+        self.output.close()
+        self.output = None
         pass
 
     @staticmethod

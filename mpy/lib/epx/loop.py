@@ -92,10 +92,11 @@ class StateMachine:
             self._trans(new_state)
         tsk = Task(False, name, cb, to, fudge)
         self.attach(tsk)
+        return tsk
 
     def schedule_trans_now(self, new_state):
         self.cancel_state_tasks()
-        self.schedule_trans(new_state, 0)
+        return self.schedule_trans(new_state, 0)
 
     def run_observers(self):
         for name in list(self.observers.keys()):

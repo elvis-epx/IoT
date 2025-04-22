@@ -45,7 +45,7 @@ if s.recv(1) != b'1':
     print("Invalid header Ack", file=sys.stderr)
     sys.exit(1)
 
-prevhash = bytearray([0 for _ in range(40)])
+prevhash = bytearray([0 for _ in range(20)])
 
 for blkno in range(blklen):
     offset = blkno * 4096

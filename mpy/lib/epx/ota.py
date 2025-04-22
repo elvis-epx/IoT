@@ -284,7 +284,7 @@ class OTAHandler:
     def header_to_firmware_upload(self):
         self.fwblklen = self.buf[2] * 256 + self.buf[3]
         self.fwblkrecv = 0
-        self.fwblkhash = bytearray([0 for _ in range(40)])
+        self.fwblkhash = bytearray([0 for _ in range(20)])
         self.fwpart = Partition(Partition.RUNNING).get_next_update()
 
         print("OTA firmware upload, expecting %d blocks" % (self.fwblklen))
@@ -392,8 +392,8 @@ class OTAHandler:
         self.sm.schedule_trans("connlost", 30 * SECONDS)
 
     def on_payload_fw(self):
-        self.sm.recurring_task("ota_payload_fw", self.payload_fw_poll, 10 * MILISSECONDS)
         self.fw_timeout_task = self.sm.schedule_trans("connlost", 30 * SECONDS)
+        self.sm.recurring_task("ota_payload_fw", self.payload_fw_poll, 10 * MILISSECONDS)
 
     def payload_poll(self, _):
         res, data = self.read()
@@ -435,23 +435,23 @@ class OTAHandler:
 
         self.buf += data
         del data
-        if len(self.buf) < (40 + 2 + 4096 + 40):
+        if len(self.buf) < (20 + 2 + 4096 + 20):
             return
 
         self.fw_timeout_task.restart()
 
         data = None
-        prevhash = self.buf[:40]
-        rawpktno = self.buf[40:42]
-        pktno = rawpktno[0] * 256 + rawpktno[1]
-        payload = self.buf[42:42+4096]
-        neuhash = self.buf[42+4096:42+4096+40]
+        prevhash = self.buf[:20]
+        rawblkno = self.buf[20:22]
+        blkno = rawblkno[0] * 256 + rawblkno[1]
+        payload = self.buf[22:22+4096]
+        neuhash = self.buf[22+4096:22+4096+20]
         self.buf = b''
         gc.collect()
 
-        print("OTA firmware #pkt %d" % pktno)
+        print("OTA firmware #blk %d" % blkno)
 
-        if pktno != self.fwblkrecv:
+        if blkno != self.fwblkrecv:
             print("Unexp OTA firmware #pkt")
             self.sm.schedule_trans_now("connlost")
             return
@@ -464,7 +464,7 @@ class OTAHandler:
 
         h = sha1()
         h.update(prevhash)
-        h.update(rawpktno)
+        h.update(rawblkno)
         h.update(payload)
         if h.digest() != neuhash:
             print("Invalid OTA pkt hash")
