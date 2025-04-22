@@ -282,10 +282,16 @@ class OTAHandler:
         self.sm.schedule_trans_now("payload")
 
     def header_to_firmware_upload(self):
+        try:
+            self.fwpart = Partition(Partition.RUNNING).get_next_update()
+        except OSError:
+            print("partition table does not have support for firmware OTA")
+            self.sm.schedule_trans_now("connlost")
+            return
+
         self.fwblklen = self.buf[2] * 256 + self.buf[3]
         self.fwblkrecv = 0
         self.fwblkhash = bytearray([0 for _ in range(20)])
-        self.fwpart = Partition(Partition.RUNNING).get_next_update()
 
         print("OTA firmware upload, expecting %d blocks" % (self.fwblklen))
         self.buf = b''
