@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mpfshell `cat serial2.txt` -n
+mpfshell `cat serial_params.txt` -n
