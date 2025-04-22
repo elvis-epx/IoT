@@ -58,6 +58,9 @@ if s.recv(1) != b'1':
 prevhash = bytearray([0 for _ in range(20)])
 
 for blkno in range(blklen):
+    if blkno == 3 and simfail == "order":
+        blkno = 5
+
     offset = blkno * 4096
     payload = firmware[offset:offset+4096]
     rawblkno = bytearray([blkno // 256, blkno % 256])
@@ -67,6 +70,14 @@ for blkno in range(blklen):
     h.update(rawblkno)
     h.update(payload)
     neuhash = h.digest()
+
+    if blkno == 3:
+        if simfail == "prevhash":
+            prevhash = bytearray(prevhash)
+            prevhash[5] = prevhash[5] ^ 0xff
+        elif simfail == "neuhash":
+            neuhash = bytearray(neuhash)
+            neuhash[5] = neuhash[5] ^ 0xff
     
     print("Sending block #%d, remaining %d" % (blkno, blklen - blkno - 1), file=sys.stderr)
 

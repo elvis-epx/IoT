@@ -1,4 +1,4 @@
-import machine
+import machine, os
 
 class NVS:
     def __init__(self, namespace):
@@ -58,6 +58,8 @@ class Partition:
         return (None, None, None, None, self.name)
 
     def get_next_update(self):
+        if os.path.exists("noota.sim"):
+            raise OSError("no OTA support")
         return Partition(self.TYPE_APP, "ota_1")
 
     def writeblocks(self, blkno, payload):
