@@ -42,3 +42,40 @@ class NVS:
 
     def commit(self):
         pass
+
+class Partition:
+    TYPE_APP = 1
+    RUNNING = 2
+
+    def __init__(self, partition_type, name=None):
+        self.partition_type = partition_type
+        if partition_type == self.RUNNING:
+            name = "ota_0"
+        self.name = name
+        self.output = None
+
+    def info(self):
+        return (None, None, None, None, self.name)
+
+    def get_next_update(self):
+        return Partition(self.TYPE_APP, "ota_1")
+
+    def writeblocks(self, blkno, payload):
+        if not self.output:
+            self.output = open("fwupload.sim", "wb")
+            self.blk = 0
+        assert(blkno != self.blk)
+        assert(len(payload) == 4096)
+        self.output.write(payload)
+        self.blk += 1
+
+    def set_boot(self):
+        pass
+
+    @staticmethod
+    def mark_app_valid_cancel_rollback():
+        pass
+
+    @staticmethod
+    def find(partition_type):
+        return [Partition(Partition.TYPE_APP, "ota_0"), Partition(Partition.TYPE_APP, "ota_1")]
