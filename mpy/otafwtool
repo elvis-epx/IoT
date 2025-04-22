@@ -117,4 +117,5 @@ if s.recv(1) != b'3':
     print("Invalid Ack", file=sys.stderr)
     sys.exit(1)
 
-print("Done, don't for get to reboot and commit the new firware if ok", file=sys.stderr)
+print("Success! 👍")
+print("Don't forget to reboot, test and commit the new firmware.", file=sys.stderr)
