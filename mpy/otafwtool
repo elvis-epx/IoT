@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+import socket, sys, time, struct, binascii, hashlib
+
+# send MQTT message 'getversion' to cmnd/<DeviceName>/OTA to identify current firmware version
+# send MQTT message 'open'
+# send the new firmware
+# send MQTT message 'reboot'
+# check the new firmware is active using 'getversion' again
+# send MQTT message 'keepversion' to commit the new firmware, or simply reboot to revert
+
+if len(sys.argv) < 3:
+    print("Usage: %s <ip addr> <local file> [<failure to simulate>]" % sys.argv[0], file=sys.stderr)
+    sys.exit(1)
+
+addr, firmware = sys.argv[1], sys.argv[2]
+simfail = ''
+if len(sys.argv) > 3:
+    simfail = sys.argv[3]
+
+def make_header_packet(blklen):
+    payload = bytearray([5, 101, blklen // 256, blklen % 256])
+    checksum = 0
+    for b in payload:
+        checksum ^= b
+    return payload + bytes([checksum])
+
+port = 1337
+
+s = socket.socket()
+s.connect((addr, port))
+
+firmware = open(firmware, "rb").read()
+while len(firmware) % 4096:
+    firmware += bytes([0xff])
+blklen = len(firmware) // 4096
+
+print("Sending header", file=sys.stderr)
+data = make_header_packet(blklen)
+s.send(data)
+
+print("Waiting for header Ack", file=sys.stderr)
+
+if s.recv(1) != b'1':
+    print("Invalid header Ack", file=sys.stderr)
+    sys.exit(1)
+
+prevhash = bytearray([0 for _ in range(40)])
+
+for blkno in range(blklen):
+    offset = blkno * 4096
+    payload = firmware[offset:offset+4096]
+    rawblkno = bytearray([blkno // 256, blkno % 256])
+
+    h = hashlib.sha1()
+    h.update(prevhash)
+    h.update(rawblkno)
+    h.update(payload)
+    neuhash = h.digest()
+    
+    print("Sending block #%d, remaining %d" % (blkno, blklen - blkno - 1), file=sys.stderr)
+
+    pkt = prevhash + rawblkno + payload + neuhash
+    while pkt:
+        sent = s.send(pkt)
+        if sent <= 0:
+            print("Could not send", file=sys.stderr)
+            sys.exit(1)
+        pkt = pkt[sent:]
+
+    print("Waiting for Ack", file=sys.stderr)
+    if s.recv(1) != b'2':
+        print("Invalid payload Ack", file=sys.stderr)
+        sys.exit(1)
+
+    prevhash = neuhash
+
+print("Waiting for final Ack", file=sys.stderr)
+if s.recv(1) != b'3':
+    print("Invalid Ack", file=sys.stderr)
+    sys.exit(1)
+
+print("Done, don't for get to reboot and commit the new firware if ok", file=sys.stderr)
