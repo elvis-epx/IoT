@@ -1,5 +1,9 @@
-- Uptime with random factor, possibly all MQTT periodic topics
 - MicroPython OTA
+    - Test in real device
+    - Increase coverage to 100%
+
+- Uptime with random factor, possibly all MQTT periodic topics
+
 - Remote mpy console, if possible
 - MQTT with TLS
 - ESP-NOW
