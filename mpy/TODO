@@ -1,5 +1,6 @@
 - MicroPython OTA
     - More tests
+    - Use socket uselect.poll() instead of timeout polling
 
 - Uptime with random factor, possibly all MQTT periodic topics
 
