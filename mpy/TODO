@@ -1,9 +1,9 @@
 - MicroPython OTA
-    - Test in real device
-    - Increase coverage to 100%
+    - More tests
 
 - Uptime with random factor, possibly all MQTT periodic topics
 
+- Improve system logging, use ota.log_pub for all print()s or use another protocol
 - Remote mpy console, if possible
 - MQTT with TLS
 - ESP-NOW

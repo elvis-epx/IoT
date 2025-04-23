@@ -10,6 +10,8 @@ from esp32 import Partition
 
 flavor = 'unknown'
 
+# TODO improve system logging, perhaps use other protocol than MQTT for log_pub
+
 def mqtt_ota_start(mqtt, config):
     if 'flavor' in config.data:
         global flavor
@@ -42,10 +44,10 @@ else: # pragma: no cover
 
 ota_handler = None
 
-def ota_start():
+def ota_start(log_pub):
     global ota_handler
     if not ota_handler:
-        ota_handler = OTAHandler()
+        ota_handler = OTAHandler(log_pub)
 
 def ota_commit():
     global ota_handler
@@ -99,8 +101,8 @@ class OTASub(MQTTSub):
         if msg == b'reboot':
             loop.reboot("Received MQTT reboot cmd")
         elif msg == b'open':
-            print("Received MQTT OTA open cmd")
-            ota_start()
+            self.log_pub.dumpmsg("Received MQTT OTA open cmd")
+            ota_start(self.log_pub)
             self.ota_pub.start_bcast()
         elif msg == b'commit':
             res = ota_commit()
@@ -134,7 +136,9 @@ class OTASub(MQTTSub):
 # OTA proper handler
 
 class OTAHandler:
-    def __init__(self):
+    def __init__(self, log_pub):
+        self.log_pub = log_pub
+
         self.sock = socket.socket()
         self.sock.setblocking(False)
         setuplistener(self.sock)
@@ -177,10 +181,10 @@ class OTAHandler:
         upl = [ f for f in os.listdir(root) if f.endswith(".upl") ]
         for f in upl:
             try:
-                print("Removing", f)
+                self.log_pub.dumpmsg("Removing " + f)
                 os.unlink(f)
             except OSError as e:
-                print("OTA rm %s fail" % f)
+                self.log_pub.dumpmsg("OTA rm %s fail" % f)
 
         self.sm.schedule_trans("listen", 1 * SECONDS)
 
@@ -221,12 +225,12 @@ class OTAHandler:
             if eagain(e):
                 return 0, None
 
-            print("OTA: recv() fail")
+            self.log_pub.dumpmsg("OTA: recv() fail")
             self.sm.schedule_trans_now("connlost")
             return -1, None
 
         if len(data) == 0:
-            print("OTA: recv() EOF")
+            self.log_pub.dumpmsg("OTA: recv() EOF")
             self.sm.schedule_trans_now("connlost")
             return -2, None
 
@@ -268,14 +272,14 @@ class OTAHandler:
         self.tmpfilename = 'tmppiggy'
         self.tmpfile = open(self.tmpfilename, 'wb')
         self.uplfilename = self.encodeuplfile(filename)
-        print("OTA file %s len %d" % (self.uplfilename, self.filelen))
+        self.log_pub.dumpmsg("OTA file %s len %d" % (self.uplfilename, self.filelen))
         self.buf = b''
         gc.collect()
 
         try:
             self.connection.send(b'1')
         except sockerror as e:
-            print("Failure while acking header")
+            self.log_pub.dumpmsg("Failure while acking header")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -285,7 +289,7 @@ class OTAHandler:
         try:
             self.fwpart = Partition(Partition.RUNNING).get_next_update()
         except OSError:
-            print("partition table does not have support for firmware OTA")
+            self.log_pub.dumpmsg("partition table does not have support for firmware OTA")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -293,14 +297,14 @@ class OTAHandler:
         self.fwblkrecv = 0
         self.fwblkhash = bytearray([0 for _ in range(20)])
 
-        print("OTA firmware upload, expecting %d blocks" % (self.fwblklen))
+        self.log_pub.dumpmsg("OTA firmware upload, expecting %d blocks" % self.fwblklen)
         self.buf = b''
         gc.collect()
 
         try:
             self.connection.send(b'1')
         except sockerror as e:
-            print("Failure while acking header")
+            self.log_pub.dumpmsg("Failure while acking header")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -323,7 +327,7 @@ class OTAHandler:
         except OSError as e:
             h = b'0' * 40
 
-        print("OTA file %s hash %s" % (filename, h))
+        self.log_pub.dumpmsg("OTA file %s hash %s" % (filename, h))
 
         try:
             self.connection.send(b'6' + h)
@@ -346,9 +350,9 @@ class OTAHandler:
 
         try:
             os.unlink(filename)
-            print("OTA file rm %s" % filename)
+            self.log_pub.dumpmsg("OTA file rm %s" % filename)
         except OSError as e:
-            print("OTA file rm %s fail" % filename)
+            self.log_pub.dumpmsg("OTA file rm %s fail" % filename)
 
         try:
             self.connection.send(b'8')
@@ -364,14 +368,14 @@ class OTAHandler:
         length, ptype = self.buf[0], self.buf[1]
 
         if ptype not in exp_types:
-            print("Unexpected pkt type")
+            self.log_pub.dumpmsg("Unexpected pkt type")
             self.sm.schedule_trans_now("connlost")
             return -1, 0
 
         min_len = exp_types[ptype]
 
         if length < min_len:
-            print("Unexpectedly short pkt len")
+            self.log_pub.dumpmsg("Unexpectedly short pkt len")
             self.sm.schedule_trans_now("connlost")
             return -1, 0
 
@@ -379,7 +383,7 @@ class OTAHandler:
             return 0, 0
 
         if len(self.buf) > length:
-            print("Pkt too long")
+            self.log_pub.dumpmsg("Pkt too long")
             self.sm.schedule_trans_now("connlost")
             return -1, 0
 
@@ -387,7 +391,7 @@ class OTAHandler:
         for b in self.buf:
             checksum ^= b
         if checksum != 0:
-            print("Invalid checksum")
+            self.log_pub.dumpmsg("Invalid checksum")
             self.sm.schedule_trans_now("connlost")
             return -1, 0
 
@@ -420,14 +424,14 @@ class OTAHandler:
         gc.collect()
 
         if self.filetot > self.filelen:
-            print("OTA recv file too long")
+            self.log_pub.dumpmsg("OTA recv file too long")
             self.sm.schedule_trans_now("connlost")
             return
 
         try:
             self.connection.send(b'2')
         except sockerror as e:
-            print("Failure while acking payload")
+            self.log_pub.dumpmsg("Failure while acking payload")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -458,13 +462,13 @@ class OTAHandler:
         print("OTA firmware #blk %d" % blkno)
 
         if blkno != self.fwblkrecv:
-            print("Unexp OTA firmware #pkt")
+            self.log_pub.dumpmsg("Unexp OTA firmware #pkt")
             self.sm.schedule_trans_now("connlost")
             return
         self.fwblkrecv += 1
 
         if prevhash != self.fwblkhash:
-            print("Unexp OTA firmware prev hash")
+            self.log_pub.dumpmsg("Unexp OTA firmware prev hash")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -473,7 +477,7 @@ class OTAHandler:
         h.update(rawblkno)
         h.update(payload)
         if h.digest() != neuhash:
-            print("Invalid OTA pkt hash")
+            self.log_pub.dumpmsg("Invalid OTA pkt hash")
             self.sm.schedule_trans_now("connlost")
             return
         self.fwblkhash = neuhash
@@ -484,7 +488,7 @@ class OTAHandler:
         try:
             self.connection.send(b'2')
         except sockerror as e:
-            print("Failure while acking payload")
+            self.log_pub.dumpmsg("Failure while acking payload")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -498,7 +502,7 @@ class OTAHandler:
         try:
             os.rename(self.tmpfilename, self.uplfilename)
         except OSError as e:
-            print("Could not rename tmpfile onto uplfile")
+            self.log_pub.dumpmsg("Could not rename tmpfile onto uplfile")
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -510,7 +514,7 @@ class OTAHandler:
         self.sm.schedule_trans_now("done")
 
     def on_eof_fw(self):
-        print("OTA firmware completed upload")
+        self.log_pub.dumpmsg("OTA firmware completed upload")
         try:
             self.connection.send(b'3')
         except sockerror as e: # pragma: no cover
@@ -523,7 +527,7 @@ class OTAHandler:
 
     def on_done_fw(self):
         self.fwpart.set_boot()
-        print("OTA firmware marked to run at next boot")
+        self.log_pub.dumpmsg("OTA firmware marked to run at next boot")
         self.sm.schedule_trans_now("listen")
 
     def commit(self):
@@ -538,13 +542,13 @@ class OTAHandler:
                 path += '/' + segm
                 try:
                     os.mkdir(path)
-                    print('mkdir', path)
+                    self.log_pub.dumpmsg('mkdir %s' % path)
                 except OSError as e:
                     # Most probably existing folder
                     pass
 
             try:
-                print("Renaming", uplfile, finalfile)
+                self.log_pub.dumpmsg("Renaming %s to %s" % (uplfile, finalfile))
                 os.rename(uplfile, finalfile)
                 res += "good " + uplfile + " -> " + finalfile + "\n"
             except OSError as e:
