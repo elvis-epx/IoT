@@ -14,6 +14,7 @@ builtins.const = lambda x: x
 import time
 time.sleep_ms = lambda t: time.sleep(t / 1000)
 time.ticks_ms = lambda: int(time.time() * 1000)
+time.ticks_us = lambda: int(time.time() * 1000000)
 time.ticks_add = lambda a, b: a + b
 time.ticks_diff = lambda a, b: a - b
 

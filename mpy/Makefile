@@ -96,6 +96,10 @@ ota.tst: testsuite/ota/script
 	./runtest ota
 	touch ota.tst
 
+otafw.tst: testsuite/otafw/script
+	./runtest otafw
+	touch otafw.tst
+
 otae.tst: testsuite/otae/script
 	./runtest otae
 	touch otae.tst
@@ -103,6 +107,10 @@ otae.tst: testsuite/otae/script
 otafail.tst: testsuite/otafail/script
 	./runtest otafail
 	touch otafail.tst
+
+otafwfail.tst: testsuite/otafwfail/script
+	./runtest otafwfail
+	touch otafwfail.tst
 
 relay_disp.tst: testsuite/relay_disp/script
 	./runtest relay_disp

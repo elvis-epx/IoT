@@ -7,42 +7,42 @@ runme
 sleep 5
 wifi GOT_IP
 sleep 10
-assert mqtt stat/H2OControl/Malfunction 2
+assert mqtt stat/H2OControl/Malfunctions 2
 assert mqtt stat/H2OControl/CoarseLevelPct 100
 mcp23017f
 sleep 3
 advance $(( 10 * 60 * 1000 ))
 sleep 3
-assert mqtt stat/H2OControl/Malfunction 2
+assert mqtt stat/H2OControl/Malfunctions 2
 mcp23017nf
 sleep 3
 advance $(( 10 * 60 * 1000 ))
 sleep 3
-assert mqtt stat/H2OControl/Malfunction 0
+assert mqtt stat/H2OControl/Malfunctions 0
 assert mqtt stat/H2OControl/LevelSensorMap 1,1,1,1,1
 sleep 5
 mcp23017f
 sleep 5
-assert mqtt stat/H2OControl/Malfunction 4
+assert mqtt stat/H2OControl/Malfunctions 4
 sleep 3
 mcp23017f
 advance $(( 10 * 60 * 1000 ))
 sleep 3
-assert mqtt stat/H2OControl/Malfunction 6
+assert mqtt stat/H2OControl/Malfunctions 6
 mcp23017nf
 sleep 3
 advance $(( 10 * 60 * 1000 ))
 sleep 3
-assert mqtt stat/H2OControl/Malfunction 0
+assert mqtt stat/H2OControl/Malfunctions 0
 mcp23017 251
 sleep 7 # 4 seconds of debounce
 assert mqtt stat/H2OControl/CoarseLevelPct 60
-assert mqtt stat/H2OControl/Malfunction 1
+assert mqtt stat/H2OControl/Malfunctions 1
 assert mqtt stat/H2OControl/LevelSensorMap 0,0,1,0,0
 mcp23017 248
 sleep 7
 assert mqtt stat/H2OControl/CoarseLevelPct 60
-assert mqtt stat/H2OControl/Malfunction 0
+assert mqtt stat/H2OControl/Malfunctions 0
 assert mqtt stat/H2OControl/LevelSensorMap 1,1,1,0,0
 i=0
 while [ "$i" -lt 30 ]; do
@@ -51,7 +51,7 @@ while [ "$i" -lt 30 ]; do
     i=$(($i + 1))
 done
 sleep 5
-assert mqtt stat/H2OControl/Malfunction 16
+assert mqtt stat/H2OControl/Malfunctions 16
 advance $(( 30 * 60 * 1000 ))
 sleep 5
-assert mqtt stat/H2OControl/Malfunction 0
+assert mqtt stat/H2OControl/Malfunctions 0
