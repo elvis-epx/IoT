@@ -47,7 +47,7 @@ class Sensor:
 
         # TODO add/remove sensors as we go, not only once?
 
-        task = Task(True, "sensor_eval", self.eval, 60 * SECONDS)
+        task = Task(True, "sensor_eval", self.eval, 10 * SECONDS)
         task.advance()
 
     def eval(self, _):
