@@ -1,0 +1,52 @@
+#!/bin/bash -x
+
+MQTT_SERVER=$(cat mqttserver.txt)
+
+DEV=$(cat $1 | grep 'mqttname' | cut -f 2 -d ' ')
+
+echo "Device is $DEV"
+
+rm -f /tmp/piggy_ota
+( mosquitto_sub -h $MQTT_SERVER -t "stat/${DEV}/OTA" -W 60 -C 1 >/tmp/piggy_ota 2>&1 ) &
+mosquitto_pub -h $MQTT_SERVER -t "cmnd/${DEV}/OTA" -m open
+echo "Waiting for OTA details"
+while lsof /tmp/piggy_ota >/dev/null 2>&1; do
+    sleep 1
+done
+cat /tmp/piggy_ota
+IPADDR=`cat /tmp/piggy_ota | grep netstatus | tail -1 | sed 's/^.* addr \([0-9.]*\) .*$/\1/'`
+echo $IPADDR
+
+echo "Sending config file"
+
+localfile=$1
+remotefile=config.txt
+
+localhash=$(sha1sum $localfile | cut -f 1 -d ' ')
+echo "Hash of local  $localfile: $localhash"
+remotehash=$(./otatool "$IPADDR" hash $remotefile 2>/dev/null || echo Error)
+if [ "$remotehash" = "Error" ]; then
+    echo "Error getting remote hash"
+    exit 1
+fi
+echo "Hash of remote $remotefile: $remotehash"
+if [ "$remotehash" != "$localhash" ]; then
+    echo "...Updating"
+    if ! ./otatool "$IPADDR" send $localfile $remotefile; then
+        echo "Error sending file"
+        exit 1
+    fi
+fi
+
+( mosquitto_sub -h $MQTT_SERVER -t "stat/${DEV}/Log" -W 10 -C 1 ) &
+sleep 1
+echo "Committing..."
+mosquitto_pub -h $MQTT_SERVER -t "cmnd/${DEV}/OTA" -m commit
+sleep 5
+
+echo "Rebooting"
+mosquitto_pub -h $MQTT_SERVER -t "cmnd/${DEV}/OTA" -m reboot
+sleep 1
+
+echo "Waiting for MQTT messages..."
+mosquitto_sub -h $MQTT_SERVER -t "stat/${DEV}/#" -W 120 -C 10 -v
