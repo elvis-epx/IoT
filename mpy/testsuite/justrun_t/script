@@ -10,6 +10,6 @@ sleep 60
 
 assert mqtt stat/Temperature/Malfunction 0
 
-sleep 300
+sleep 60
 
 quit
