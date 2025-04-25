@@ -16,7 +16,7 @@ clean-coverage:
 	rm -rf htmlcov/
 	rm -f *.tst
 
-test: h2o_disp.tst h2o_fails.tst justrun.tst justrun_e.tst justrun_h.tst justrun_r.tst justrun_sc.tst justrun_sm.tst tnowp.tst tnowc.tst justrun_sw.tst lan.tst mqttf.tst mqttf2.tst mqttf3.tst netnow.tst ota.tst otae.tst otafail.tst relay_disp.tst sensormf1.tst sensormf2.tst sw_tests.tst sw_tests2.tst sw_tests3.tst testsub.tst watchdog.tst wifi.tst
+test: h2o_disp.tst h2o_fails.tst justrun.tst justrun_e.tst justrun_h.tst justrun_r.tst justrun_sc.tst justrun_sm.tst tnowp.tst tnowc.tst justrun_sw.tst lan.tst mqttf.tst mqttf2.tst mqttf3.tst netnow.tst ota.tst otafw.tst otae.tst otafail.tst otafwfail.tst relay_disp.tst sensormf1.tst sensormf2.tst sw_tests.tst sw_tests2.tst sw_tests3.tst testsub.tst watchdog.tst wifi.tst
 	python3-coverage combine || echo
 	python3-coverage html
 	xdg-open htmlcov/index.html
