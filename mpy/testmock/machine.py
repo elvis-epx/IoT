@@ -59,6 +59,10 @@ class Pin:
             os.remove(f)
             for _ in range(0, p):
                 self.irq_cb(None)
+                # maxflow in test configs is 50L/min, 4.8 pulses ~= 1L/min
+                time.sleep((1 / 4.8) / 40.0)
+                self.irq_cb(None)
+                time.sleep((1 / 4.8) / 40.0)
             return True
         return False
 
