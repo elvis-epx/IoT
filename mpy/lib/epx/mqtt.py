@@ -184,10 +184,11 @@ class MQTTPub:
         self.topic = topic.encode('ascii')
         self.msg = None
         self.retain = retain
+        self.forcepubtask = None
         if to > 0:
             Task(True, "eval_%s" % topic, self.eval, to).advance()
         if forcepubto > 0:
-            Task(True, "force_%s" % topic, self.forcepub, forcepubto)
+            self.forcepubtask = Task(True, "force_%s" % topic, self.forcepub, forcepubto)
 
     def adjust_topic(self, name):
         self.topic = self.topic % name.encode('ascii')
@@ -208,6 +209,8 @@ class MQTTPub:
             self.msg = new_msg
             if self.msg is not None:
                 mqtt_manager.pub_requested(self)
+                if self.forcepubtask:
+                    self.forcepubtask.restart()
 
     def gen_msg(self): # override
         self.msg = None # pragma: no cover
