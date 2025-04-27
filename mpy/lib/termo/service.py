@@ -3,7 +3,7 @@ from epx.loop import SECONDS, MINUTES
 
 class Temperatures(MQTTPub):
     def __init__(self, sensor, addr):
-        MQTTPub.__init__(self, "stat/%s/Temperature/" + addr, 10 * SECONDS, 10 * MINUTES, False)
+        MQTTPub.__init__(self, "stat/%s/Temperature/" + addr, 15 * SECONDS, 5 * MINUTES, False)
         self.addr = addr
         self.sensor = sensor
         self.last_temp = None
