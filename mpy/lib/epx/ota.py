@@ -404,6 +404,7 @@ class OTAHandler:
 
     def on_payload(self):
         self.sm.recurring_task("ota_payload", self.payload_poll, 50 * MILISSECONDS)
+        # FIXME restart timeout task when fragment is received
         self.sm.schedule_trans("connlost", 30 * SECONDS)
 
     def on_payload_fw(self):
