@@ -205,6 +205,8 @@ class MQTTPub:
         new_msg = self.gen_msg()
         if new_msg is not None:
             new_msg = new_msg.encode('utf-8')
+            # FIXME clarify semantics - if a topic generates 'None', does this mean
+            # a) no change, or b) cease to publish?
         if self.pub_condition(force, self.msg, new_msg):
             self.msg = new_msg
             if self.msg is not None:
