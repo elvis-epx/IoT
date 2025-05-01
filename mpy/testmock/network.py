@@ -29,6 +29,7 @@ STAT_NO_AP_FOUND = 4
 STAT_UNDEF_ERROR = 5
 
 PHY_JL1101=1
+PHY_GENERIC=2
 
 class WLAN:
     def __init__(self, kind):
