@@ -10,10 +10,11 @@ class Temperatures(MQTTPub):
 
     def gen_msg(self):
         # as float
-        temp = self.sensor.temperature(self.addr)
+        temp, accuracy_stddev = self.sensor.temperature(self.addr)
         if temp is None:
             return None
-        if self.last_temp is not None and abs(temp - self.last_temp) < 0.1:
+        # TODO move precision (0.1 in this case) to config.txt
+        if self.last_temp is not None and abs(temp - self.last_temp) < max(0.1, accuracy_stddev):
             # Avoid dithering
             temp = self.last_temp
         else:

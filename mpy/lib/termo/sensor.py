@@ -42,12 +42,21 @@ class Sensor:
             self.roms[name] = {}
             self.roms[name]['raw'] = rom
             self.roms[name]['dt'] = Shortcronometer()
+            # TODO move some Kalman parameters to config.txt
+            # z = sensor value (ºC)
             self.roms[name]['z'] = None
-            self.roms[name]['x'] = None  # Use first measurement as initial estimation
-            self.roms[name]['R'] = 0.5 ** 2 # in ºC squared (sensor accuracy)
-            self.roms[name]['P'] = 10.0 ** 2 # in ºC squared (accuracy of initial estimation)
-            # variance of estimation i.e. likelyhood of current temperature to stay the same
-            self.roms[name]['Q/dt'] = 0.25 ** 2 / 60000 # in (ºC/min) squared and converted to ms
+            # x = estimated value (ºC)
+            self.roms[name]['x'] = None  # None = first measurement as initial estimation
+            # Sensor accuracy, expressed as standard deviation
+            self.roms[name]['acc'] = 0.5
+            # R = sensor measurement variance (stddev^2)
+            self.roms[name]['R'] = 0.5 ** 2
+            # P = "accuracy" of current estimation x i.e. variance
+            self.roms[name]['P'] = 10.0 ** 2 # accuracy of initial estimation
+            # Q = "accuracy" of next estimation i.e. variance
+            # (could be understood as how the ambient temperature is expected do change as time passes)
+            # Q/dt = variance of next estimation per unit of time (dt in ms)
+            self.roms[name]['Q/dt'] = 0.25 ** 2 / 60000
             self.roms[name]['mqtt'] = self.mqttpubclass(self, name)
             self.mqttpubadd(self.roms[name]['mqtt'])
 
@@ -105,7 +114,7 @@ class Sensor:
     def temperature(self, name):
         if name not in self.roms:
             return None
-        return self.roms[name]['x']
+        return (self.roms[name]['x'], self.roms[name]['P'] ** 0.5)
 
     def malfunction(self):
         return self._malfunction
