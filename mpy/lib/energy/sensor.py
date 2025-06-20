@@ -31,7 +31,7 @@ class Sensor:
             self.varAoffset = 0.0
 
         self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
-                        "A": None, "Aavg": None, "Amax": None, \
+                        "A": None, "Ao": None, "Aavg": None, "Amax": None, \
                         "W": None, "Wavg": None, \
                         "VA": None, "VAavg": None, \
                         "Malfunction": 0, "n": None}
@@ -111,11 +111,12 @@ class Sensor:
         effective_current = 0.0
         if sensor_data["V"] > 0:
             effective_current = sensor_data["W"] / sensor_data["V"]
+        sensor_data["Ao"] = sensor_data["A"]
         apparent_current = sensor_data["A"]
         # calculate reactive current
         # apparent^2 = effective^2 + reactive^2
         # reactive^2 = apparent^2 - effective^2
-        reactive_current = (apparent_current ** 2 - effective_current ** 2) ** 0.5
+        reactive_current = max(0.0, apparent_current ** 2 - effective_current ** 2) ** 0.5
         # discount reactive current offset
         reactive_current = max(0.0, reactive_current - self.varAoffset)
         # recalculate apparent current
