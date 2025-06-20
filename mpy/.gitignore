@@ -11,6 +11,7 @@ htmlcov/
 tmppiggy
 log
 serial*.txt
+mqttserver.txt
 reboot.txt
 exception.txt
 *.upl
