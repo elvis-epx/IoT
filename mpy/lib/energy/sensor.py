@@ -24,7 +24,12 @@ agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
                   "n": 0}
 
 class Sensor:
-    def __init__(self):
+    def __init__(self, cfg):
+        try:
+            self.varAoffset = float(cfg.data.get('varcurrentoffset', '0.0'))
+        except ValueError:
+            self.varAoffset = 0.0
+
         self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
                         "A": None, "Aavg": None, "Amax": None, \
                         "W": None, "Wavg": None, \
@@ -102,6 +107,20 @@ class Sensor:
 
         self.visible_data['Malfunction'] = 0
         sensor_data = self.impl.get_data()
+
+        effective_current = 0.0
+        if sensor_data["V"] > 0:
+            effective_current = sensor_data["W"] / sensor_data["V"]
+        apparent_current = sensor_data["A"]
+        # calculate reactive current
+        # apparent^2 = effective^2 + reactive^2
+        # reactive^2 = apparent^2 - effective^2
+        reactive_current = (apparent_current ** 2 - effective_current ** 2) ** 0.5
+        # discount reactive current offset
+        reactive_current = max(0.0, reactive_current - self.varAoffset)
+        # recalculate apparent current
+        sensor_data["A"] = (effective_current ** 2 + reactive_current ** 2) ** 0.5
+
         sensor_data["VA"] = sensor_data["V"] * sensor_data["A"]
 
         self.visible_data.update(sensor_data)
