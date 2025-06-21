@@ -18,7 +18,7 @@ else: # pragma: no cover
     FAILURE_TIMEOUT = 10 * MINUTES
 
 agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
-                  "Aavg": 0.0, "Aoavg": 0.0, "Amax": 0.0, \
+                  "Aavg": 0.0, "Amax": 0.0, \
                   "Wavg": 0.0, \
                   "VAavg": 0.0, \
                   "n": 0}
@@ -30,8 +30,13 @@ class Sensor:
         except ValueError:
             self.varAoffset = 0.0
 
+        try:
+            self.poweroffset = float(cfg.data.get('poweroffset', '0.0'))
+        except ValueError:
+            self.poweroffset = 0.0
+
         self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
-                        "A": None, "Ao": None, "Aavg": None, "Aoavg": None, "Amax": None, \
+                        "A": None, "Aavg": None, "Amax": None, \
                         "W": None, "Wavg": None, \
                         "VA": None, "VAavg": None, \
                         "Malfunction": 0, "n": None}
@@ -108,10 +113,10 @@ class Sensor:
         self.visible_data['Malfunction'] = 0
         sensor_data = self.impl.get_data()
 
+        sensor_data["W"] = max(0.0, sensor_data["W"] - self.poweroffset)
         effective_current = 0.0
         if sensor_data["V"] > 0:
             effective_current = sensor_data["W"] / sensor_data["V"]
-        sensor_data["Ao"] = sensor_data["A"]
         apparent_current = sensor_data["A"]
         # calculate reactive current
         # apparent^2 = effective^2 + reactive^2
@@ -136,7 +141,7 @@ class Sensor:
 
     def update_aggregates(self, sensor_data):
         w = self.agg_data["n"]
-        for k in ("V", "A", "W", "VA", "Ao"):
+        for k in ("V", "A", "W", "VA"):
             if (k + "avg") in self.agg_data:
                 self.agg_data[k + "avg"] = (self.agg_data[k + "avg"] * w + sensor_data[k]) / (w + 1.0)
             if (k + "min") in self.agg_data:
