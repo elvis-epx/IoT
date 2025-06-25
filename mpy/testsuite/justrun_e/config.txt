@@ -3,4 +3,3 @@ password PASSWORD
 mqttbroker 1.2.3.4
 mqttname Energy
 watchdog 0
-varcurrentoffset 0.0

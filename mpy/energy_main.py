@@ -12,7 +12,7 @@ from energy.service import *
 config = Config()
 config.data['flavor'] = 'energy'
 watchdog = Watchdog(config)
-sensor = Sensor(config)
+sensor = Sensor()
 net = Net(config)
 
 mqtt = MQTT(config, net, watchdog)
