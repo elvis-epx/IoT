@@ -59,17 +59,6 @@ class Current(MQTTPub):
             return None # pragma: no cover
         return "%.2f" % self.sensor.get_data('Aavg')
 
-class CurrentOrig(MQTTPub):
-    def __init__(self, sensor):
-        MQTTPub.__init__(self, "stat/%s/AO", 0, 0, False)
-        self.sensor = sensor
-        self.sensor.pub_add(self)
-
-    def gen_msg(self):
-        if self.sensor.get_data('Aoavg') is None:
-            return None # pragma: no cover
-        return "%.2f" % self.sensor.get_data('Aoavg')
-
 class CurrentNow(MQTTPub):
     def __init__(self, sensor):
         MQTTPub.__init__(self, "stat/%s/Anow", 0, 0, False)

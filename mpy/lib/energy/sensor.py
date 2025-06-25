@@ -18,7 +18,7 @@ else: # pragma: no cover
     FAILURE_TIMEOUT = 10 * MINUTES
 
 agg_data_clean = {"Vavg": 0.0, "Vmin": 999999.9, "Vmax": 0.0, \
-                  "Aavg": 0.0, "Aoavg": 0.0, "Amax": 0.0, \
+                  "Aavg": 0.0, "Amax": 0.0, \
                   "Wavg": 0.0, \
                   "VAavg": 0.0, \
                   "n": 0}
@@ -31,7 +31,7 @@ class Sensor:
             self.varAoffset = 0.0
 
         self.visible_data = {"V": None, "Vavg": None, "Vmin": None, "Vmax": None, \
-                        "A": None, "Ao": None, "Aavg": None, "Aoavg": None, "Amax": None, \
+                        "A": None, "Ao": None, "Aavg": None, "Amax": None, \
                         "W": None, "Wavg": None, \
                         "VA": None, "VAavg": None, \
                         "Malfunction": 0, "n": None}
@@ -136,7 +136,7 @@ class Sensor:
 
     def update_aggregates(self, sensor_data):
         w = self.agg_data["n"]
-        for k in ("V", "A", "W", "VA", "Ao"):
+        for k in ("V", "A", "W", "VA"):
             if (k + "avg") in self.agg_data:
                 self.agg_data[k + "avg"] = (self.agg_data[k + "avg"] * w + sensor_data[k]) / (w + 1.0)
             if (k + "min") in self.agg_data:
