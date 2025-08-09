@@ -6,10 +6,17 @@ runme
 sleep 5
 
 wifi GOT_IP
+mqttsub cmnd/Temperature/Refresh "ble"
 sleep 60
 
 assert mqtt stat/Temperature/Malfunction 0
 
 sleep 60
+
+forget_mqtt # Makes sure past MQTT messages are not found
+
+mqttsub cmnd/Temperature/Refresh "ble"
+sleep 2
+assert mqtt stat/Temperature/Malfunction 0
 
 quit
