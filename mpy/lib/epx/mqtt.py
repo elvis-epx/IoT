@@ -47,6 +47,7 @@ class MQTT:
             self.sm.schedule_trans("start", 12 * SECONDS)
 
         self.pub(Uptime())
+        self.sub(Refresh())
 
         self.log_pub = Log()
         self.pub(self.log_pub)
@@ -129,6 +130,10 @@ class MQTT:
         if pubobj not in self.pub_pending:
             self.pub_pending.append(pubobj)
 
+    def refresh_all_pubs(self):
+        for pubobj in self.publist:
+            self.pub_requested(pubobj)
+
     def eval_pub(self, _):
         if self.sm.state != 'connected' or not self.pub_pending:
             return
@@ -137,9 +142,10 @@ class MQTT:
 
         self.watchdog.may_block() # impl.publish() may block
         try:
-            self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
-            print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
-            self.ping_task.restart()
+            if pubobj.msg is not None:
+                self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
+                print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
+                self.ping_task.restart()
             if self.pub_pending:
                 self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
         except (MQTTException, OSError):
@@ -269,3 +275,13 @@ class Uptime(MQTTPub):
 
     def gen_msg(self):
         return "%d" % (self.uptime.elapsed() // MINUTES)
+
+
+class Refresh(MQTTSub):
+    def __init__(self):
+        MQTTSub.__init__(self, "cmnd/%s/Refresh")
+
+    def recv(self, topic, msg, retained, dup):
+        if retained or dup or not msg:
+            return
+        mqtt_manager.refresh_all_pubs()

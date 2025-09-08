@@ -149,6 +149,12 @@ function assert_mqtt ()
     return 1
 }
 
+function forget_mqtt ()
+{
+    rm ${TEST_FOLDER}/mqttpub.sim
+    touch ${TEST_FOLDER}/mqttpub.sim
+}
+
 function assert () {
     if [ "$1" = "gpio" ]; then
         assert_gpio "$2" "$3"
