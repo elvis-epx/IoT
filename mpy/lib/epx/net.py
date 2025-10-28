@@ -39,12 +39,8 @@ class Net:
 
     def on_start(self):
         if self.wired:
-            # TODO support other ethernet boards
-            # Currently depends on custom-built MicroPython for the DTWonder hw
-            if hasattr(network, 'PHY_GENERIC'):
-                board = network.PHY_GENERIC
-            else:
-                board = network.PHY_JL1101
+            # TODO configurable support other ethernet boards
+            board = network.PHY_GENERIC
             self.impl = network.LAN(mdc=machine.Pin(23), mdio=machine.Pin(18), power=machine.Pin(0), phy_addr=1,
                         phy_type=board, ref_clk=machine.Pin(17), ref_clk_mode=machine.Pin.OUT)
         else:
