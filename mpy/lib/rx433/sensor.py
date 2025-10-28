@@ -227,19 +227,15 @@ class OOKReceiverRMT:
         self.rmt = None
 
         # Delay startup to after the watchdog is active (10s)
-        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
+        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 300
         Task(False, "start", self.start, startup_time * SECONDS)
 
     def start(self, _):
         pin = machine.Pin(14, machine.Pin.IN)
         # ideally min_ns would be DATA_MIN_US * 1000 / 4 or so for better filtering,
         # but current RMT API does not support bigger values
-        if hasattr(esp32, 'RMTRX'):
-            rmtrxclass = esp32.RMTRX
-        else:
-            rmtrxclass = esp32.RMT2
 
-        self.rmt = rmtrxclass(pin=pin, num_symbols=64, \
+        self.rmt = esp32.RMTRX(pin=pin, num_symbols=64, \
                               min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
                               resolution_hz=1000000,
                               soft_min_value=DATA_MIN_US,
@@ -247,7 +243,7 @@ class OOKReceiverRMT:
                               soft_min_len=min(self.expected_lengths),
                               soft_max_len=max(self.expected_lengths))
         loop.poll_object("RMT", self.rmt, loop.POLLIN, self.recv)
-        self.rmt.read_pulses()
+        self.rmt.active(1)
 
     def recv(self, _):
         data = self.rmt.get_data()
@@ -271,7 +267,7 @@ class OOKReceiverRMT:
     def stop(self):
         if not self.rmt:
             return
-        self.rmt.stop_read_pulses()
+        self.rmt.active(0)
         self.rmt = None
     
     def stats(self):
