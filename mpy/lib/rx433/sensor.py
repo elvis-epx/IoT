@@ -227,7 +227,7 @@ class OOKReceiverRMT:
         self.rmt = None
 
         # Delay startup to after the watchdog is active (10s)
-        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 300
+        startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
         Task(False, "start", self.start, startup_time * SECONDS)
 
     def start(self, _):
