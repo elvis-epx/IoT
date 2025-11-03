@@ -28,7 +28,7 @@ at the minimum:
 - energy\_main.py that becomes the main.py
 - energy\_config.txt.example is an example of configuration file for the profile
 - energy\_config.txt is the configuration file (based on the example above) that you should create for your particular need. This becomes the file config.txt in the ESP32. The pcp\_conf script automates the copy of this file to the MCU.
-- energy.mpf is a manifest used by the cpall script (based on mpfshell) to upload all code to the ESP32 via serialA
+- energy.mpf is a manifest used by the cpall script (based on mpfshell) to upload all code to the ESP32 via serial port.
 
 The following files are optional, but generally they exist:
 
@@ -57,7 +57,7 @@ The following files are included in in basically every profile's manifest:
 
 Each profile may also add any number of files from lib/third/ folder. These modules are third-party modules,
 generally device drivers, that are included in the source code for convenience. We generally tweak these
-modules to make them more reliable and for them to fit better in our event-loop-based framework.
+modules to make them more reliable and to fit better in our event-loop-based framework.
 
 The lib/epx/netnow.py module interfaces with ESP-NOW and is used only by the profiles that employ ESP-NOW
 (currently, only the "scale" profile).
@@ -87,8 +87,8 @@ The event loop does call time.sleep() or poll.poll() as it should in a UNIX envi
 MicroPython currently does not use the "automatic light sleep" feature available in ESP-IDF, but it might use
 it in the future, and then our framework will enable significant energy savings.
 
-Still about energy, we use the profile\_boot.py to set the MCU frequency. In all our profiles, we 
-set it to 80Mhz, which allows the ESP32 to run cooler and we don't see the need of more performance.
+Still about energy, we use the profile\_boot.py to set the MCU frequency. In most profiles we 
+set it to 80Mhz which allows the ESP32 to run cooler and we don't see the need of more performance.
 
 ## ESP-NOW protocol
 
