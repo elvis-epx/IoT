@@ -17,5 +17,5 @@ lib/energy/__init__.py
 lib/energy/service.py
 lib/energy/sensor.py
 
-energy_boot.py boot.py
-energy_main.py main.py
+profiles/energy/boot.py boot.py
+profiles/energy/main.py main.py

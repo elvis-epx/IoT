@@ -20,11 +20,10 @@ put lib/third/hdc1080.py /lib/third/hdc1080.py
 put lib/third/mcp23017.py /lib/third/mcp23017.py
 put lib/third/ssd1306.py /lib/third/ssd1306.py
 
-md /lib/h2o
-put lib/h2o/__init__.py /lib/h2o/__init__.py
-put lib/h2o/service.py /lib/h2o/service.py
-put lib/h2o/sensor.py /lib/h2o/sensor.py
-put lib/h2o/actuator.py /lib/h2o/actuator.py
+md /lib/relay
+put lib/relay/__init__.py /lib/relay/__init__.py
+put lib/relay/service.py /lib/relay/service.py
+put lib/relay/actuator.py /lib/relay/actuator.py
 
-put h2o_boot.py boot.py
-put h2o_main.py main.py
+put profiles/relay/boot.py boot.py
+put profiles/relay/main.py main.py

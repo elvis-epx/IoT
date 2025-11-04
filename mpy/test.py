@@ -7,6 +7,7 @@ sys.path.insert(0, '../../lib')
 sys.path.insert(0, '../../testmock')
 
 flavor = sys.argv[1]
+sys.path.insert(0, '../../profiles/' + flavor)
 
 import builtins
 builtins.const = lambda x: x
@@ -28,8 +29,8 @@ if len(sys.argv) < 3:
 
 import importlib
 
-boot = importlib.import_module(flavor + '_boot')
-stage = importlib.import_module(flavor + '_stage')
+boot = importlib.import_module('boot')
+stage = importlib.import_module('stage')
 while machine.test_mock(None):
     pass
-main = importlib.import_module(flavor + '_main')
+main = importlib.import_module('main')

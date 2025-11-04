@@ -1,3 +1,0 @@
-#!/bin/bash
-
-mpfshell `cat serial_params.txt` -n

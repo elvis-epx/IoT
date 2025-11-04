@@ -11,10 +11,11 @@ lib/uumqtt/simple2.py
 lib/uumqtt/errno.py
 
 lib/third/__init__.py
+lib/third/ssd1306.py
 
-lib/termo/__init__.py
-lib/termo/service.py
-lib/termo/sensor.py
+lib/relay/__init__.py
+lib/relay/service.py
+lib/relay/actuator.py
 
-termo_boot.py boot.py
-termo_main.py main.py
+profiles/relay/boot.py boot.py
+profiles/relay/main.py main.py

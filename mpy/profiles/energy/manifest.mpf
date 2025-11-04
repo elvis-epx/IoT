@@ -4,12 +4,9 @@ put lib/epx/__init__.py /lib/epx/__init__.py
 put lib/epx/config.py /lib/epx/config.py
 put lib/epx/mqtt.py /lib/epx/mqtt.py
 put lib/epx/net.py /lib/epx/net.py
-put lib/epx/netnow.py /lib/epx/netnow.py
-put lib/epx/netnowc.py /lib/epx/netnowc.py
 put lib/epx/watchdog.py /lib/epx/watchdog.py
 put lib/epx/loop.py /lib/epx/loop.py
 put lib/epx/ota.py /lib/epx/ota.py
-put lib/epx/nvram.py /lib/epx/nvram.py
 
 md /lib/uumqtt
 put lib/uumqtt/__init__.py  /lib/uumqtt/__init__.py 
@@ -18,11 +15,12 @@ put lib/uumqtt/errno.py /lib/uumqtt/errno.py
 
 md /lib/third
 put lib/third/__init__.py /lib/third/__init__.py
+put lib/third/pzem.py /lib/third/pzem.py
 
-md /lib/scale_manager
-put lib/scale_manager/__init__.py /lib/scale_manager/__init__.py
-put lib/scale_manager/service.py /lib/scale_manager/service.py
-put lib/scale_manager/forwarder.py /lib/scale_manager/forwarder.py
+md /lib/energy
+put lib/energy/__init__.py /lib/energy/__init__.py
+put lib/energy/service.py /lib/energy/service.py
+put lib/energy/sensor.py /lib/energy/sensor.py
 
-put scale_manager_boot.py boot.py
-put scale_manager_main.py main.py
+put profiles/energy/boot.py boot.py
+put profiles/energy/main.py main.py

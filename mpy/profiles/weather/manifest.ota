@@ -20,5 +20,5 @@ lib/weather/service.py
 lib/weather/sensor.py
 lib/weather/actuator.py
 
-weather_boot.py boot.py
-weather_main.py main.py
+profiles/weather/boot.py boot.py
+profiles/weather/main.py main.py

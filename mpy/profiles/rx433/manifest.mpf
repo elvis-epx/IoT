@@ -4,25 +4,19 @@ put lib/epx/__init__.py /lib/epx/__init__.py
 put lib/epx/config.py /lib/epx/config.py
 put lib/epx/mqtt.py /lib/epx/mqtt.py
 put lib/epx/net.py /lib/epx/net.py
-put lib/epx/netnow.py /lib/epx/netnow.py
-put lib/epx/netnowc.py /lib/epx/netnowc.py
 put lib/epx/watchdog.py /lib/epx/watchdog.py
 put lib/epx/loop.py /lib/epx/loop.py
 put lib/epx/ota.py /lib/epx/ota.py
-put lib/epx/nvram.py /lib/epx/nvram.py
 
 md /lib/uumqtt
 put lib/uumqtt/__init__.py  /lib/uumqtt/__init__.py 
 put lib/uumqtt/simple2.py  /lib/uumqtt/simple2.py 
 put lib/uumqtt/errno.py /lib/uumqtt/errno.py
 
-md /lib/third
-put lib/third/__init__.py /lib/third/__init__.py
+md /lib/rx433
+put lib/rx433/__init__.py /lib/rx433/__init__.py
+put lib/rx433/service.py /lib/rx433/service.py
+put lib/rx433/sensor.py /lib/rx433/sensor.py
 
-md /lib/tnowc
-put lib/tnowc/__init__.py /lib/tnowc/__init__.py
-put lib/tnowc/service.py /lib/tnowc/service.py
-put lib/tnowc/forwarder.py /lib/tnowc/forwarder.py
-
-put tnowc_boot.py boot.py
-put tnowc_main.py main.py
+put profiles/rx433/boot.py boot.py
+put profiles/rx433/main.py main.py

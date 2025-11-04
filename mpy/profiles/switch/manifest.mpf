@@ -7,6 +7,7 @@ put lib/epx/net.py /lib/epx/net.py
 put lib/epx/watchdog.py /lib/epx/watchdog.py
 put lib/epx/loop.py /lib/epx/loop.py
 put lib/epx/ota.py /lib/epx/ota.py
+put lib/epx/nvram.py /lib/epx/nvram.py
 
 md /lib/uumqtt
 put lib/uumqtt/__init__.py  /lib/uumqtt/__init__.py 
@@ -20,11 +21,12 @@ put lib/third/hdc1080.py /lib/third/hdc1080.py
 put lib/third/mcp23017.py /lib/third/mcp23017.py
 put lib/third/ssd1306.py /lib/third/ssd1306.py
 
-md /lib/weather
-put lib/weather/__init__.py /lib/weather/__init__.py
-put lib/weather/service.py /lib/weather/service.py
-put lib/weather/sensor.py /lib/weather/sensor.py
-put lib/weather/actuator.py /lib/weather/actuator.py
+md /lib/switch
+put lib/switch/__init__.py /lib/switch/__init__.py
+put lib/switch/service.py /lib/switch/service.py
+put lib/switch/actuator.py /lib/switch/actuator.py
+put lib/switch/sensor.py /lib/switch/sensor.py
+put lib/switch/driver.py /lib/switch/driver.py
 
-put weather_boot.py boot.py
-put weather_main.py main.py
+put profiles/switch/boot.py boot.py
+put profiles/switch/main.py main.py

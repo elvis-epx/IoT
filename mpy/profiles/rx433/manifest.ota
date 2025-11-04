@@ -14,5 +14,5 @@ lib/rx433/__init__.py
 lib/rx433/service.py
 lib/rx433/sensor.py
 
-rx433_boot.py boot.py
-rx433_main.py main.py
+profiles/rx433/boot.py boot.py
+profiles/rx433/main.py main.py

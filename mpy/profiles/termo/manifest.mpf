@@ -21,5 +21,5 @@ put lib/termo/__init__.py /lib/termo/__init__.py
 put lib/termo/service.py /lib/termo/service.py
 put lib/termo/sensor.py /lib/termo/sensor.py
 
-put termo_boot.py boot.py
-put termo_main.py main.py
+put profiles/termo/boot.py boot.py
+put profiles/termo/main.py main.py

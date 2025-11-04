@@ -15,5 +15,5 @@ lib/scale_sensor/__init__.py
 lib/scale_sensor/service.py
 lib/scale_sensor/sensor.py
 
-scale_sensor_boot.py boot.py
-scale_sensor_main.py main.py
+profiles/scale_sensor/boot.py boot.py
+profiles/scale_sensor/main.py main.py

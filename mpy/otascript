@@ -6,12 +6,12 @@ DEVTYPE="$1"
 IP="$2"
 FORCE="$3"
 
-if ! [ -f ${DEVTYPE}.ota ]; then
-    echo "Error: device type has no .ota laundry list"
+if ! [ -f profiles/${DEVTYPE}/manifest.ota ]; then
+    echo "Error: device type has no manifest.ota"
     exit 1
 fi
 
-if ! ./otatool "$IP" flavor; then
+if ! ./otatool "$profiles/IP" flavor; then
     REMOTEDEVTYPE="old"
 else
     REMOTEDEVTYPE=$(./otatool "$IP" flavor)
@@ -55,4 +55,4 @@ fi
         fi
     fi
 
-done) < ${DEVTYPE}.ota
+done) < profiles/${DEVTYPE}/manifest.ota

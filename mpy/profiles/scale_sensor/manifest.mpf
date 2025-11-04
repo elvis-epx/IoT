@@ -10,10 +10,12 @@ put lib/epx/nvram.py /lib/epx/nvram.py
 
 md /lib/third
 put lib/third/__init__.py /lib/third/__init__.py
+put lib/third/hx711.py /lib/third/hx711.py
 
-md /lib/tnowp
-put lib/tnowp/__init__.py /lib/tnowp/__init__.py
-put lib/tnowp/service.py /lib/tnowp/service.py
+md /lib/scale_sensor
+put lib/scale_sensor/__init__.py /lib/scale_sensor/__init__.py
+put lib/scale_sensor/service.py /lib/scale_sensor/service.py
+put lib/scale_sensor/sensor.py /lib/scale_sensor/sensor.py
 
-put tnowp_boot.py boot.py
-put tnowp_main.py main.py
+put profiles/scale_sensor/boot.py boot.py
+put profiles/scale_sensor/main.py main.py

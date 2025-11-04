@@ -15,12 +15,16 @@ put lib/uumqtt/errno.py /lib/uumqtt/errno.py
 
 md /lib/third
 put lib/third/__init__.py /lib/third/__init__.py
-put lib/third/pzem.py /lib/third/pzem.py
+put lib/third/bme280.py /lib/third/bme280.py
+put lib/third/hdc1080.py /lib/third/hdc1080.py
+put lib/third/mcp23017.py /lib/third/mcp23017.py
+put lib/third/ssd1306.py /lib/third/ssd1306.py
 
-md /lib/energy
-put lib/energy/__init__.py /lib/energy/__init__.py
-put lib/energy/service.py /lib/energy/service.py
-put lib/energy/sensor.py /lib/energy/sensor.py
+md /lib/weather
+put lib/weather/__init__.py /lib/weather/__init__.py
+put lib/weather/service.py /lib/weather/service.py
+put lib/weather/sensor.py /lib/weather/sensor.py
+put lib/weather/actuator.py /lib/weather/actuator.py
 
-put energy_boot.py boot.py
-put energy_main.py main.py
+put profiles/weather/boot.py boot.py
+put profiles/weather/main.py main.py
