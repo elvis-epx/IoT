@@ -238,8 +238,8 @@ class OOKReceiverRMT:
         self.rmt = esp32.RMTRX(pin=pin, num_symbols=64, \
                               min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
                               resolution_hz=1000000,
-                              soft_min_value=DATA_MIN_US,
-                              soft_max_value=DATA_MAX_US,
+                              soft_min_ns=DATA_MIN_US * 1000,
+                              soft_max_ns=DATA_MAX_US * 1000,
                               soft_min_len=min(self.expected_lengths),
                               soft_max_len=max(self.expected_lengths))
         loop.poll_object("RMT", self.rmt, loop.POLLIN, self.recv)
