@@ -26,21 +26,22 @@ at the minimum:
 
 - profiles/energy/boot.py that becomes the boot.py when installed into the ESP32
 - profiles/energy/main.py that becomes the main.py
+- profiles/energy/stage.py is used by testing and coverage framework.
 - profiles/energy/config.txt.example is an example of configuration file for the profile
-- profiles/energy/config.txt is the configuration file (based on the example above) that you should create for your particular need. This becomes the file config.txt in the ESP32. The pcp\_conf script automates the copy of this file to the MCU.
-- energy.mpf is a manifest used by the cpall script (based on mpfshell) to upload all code to the ESP32 via serial port.
+- profiles/energy/manifest.mpf is used by the cpall script (based on mpfshell) to upload all code to the ESP32 via serial port.
+- profiles/energy/manifest.ota directs the OTA update of the code (otascript tool).
+
+You should create a config file for your particular need. This becomes the file config.txt in the ESP32. The pcp\_conf script automates the copy of this file to the MCU.
 
 The following files are optional, but generally they exist:
 
-- energy.ota is a manifest that directs the OTA update of the code (otascript tool).
-- energy\_stage.py is used by testing and coverage framework.
 - lib/energy/\*.py are the profile-specific modules
 
-The profile-specific modules tend to follow a pattern:
+Using now the h2o profile as example, the profile-specific modules tend to follow a pattern:
 
-- lib/profile/sensor.py contains interfaces with hardware sensors. Some modules talk directly with the hardware, some do it through third-party modules found at lib/third/.
-- lib/profile/actuator.py contains interfaces with hardware actuators.
-- lib/profile/service.py contains classes that represent MQTT topics (published and subscribed).
+- lib/h2o/sensor.py contains interfaces to hardware sensors, if they exist. Some modules talk directly with the hardware, some do it through third-party modules found at lib/third/.
+- lib/h2o/actuator.py contains interfaces with hardware actuators, if they exist.
+- lib/h2o/service.py contains classes that represent MQTT topics (published and subscribed), or ESP-NOW topics.
 
 ## Anatomy of the common modules
 
@@ -61,6 +62,107 @@ modules to make them more reliable and to fit better in our event-loop-based fra
 
 The lib/epx/netnow.py module interfaces with ESP-NOW and is used only by the profiles that employ ESP-NOW
 (currently, only the "scale" profile).
+
+## CLI utilities
+
+There are a number of primitive CLI tools available:
+
+- pcp: copy a file via serial port using `mpfshell`
+- pcp\_conf: copy a file that becomes /config.txt in the target
+- pcp\_main: copy a file that becomes /main.py in the target
+- cpall: copy all necessary files, driven by the profile manifest, except the config file
+
+In order to use the tools above, first create a local file named `serial\_params.txt` that contains
+the mpfshell parameters related to serial port, something like `-o ttyUSB0` or `-o ttyUSB0 --reset`.
+
+In general, we use `cpall <profile>` followed by `pcp\_conf <my config file>` to first configure a
+device, and then use OTA for further updates.
+
+OTA tools:
+
+- otatool: low-level tool to send a single file using the OTA network protocol, or retrieve the hash of an existing file.
+- ota\_config: send one file via OTA that becomes /config.txt in the target
+- otascript: send all changed files via OTA. Compares file hashes to send only the ones that have changed.
+- ota: high-level tool that uses `otascript`, discovers the IP address of the target, etc.
+
+In general, we only use the `ota` tool to upgrade the MicroPython code and is the easiest to use.
+In the rare occasion we need to update the config file, then we use `ota\_config`. More about OTA
+in a later section of this document.
+
+In order to use `ota`, first create a local file named `mqttserver.txt` that contains the name or the
+IP address of the MQTT broker, since we use MQTT to open OTA in the target device, and discover its
+address.
+
+OTA firmware tool:
+
+- otafwtool: OTA tool to update the MicroPython interpreter. It is not completely autonomous, there are
+a number of steps that are still responsibility of the user.
+
+Test tools:
+
+- entool: ESP-NOW protocol simulator
+- runtest: runs a test script contained in testsuites/
+- test.py: Python cradle that loads a profile in test mode, to run in a PC
+- utest.py: same as test.py but for unit tests.
+
+# OTA code upgrade and observability
+
+The framework supports OTA update of any files, be it code, configuration, etc. The basic procedure to update one file is:
+
+- Send message `open` to device topic `cmnd/DeviceName/OTA`. This will open a network socket.
+- Use the `otatool` script to send the file using the OTA protocol. The file will get a temporary name.
+- Send message `commit` to `cmnd/DeviceName/OTA`. This actually replaces the old file.
+- Send message `reboot` to `cmnd/DeviceName/OTA`.
+
+In order to use `otatool` you need to know the IP address of the device. After sending `open` to OTA, the IP address is
+published via topic `stat/DeviceName/Log` to be discoverable via MQTT.
+
+The `ota` script does all the steps above automatically.
+
+IMPORTANT: the OTA code update does not currently support rollbacks, so make sure you have run the code in a test device
+before shipping. Otherwise, if MicroPython fails, OTA will be unreachable as well, and you will have to resort to serial
+port.
+
+# OTA bservability
+
+Other commands accepted by `cmnd/DeviceName/OTA`:
+
+- `stats`: produce network statistics
+- `msg\_reboot`: produce reason for the last reboot
+- `msg\_exception`: produce last exception backtrace
+- `msg\_rm`: clear the two messages above, works as "mark as read"
+
+These commands report their output via `stat/DeviceName/Log`, and the device accepts them anytime, it is not necessary
+to send the `open` command before.
+
+# OTA firmware upgrade
+
+The framework also implements a protocol for the OTA firmware upgrade. The OTA variant of the MicroPython firmware must
+have been installed previously, so the flash memory has the proper layout to support this operation.
+
+The current procedure is:
+
+- Subscribe to `stat/DeviceName/Log` to get the output of the commands below.
+- Optionally, send `getversion` to `cmnd/DeviceName/OTA` to check the version that is currently running.
+- send `open` to `cmnd/DeviceName/OTA`.
+- discover the IP address of the device (will be logged every 10 seconds or so).
+- use the `otafwtool` to send the new firmware. Make sure to send only the Micropython binary (.app.bin) not the whole flashable image (.bin). If in doubt, remember that .app.bin is always the smaller of the two.
+- send `reboot` to `cmnd/DeviceName/OTA` to run the new firmware
+
+If the devices does not come up, just power cycle at this point, and it will revert to the old firmware. If the device does start:
+
+- send `getversion` to `cmnd/DeviceName/OTA`, to make sure the device is actually running the new firmware version.
+- Make sure the device is working properly, doing tests or having tested previously on a canary device.
+- Finally, send `keepversion` to `cmnd/DeviceName/OTA` to commit the new firmware version.
+- Optionally, `reboot` and `getversion` again to ensure the new firmware did stick.
+
+The command `partitions` produces the number of firmware partitions and the current active partition. This is useful
+to discover whether the firmware can receive OTA updates. If there are two partitions, it can. If there is a single one,
+it cannot.
+
+# Testing and coverage
+
+FIXME
 
 ## The event loop
 
