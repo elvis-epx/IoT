@@ -11,7 +11,7 @@ if ! [ -f profiles/${DEVTYPE}/manifest.ota ]; then
     exit 1
 fi
 
-if ! ./otatool "$profiles/IP" flavor; then
+if ! ./otatool "$IP" flavor; then
     REMOTEDEVTYPE="old"
 else
     REMOTEDEVTYPE=$(./otatool "$IP" flavor)
