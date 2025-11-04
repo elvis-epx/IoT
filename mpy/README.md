@@ -72,10 +72,10 @@ There are a number of primitive CLI tools available:
 - pcp\_main: copy a file that becomes /main.py in the target
 - cpall: copy all necessary files, driven by the profile manifest, except the config file
 
-In order to use the tools above, first create a local file named `serial\_params.txt` that contains
+In order to use the tools above, first create a local file named `serial_params.txt` that contains
 the mpfshell parameters related to serial port, something like `-o ttyUSB0` or `-o ttyUSB0 --reset`.
 
-In general, we use `cpall <profile>` followed by `pcp\_conf <my config file>` to first configure a
+In general, we use `cpall <profile>` followed by `pcp_conf <my config file>` to first configure a
 device, and then use OTA for further updates.
 
 OTA tools:
@@ -86,7 +86,7 @@ OTA tools:
 - ota: high-level tool that uses `otascript`, discovers the IP address of the target, etc.
 
 In general, we only use the `ota` tool to upgrade the MicroPython code and is the easiest to use.
-In the rare occasion we need to update the config file, then we use `ota\_config`. More about OTA
+In the rare occasion we need to update the config file, then we use `ota_config`. More about OTA
 in a later section of this document.
 
 In order to use `ota`, first create a local file named `mqttserver.txt` that contains the name or the
@@ -128,9 +128,9 @@ port.
 Other commands accepted by `cmnd/DeviceName/OTA`:
 
 - `stats`: produce network statistics
-- `msg\_reboot`: produce reason for the last reboot
-- `msg\_exception`: produce last exception backtrace
-- `msg\_rm`: clear the two messages above, works as "mark as read"
+- `msg_reboot`: produce reason for the last reboot
+- `msg_exception`: produce last exception backtrace
+- `msg_rm`: clear the two messages above, works as "mark as read"
 
 These commands report their output via `stat/DeviceName/Log`, and the device accepts them anytime, it is not necessary
 to send the `open` command before.
@@ -162,7 +162,7 @@ it cannot.
 
 # Testing and coverage
 
-FIXME
+To be written. Folder `testsuite`, `Makefile`, etc.
 
 ## The event loop
 
