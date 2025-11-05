@@ -123,7 +123,7 @@ IMPORTANT: the OTA code update does not currently support rollbacks, so make sur
 before shipping. Otherwise, if MicroPython fails, OTA will be unreachable as well, and you will have to resort to serial
 port.
 
-# OTA bservability
+# OTA observability
 
 Other commands accepted by `cmnd/DeviceName/OTA`:
 
@@ -162,7 +162,19 @@ it cannot.
 
 # Testing and coverage
 
-To be written. Folder `testsuite`, `Makefile`, etc.
+The framework currently uses an ad-hoc scheme for E2E testing, unit testing and coverage report. It runs on
+regular Python on a PC or Mac. (This means the framework code under test must be equally valid MicroPython and Python.)
+
+The current test suite is not in the best shape, the E2E tests are time-dependent and sometimes they fail. It should
+be improved in the future, but it currently does a fair job of exercising near 100% of the code.
+
+The `testmock/` folder contains Python code to mock hardware drivers and/or or replace MicroPython-only modules.
+
+The `testsuite/' folder contains the individual tests, each one in its own subfolder. Each test has a `config.txt`,
+a `flavor` file identifying the profile, and a `script` that drives the test.
+
+The `runtest` script runs individual tests. Running the whole test suite is driven by a `Makefile`. Do `make clean`
+followed by `make test`. 
 
 ## The event loop
 
