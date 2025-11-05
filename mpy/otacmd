@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mosquitto_pub -h $(cat mqttserver.txt) -t "cmnd/$1/OTA" -m "$2"

@@ -83,6 +83,8 @@ OTA tools:
 - otatool: low-level tool to send a single file using the OTA network protocol, or retrieve the hash of an existing file.
 - ota\_config: send one file via OTA that becomes /config.txt in the target
 - otascript: send all changed files via OTA. Compares file hashes to send only the ones that have changed.
+- otacmd: send command to topic `cmnd/$1/OTA`
+- monmqtt: monitor the topic `stat/$1/Log`
 - ota: high-level tool that uses `otascript`, discovers the IP address of the target, etc.
 
 In general, we only use the `ota` tool to upgrade the MicroPython code and is the easiest to use.
@@ -109,7 +111,7 @@ Test tools:
 
 The framework supports OTA update of any files, be it code, configuration, etc. The basic procedure to update one file is:
 
-- Send message `open` to device topic `cmnd/DeviceName/OTA`. This will open a network socket.
+- Send message `open` to device topic `cmnd/DeviceName/OTA`, using `otacmd` or `mosquitto_pub` or by any other means. This will open a network socket.
 - Use the `otatool` script to send the file using the OTA protocol. The file will get a temporary name.
 - Send message `commit` to `cmnd/DeviceName/OTA`. This actually replaces the old file.
 - Send message `reboot` to `cmnd/DeviceName/OTA`.
@@ -142,8 +144,8 @@ have been installed previously, so the flash memory has the proper layout to sup
 
 The current procedure is:
 
-- Subscribe to `stat/DeviceName/Log` to get the output of the commands below.
-- Optionally, send `getversion` to `cmnd/DeviceName/OTA` to check the version that is currently running.
+- Subscribe to `stat/DeviceName/Log` to get the output of the commands below. Use `mqttmon` script or `mosquitto_sub`.
+- Optionally, send `getversion` to `cmnd/DeviceName/OTA` (using `otacmd` or `mosquitto_pub`) to check the version that is currently running.
 - send `open` to `cmnd/DeviceName/OTA`.
 - discover the IP address of the device (will be logged every 10 seconds or so).
 - use the `otafwtool` to send the new firmware. Make sure to send only the Micropython binary (.app.bin) not the whole flashable image (.bin). If in doubt, remember that .app.bin is always the smaller of the two.

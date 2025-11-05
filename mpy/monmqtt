@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mosquitto_sub -h $(cat mqttserver.txt) -t "stat/$1/#" -v
