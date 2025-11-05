@@ -24,7 +24,7 @@ class FlowMeter:
         self.cronometer = Shortcronometer()
 
         self.pin = Pin(14, Pin.IN)
-        self.counter = Counter(0, self.pin, filter_ns=(self.min_pulse_width_us * 1000)
+        self.counter = Counter(0, self.pin, filter_ns=(self.min_pulse_width_us * 1000))
 
     def clear_malfunction(self, _):
         self.malfunction_value = 0
@@ -33,6 +33,7 @@ class FlowMeter:
         p = self.counter.value(0)
         # Note: the following test depends on eval() being called every 1s
         if p > self.maxflow:
+            print("Flow too high, ignoring", p)
             # self.malfunction_value = 0x10
             p = 0
         self.pulses += p
