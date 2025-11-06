@@ -2,7 +2,7 @@ import gc
 from epx import loop
 from epx.mqtt import MQTTPub, MQTTSub
 import machine
-from epx.loop import StateMachine, Task, SECONDS, MILISSECONDS, MINUTES
+from epx.loop import StateMachine, Task, SECONDS, MILISSECONDS, MINUTES, POLLIN
 import os
 from hashlib import sha1
 import binascii
@@ -220,7 +220,7 @@ class OTAHandler:
 
     def on_header(self):
         self.buf = b''
-        self.sm.recurring_task("ota_header", self.header_poll, 500 * MILISSECONDS)
+        self.sm.poll_object("ota_header_sock", self.connection, POLLIN, self.header_poll)
         self.sm.schedule_trans("connlost", 10 * SECONDS)
 
     def read(self):
@@ -403,13 +403,12 @@ class OTAHandler:
         return 1, ptype
 
     def on_payload(self):
-        self.sm.recurring_task("ota_payload", self.payload_poll, 50 * MILISSECONDS)
-        # FIXME restart timeout task when fragment is received
-        self.sm.schedule_trans("connlost", 30 * SECONDS)
+        self.timeout_task = self.sm.schedule_trans("connlost", 30 * SECONDS)
+        self.sm.poll_object("ota_payload_sock", self.connection, POLLIN, self.payload_poll)
 
     def on_payload_fw(self):
-        self.fw_timeout_task = self.sm.schedule_trans("connlost", 30 * SECONDS)
-        self.sm.recurring_task("ota_payload_fw", self.payload_fw_poll, 10 * MILISSECONDS)
+        self.timeout_task = self.sm.schedule_trans("connlost", 30 * SECONDS)
+        self.sm.poll_object("ota_payload_fw_sock", self.connection, POLLIN, self.payload_fw_poll)
 
     def payload_poll(self, _):
         res, data = self.read()
@@ -420,6 +419,8 @@ class OTAHandler:
         res, _ = self.parse_packet({2: 3})
         if res <= 0:
             return
+
+        self.timeout_task.restart()
 
         segm_len = len(self.buf) - 3
         print("OTA segm %d + %d" % (self.filetot, segm_len))
@@ -454,7 +455,7 @@ class OTAHandler:
         if len(self.buf) < (20 + 2 + 4096 + 20):
             return
 
-        self.fw_timeout_task.restart()
+        self.timeout_task.restart()
 
         data = None
         prevhash = self.buf[:20]
