@@ -2,6 +2,7 @@
 
 DEV="$1"
 FLAVOR="$2"
+FORCE="$3"
 MQTT_SERVER=$(cat mqttserver.txt)
 
 rm -f /tmp/piggy_ota
@@ -17,7 +18,7 @@ echo $IPADDR
 
 echo "Sending files"
 
-if ! ./otascript $FLAVOR $IPADDR; then
+if ! ./otascript $FLAVOR $IPADDR $FORCE; then
     echo "otascript failed"
     exit 1
 fi
