@@ -204,7 +204,7 @@ class OTAHandler:
         self.uplfilename = ''
         self.filelen = 0
         gc.collect()
-        self.sm.recurring_task("ota_listen", self.listen_poll, 500 * MILISSECONDS)
+        self.sm.poll_object("ota_listen_sock", self.sock, POLLIN, self.listen_poll)
 
     def on_connlost(self):
         self.sm.schedule_trans_now("listen")
