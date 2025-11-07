@@ -15,8 +15,6 @@ flavor = 'unknown'
 # https://iot49.org/projects/internet/ota.html
 # https://github.com/orgs/micropython/discussions/12751
 
-# TODO improve system logging, perhaps use other protocol than MQTT for log_pub
-
 def mqtt_ota_start(mqtt, config):
     if 'flavor' in config.data:
         global flavor
