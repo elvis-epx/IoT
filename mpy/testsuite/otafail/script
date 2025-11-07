@@ -3,7 +3,7 @@
 . testsuite/defs.sh
 
 runme
-sleep 5
+sleep 15
 wifi GOT_IP
 sleep 6
 mqttsub cmnd/TempSensor/OTA open

@@ -17,7 +17,7 @@ nvram i switch 3 0
 # Switch states in NVRAM
 
 runme
-sleep 5
+sleep 15
 
 # Switches/relays
 assert gpio 17 1

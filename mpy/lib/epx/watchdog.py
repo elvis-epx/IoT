@@ -1,3 +1,4 @@
+import random
 import machine
 if hasattr(machine, 'TEST_ENV'):
     from machine import start_new_thread
@@ -13,6 +14,10 @@ class Watchdog:
         if 'watchdog' not in config.data:
             config.data['watchdog'] = "0"
         self.disabled = config.data['watchdog'] == "0"
+
+        if not fast_dehibernate:
+            print("Random startup delay...")
+            loop.sleep(int(random.random() * 10 * SECONDS))
 
         self.grace = (fast_dehibernate and machine.wake_reason() == machine.DEEPSLEEP) and 1 or 10
 

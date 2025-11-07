@@ -4,6 +4,6 @@
 
 ssd1306f
 runme
-sleep 5
+sleep 15
 wifi GOT_IP
 sleep 5

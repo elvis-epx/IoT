@@ -4,7 +4,7 @@
 
 mcp23017f
 runme
-sleep 5
+sleep 15
 wifi GOT_IP
 sleep 10
 assert mqtt stat/H2OControl/Malfunctions 2

@@ -8,7 +8,7 @@ gpio 34 1
 gpio 33 1
 gpio 35 1
 runme
-sleep 5
+sleep 15
 # Switches/relays
 assert gpio 17 0
 assert gpio 16 0

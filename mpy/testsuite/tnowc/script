@@ -6,7 +6,7 @@
 ./entool bla ble 0 tx pairreq
 
 runme
-sleep 5
+sleep 15
 
 wifi GOT_IP
 

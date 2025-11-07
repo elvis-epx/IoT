@@ -1,5 +1,3 @@
-- Uptime with random factor, possibly all MQTT periodic topics
-
 - Improve system logging, use ota.log_pub for all print()s or use another protocol
 - Remote mpy console, if possible
 - MQTT with TLS

@@ -3,7 +3,7 @@
 . testsuite/defs.sh
 
 runme
-sleep 10
+sleep 15
 wifi GOT_IP
 sleep 5
 advance 30000

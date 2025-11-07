@@ -17,7 +17,7 @@ nvram i switch 3 0
 # Switch states in NVRAM
 
 runme
-sleep 5
+sleep 15
 
 # Switches/relays
 # In R mode, manual switch trumps over NVRAM upon startup
