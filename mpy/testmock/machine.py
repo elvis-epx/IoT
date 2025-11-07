@@ -26,7 +26,7 @@ class Pin:
     def __init__(self, pin, direction=IN):
         self.pin = pin
         self.direction = direction
-        self.irq_cb = None
+        self.counter = 0
         pins.append(self)
 
     def value(self, n = None):
@@ -48,23 +48,25 @@ class Pin:
             except ValueError:
                 return 0
 
-    def irq(self, trigger, handler):
-        self.irq_cb = handler
-
     def test_mock(self):
         f = "pulse%d.sim" % self.pin
         if os.path.exists(f):
             print("Got pulse%d.sim" % self.pin)
             p = int(open(f).read())
             os.remove(f)
-            for _ in range(0, p):
-                self.irq_cb(None)
-                # maxflow in test configs is 50L/min, 4.8 pulses ~= 1L/min
-                time.sleep((1 / 4.8) / 40.0)
-                self.irq_cb(None)
-                time.sleep((1 / 4.8) / 40.0)
+            self.counter += p
             return True
         return False
+
+class Counter:
+    def __init__(self, n, pin, **kw):
+        self.pin = pin
+
+    def value(self, new_value=None):
+        res = self.pin.counter
+        if new_value is not None:
+            self.pin.counter = new_value
+        return res
 
 class UART:
     def __init__(self, n, baudrate):
