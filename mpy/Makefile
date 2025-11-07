@@ -16,7 +16,7 @@ clean-coverage:
 	rm -rf htmlcov/
 	rm -f *.tst
 
-test: h2o_disp.tst h2o_fails.tst justrun.tst justrun_e.tst justrun_h.tst justrun_r.tst justrun_sc.tst justrun_sm.tst tnowp.tst tnowc.tst justrun_sw.tst lan.tst mqttf.tst mqttf2.tst mqttf3.tst netnow.tst ota.tst otafw.tst otae.tst otafail.tst otafwfail.tst relay_disp.tst sensormf1.tst sensormf2.tst sw_tests.tst sw_tests2.tst sw_tests3.tst testsub.tst watchdog.tst wifi.tst
+test: h2o_disp.tst h2o_fails.tst justrun.tst justrun_e.tst justrun_h.tst justrun_r.tst justrun_sc.tst justrun_sm.tst tnowp.tst tnowc.tst justrun_sw.tst lan.tst mqttf.tst mqttf2.tst mqttf3.tst netnow.tst ota.tst otafw.tst otae.tst otafail.tst otafwfail.tst relay_disp.tst sensormf1.tst sensormf2.tst sw_tests.tst sw_tests2.tst sw_tests3.tst testsub.tst watchdog.tst wifi.tst justrun_t.tst
 	python3-coverage combine || echo
 	python3-coverage html
 	xdg-open htmlcov/index.html
@@ -51,6 +51,10 @@ justrun_h.tst: testsuite/justrun_h/script
 justrun_r.tst: testsuite/justrun_r/script
 	./runtest justrun_r
 	touch justrun_r.tst
+
+justrun_t.tst: testsuite/justrun_t/script
+	./runtest justrun_t
+	touch justrun_t.tst
 
 justrun_sc.tst: testsuite/justrun_sc/script
 	./runtest justrun_sc
