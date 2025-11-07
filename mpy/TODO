@@ -1,5 +1,5 @@
-- Improve system logging, use ota.log_pub for all print()s or use another protocol
-- Remote mpy console, if possible
+- Recovery from exceptions or bad code OTA updates
+    - Remote mpy console, if possible
 - MQTT with TLS
 - ESP-NOW
     - fixing channel in central device does not work
