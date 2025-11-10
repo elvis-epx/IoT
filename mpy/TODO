@@ -1,14 +1,16 @@
 - Recovery from exceptions or bad code OTA updates
-    - Remote mpy console, if possible
+    - Non-core tasks that raise exceptions w/o stopping the system
+        - e.g. sensors and actuators
+        - Log these exceptions
 - MQTT with TLS
 - ESP-NOW
     - Use WT32-ETH01 (with wired LAN) as gateway
         (resolves problems with AP channel, see next item)
         - Add LAN chip configuration in config.txt
-    - OTA update vs ESP-NOW vs gateway?
-        - Pass through gateway x bring up Wi-Fi for OTA
     - fixing channel in central device does not work
            (it follows the AP it connects to which may NOT be the nearest one)
+    - OTA update vs ESP-NOW vs gateway?
+        - Pass through gateway x bring up Wi-Fi for OTA
     - increase test coverage
         - espnow mock
             - use socketpair() to satisfy poll()
