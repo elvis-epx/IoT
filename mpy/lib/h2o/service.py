@@ -85,6 +85,21 @@ class PumpedAfterLevelChange(MQTTPub):
         return "%.1f" % v
 
 
+class Pumped(MQTTPub):
+    def __init__(self, flowmeter):
+        self.flowmeter = flowmeter
+        MQTTPub.__init__(self, "stat/%s/Pumped", 60 * SECONDS, 30 * MINUTES, False)
+
+    # Make sure rate is republished as long as it is positive, even if unchanged
+    def pub_condition(self, force, oldrate, newrate):
+        return force or oldrate != newrate or newrate != b'0.0'
+
+    def gen_msg(self):
+        # can't be None, only 0
+        v = self.flowmeter.pumped_since_last_pub()
+        return "%.1f" % v
+
+
 class Malfunction(MQTTPub):
     def __init__(self, levelmeter, flowmeter):
         self.levelmeter = levelmeter

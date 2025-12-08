@@ -15,6 +15,7 @@ class FlowMeter:
         # 4x shorter than maximum flow to detect noise
         self.min_pulse_width_us = int(250000 / self.maxflow)
         self.pulses = 0
+        self.pulses_since_last_pub = 0
         self.pulses_since_level_change = 0
         self.latest_rate = 0.0 # in units/minute
         self.malfunction_value = 0
@@ -37,6 +38,7 @@ class FlowMeter:
             # self.malfunction_value = 0x10
             p = 0
         self.pulses += p
+        self.pulses_since_last_pub += p
         self.pulses_since_level_change += p
 
         elapsed = self.cronometer.elapsed()
@@ -50,6 +52,11 @@ class FlowMeter:
 
     def pumped_since_level_change(self):
         return self.pulses_since_level_change * self.single_pulse_vol
+
+    def pumped_since_last_pub(self):
+        vol = self.pulses_since_last_pub * self.single_pulse_vol
+        self.pulses_since_last_pub = 0
+        return vol
 
     def level_changed(self):
         self.pulses_since_level_change = 0
