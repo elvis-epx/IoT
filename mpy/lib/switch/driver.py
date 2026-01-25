@@ -54,6 +54,13 @@ class dtwonder2: # pragma: no cover
     def start(self):
         pass
 
+# DTWonder debug port pins:
+# GND
+# IO3 = UART RX
+# IO1 = UART TX
+# NRST (ground to reset)
+# IO0 (ground when resetting to put in bootloader mode)
+# 3.3V
 
 class dtwonder4: # pragma: no cover
     def __init__(self):
@@ -116,6 +123,9 @@ class minir4: # pragma: no cover
         self.led = 19
         self.led_inverse = 1
 
+        # External box button = GPIO 0
+        # Manual input = GPIO 27
+        # Short-circuit S1 and S2 = actuate manual input
         self.input_pins_no = [27, 0]
         self.output_pins_no = [26]
         self.input_pins = [ Pin(n, Pin.IN) for n in self.input_pins_no ]
@@ -143,10 +153,15 @@ class dtwonder8: # pragma: no cover
         self.led = -1 # none
         self.led_inverse = 0
 
+        # pin 13 (/OE) of '595
         self.output_enable = Pin(32, Pin.OUT)
+        # pin 12 (RCLK) of '595 and pin 15 (CLK_INH) of '165
         self.clock_inhibit = Pin(15, Pin.OUT)
+        # pin 11 (SRCLK) of '595 and pin 2 (CLK) of '165
         self.clock = Pin(14, Pin.OUT)
+        # pin 9 (QH) of '165
         self.bit_in = Pin(16, Pin.IN)
+        # pin 14 (SER) of '595
         self.bit_out = Pin(13, Pin.OUT)
 
         # disable all relays until first I/O is done
@@ -180,7 +195,7 @@ class dtwonder8: # pragma: no cover
     # Read 74HC165 and write 74HC595
     # (they are tied together, so they need to be read and written at the same time)
     # It seems that SH/LD of the '165 is tied together with CLK INH, so we don't need
-    # to operate this pin
+    # to operate this pin separately
 
     def do_io(self):
         input_bitmap = 0
