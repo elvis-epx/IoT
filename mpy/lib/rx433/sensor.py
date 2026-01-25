@@ -237,11 +237,7 @@ class OOKReceiverRMT:
 
         self.rmt = esp32.RMTRX(pin=pin, num_symbols=64, \
                               min_ns=3100, max_ns=self.PREAMBLE_MIN_NS, \
-                              resolution_hz=1000000,
-                              soft_min_ns=DATA_MIN_US * 1000,
-                              soft_max_ns=DATA_MAX_US * 1000,
-                              soft_min_len=min(self.expected_lengths),
-                              soft_max_len=max(self.expected_lengths))
+                              resolution_hz=1000000)
         loop.poll_object("RMT", self.rmt, loop.POLLIN, self.recv)
         self.rmt.active(1)
 
@@ -254,7 +250,6 @@ class OOKReceiverRMT:
             self.stats_nok2 += 1
             return
    
-        # unnecessary since we use soft_{min,max}_value
         for sample in data:
             abs_sample = abs(sample)
             if abs_sample < self.DATA_MIN_US or abs_sample > self.DATA_MAX_US:
