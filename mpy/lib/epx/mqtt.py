@@ -4,7 +4,7 @@ import os
 from uumqtt.simple2 import MQTTClient, MQTTException
 import ubinascii
 
-from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Longcronometer, POLLIN
+from epx.loop import Task, SECONDS, MILISSECONDS, MINUTES, StateMachine, reboot, Shortcronometer, Longcronometer, POLLIN
 from epx import loop
 
 mqtt_manager = None
