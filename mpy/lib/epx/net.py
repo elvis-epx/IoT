@@ -1,4 +1,4 @@
-import network, machine
+import network, machine, esp32
 
 from epx.loop import Task, SECONDS, MINUTES, StateMachine, reboot, Shortcronometer
 from epx import loop
@@ -6,9 +6,9 @@ from epx import loop
 class Net:
     def __init__(self, cfg):
         self.cfg = cfg
+        self.nvram = esp32.NVS("netstats")
         self.impl = None
         self.wired = False
-        self.connlost_count = 0
 
         sm = self.sm = StateMachine("net")
         
@@ -33,6 +33,26 @@ class Net:
         # Delay startup to after the watchdog is active (10s)
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
         self.sm.schedule_trans("start", startup_time * SECONDS)
+
+    def get_nvram_int(self, key):
+        try:
+            n = self.nvram.get_i32(key)
+        except OSError:
+            n = 0
+        return n
+
+    def set_nvram_int(self, key, n):
+        self.nvram.set_i32(key, n)
+        self.nvram.commit()
+
+    def get_connlost_count(self):
+        return self.get_nvram_int("connlost")
+
+    def incr_connlost_count(self):
+        self.set_nvram_int("connlost", self.get_connlost_count() + 1)
+
+    def reset_connlost_count(self):
+        self.set_nvram_int("connlost", 0)
 
     def observe(self, name, state, cb):
         self.sm.observe(name, state, cb)
@@ -100,14 +120,14 @@ class Net:
             pass
         else:
             print("Network error", ws)
-            self.connlost_count += 1
+            self.incr_connlost_count()
             self.last_connection = Shortcronometer()
             self.sm.schedule_trans_now("connlost")
 
     def on_connlost(self):
         print("Network connection lost")
         self.impl.active(False)
-        self.sm.schedule_trans("idle", 30 * SECONDS, fudge=30 * SECONDS)
+        self.sm.schedule_trans("idle", 30 * SECONDS, fudge=15 * SECONDS)
 
     def ifconfig(self):
         return self.sm.state, (self.impl and self.impl.ifconfig() or None)

@@ -122,6 +122,8 @@ class OTASub(MQTTSub):
             self.log_pub.dump('exception.txt')
         elif msg == b'stats':
             self.log_pub.dumpstats()
+        elif msg == b'resetstats':
+            self.log_pub.resetstats()
         elif msg == b'getversion':
             self.log_pub.getversion()
         elif msg == b'test_exception':

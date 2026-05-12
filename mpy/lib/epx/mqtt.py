@@ -49,8 +49,17 @@ class MQTT:
         self.pub(Uptime())
         self.sub(Refresh())
 
-        self.log_pub = Log()
+        self.log_pub = Log(self)
         self.pub(self.log_pub)
+
+    def get_connlost_count(self):
+        return self.net.get_nvram_int("mqttlost")
+
+    def incr_connlost_count(self):
+        self.net.set_nvram_int("mqttlost", self.get_connlost_count() + 1)
+
+    def reset_connlost_count(self):
+        self.net.set_nvram_int("mqttlost", 0)
 
     def pub(self, pubobj):
         pubobj.adjust_topic(self.name)
@@ -63,7 +72,9 @@ class MQTT:
         return subobj
 
     def on_start(self):
+        self.last_communication = Shortcronometer()
         self.disconn_backoff = 500 * MILISSECONDS
+
         client_id = ubinascii.hexlify(machine.unique_id()).decode('ascii')
         client_id = self.name + client_id
         self.impl = MQTTClient(client_id, self.cfg.data["mqttbroker"])
@@ -78,49 +89,51 @@ class MQTT:
             self.sm.schedule_trans_now("connected")
             return
 
-        self.disconn_backoff *= 2
-        if self.disconn_backoff >= 10 * MINUTES:
+        self.disconn_backoff = (self.disconn_backoff * 3) // 2
+        if self.last_communication.elapsed() > 10 * MINUTES:
             loop.reboot("Too much time w/o MQTT connection, rebooting")
 
         self.sm.schedule_trans_now("connlost")
 
     def on_connected(self):
         self.disconn_backoff = 500 * MILISSECONDS
-        self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=20 * SECONDS)
+        self.last_communication = Shortcronometer()
+
+        self.ping_task = self.sm.recurring_task("mqtt_ping", self.ping, 20 * SECONDS, fudge=10 * SECONDS)
         self.sm.poll_object("mqtt_sock", self.impl.sock, POLLIN, self.eval_sub)
         self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
 
     def received_data(self, topic, msg, retained, dup):
+        self.last_communication = Shortcronometer()
         if topic in self.sublist:
             self.sublist[topic].recv(topic, msg, retained, dup)
         else:
             print("MQTT recv invalid topic", topic)
 
     def ping(self, _):
-        # seize the opportunity to copy the data
-        self.log_pub.net_connlost_count = self.net.connlost_count
-
         self.watchdog.may_block()
         try:
             self.impl.ping()
+            self.last_communication = Shortcronometer()
             # print("MQTT ping")
         except (MQTTException, OSError):
             print("MQTT conn fail at ping")
-            self.log_pub.mqtt_connlost_count += 1
+            self.incr_connlost_count()
             self.sm.schedule_trans_now("connlost")
         finally:
             self.watchdog.may_block_exit()
 
     def on_connlost(self):
         self.disconnect()
-        self.sm.schedule_trans("testnet", self.disconn_backoff, fudge=self.disconn_backoff)
+        self.sm.schedule_trans("testnet", self.disconn_backoff, fudge=self.disconn_backoff // 2)
 
     def eval_sub(self, _):
         try:
             self.impl.check_msg()
+            self.last_communication = Shortcronometer()
         except (MQTTException, OSError):
             print("MQTT conn fail at check_msg")
-            self.log_pub.mqtt_connlost_count += 1
+            self.incr_connlost_count()
             self.sm.schedule_trans_now("connlost")
             return
 
@@ -145,12 +158,13 @@ class MQTT:
             if pubobj.msg is not None:
                 self.impl.publish(pubobj.topic, pubobj.msg, pubobj.retain)
                 print("MQTT pub %s %s" % (pubobj.topic, pubobj.msg))
+                self.last_communication = Shortcronometer()
                 self.ping_task.restart()
             if self.pub_pending:
                 self.sm.onetime_task("mqtt_pub", self.eval_pub, 0)
         except (MQTTException, OSError):
             print("MQTT conn fail at pub")
-            self.log_pub.mqtt_connlost_count += 1
+            self.incr_connlost_count()
             self.sm.schedule_trans_now("connlost")
         finally:
             self.watchdog.may_block_exit()
@@ -236,11 +250,10 @@ class MQTTSub:
 
 
 class Log(MQTTPub):
-    def __init__(self):
+    def __init__(self, mqttmanager):
         MQTTPub.__init__(self, "stat/%s/Log", 0, 0, False)
         self.logmsg = None
-        self.mqtt_connlost_count = 0
-        self.net_connlost_count = 0
+        self.mqttmanager = mqttmanager
 
     def gen_msg(self):
         return self.logmsg
@@ -255,7 +268,15 @@ class Log(MQTTPub):
         self.forcepub()
 
     def dumpstats(self):
-        self.logmsg = 'connlost events net %d mqtt %d' % (self.net_connlost_count, self.mqtt_connlost_count)
+        net_connlost_count = self.mqttmanager.net.get_connlost_count()
+        mqtt_connlost_count = self.mqttmanager.get_connlost_count()
+        self.logmsg = 'connlost events net %d mqtt %d' % (net_connlost_count, mqtt_connlost_count)
+        self.forcepub()
+
+    def resetstats(self):
+        self.mqttmanager.net.reset_connlost_count()
+        self.mqttmanager.reset_connlost_count()
+        self.logmsg = 'stats resetted'
         self.forcepub()
 
     def dumpmsg(self, msg):
