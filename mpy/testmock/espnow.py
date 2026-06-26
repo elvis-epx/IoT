@@ -66,6 +66,7 @@ class ESPNow:
         self._active = False
         self.pipe_r, self.pipe_w = socket.socketpair()
         self.peers = {}
+        self.peers_table = {}
 
         global singleton
         singleton = self
