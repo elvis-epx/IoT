@@ -104,13 +104,16 @@ class NetNowPeripheral:
     def recv(self, _):
         while self.impl.any():
             mac, msg = self.impl.recv()
-            self.schedule_handle_recv_packet(mac, msg)
+            rssi = 1000
+            if mac in self.impl.peers_table:
+                rssi = self.impl.peers_table[mac][0]
+            self.schedule_handle_recv_packet(mac, rssi, msg)
 
-    def schedule_handle_recv_packet(self, mac, msg):
+    def schedule_handle_recv_packet(self, mac, rssi, msg):
         my_timestamp = self.timestamp_current()
-        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg, my_timestamp), 0)
+        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, rssi, msg, my_timestamp), 0)
     
-    def handle_recv_packet(self, mac, msg, my_timestamp):
+    def handle_recv_packet(self, mac, rssi, msg, my_timestamp):
         print("netnow.handle_recv_packet")
 
         if not check_hmac(self.psk, msg):
@@ -177,7 +180,7 @@ class NetNowPeripheral:
 
         elif subtype == timestamp_subtype_backdata:
             for observer in self.data_recv_observers:
-                observer.recv_data(ttid, msg)
+                observer.recv_data(ttid, rssi, msg)
 
     def trust_timestamp(self, subtype, ttid, timestamp, my_timestamp):
         if self.is_ttid_repeated(ttid):

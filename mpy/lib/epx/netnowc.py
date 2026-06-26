@@ -104,13 +104,16 @@ class NetNowCentral:
     def recv(self, _):
         while self.impl.any():
             mac, msg = self.impl.recv()
-            self.schedule_handle_recv_packet(mac, msg)
+            rssi = 1000
+            if mac in self.impl.peers_table:
+                rssi = self.impl.peers_table[mac][0]
+            self.schedule_handle_recv_packet(mac, rssi, msg)
 
-    def schedule_handle_recv_packet(self, mac, msg):
+    def schedule_handle_recv_packet(self, mac, rssi, msg):
         my_timestamp = self.current_timestamp()
-        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, msg, my_timestamp), 0)
+        self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, rssi, msg, my_timestamp), 0)
     
-    def handle_recv_packet(self, mac, msg, my_timestamp):
+    def handle_recv_packet(self, mac, rssi, msg, my_timestamp):
         print("netnow.handle_recv_packet")
 
         if not check_hmac(self.psk, msg):
@@ -176,7 +179,7 @@ class NetNowCentral:
         msg = msg[tid_size:]
 
         if pkttype == type_data:
-            self.handle_data_packet(mac_b2s(mac), tid, msg)
+            self.handle_data_packet(mac_b2s(mac), rssi, tid, msg)
             return
 
         if pkttype == type_ping:
@@ -197,11 +200,11 @@ class NetNowCentral:
                 0 * SECONDS)
         self.timestamp_task.restart()
 
-    def handle_data_packet(self, smac, tid, msg):
+    def handle_data_packet(self, smac, rssi, tid, msg):
         print("netnow.handle_data_packet")
         self.send_confirm(tid)
         for observer in self.data_recv_observers:
-            observer.recv_data(smac, msg)
+            observer.recv_data(smac, rssi, msg)
 
     def handle_ping_packet(self, smac, tid):
         print("netnow.handle_ping_packet")

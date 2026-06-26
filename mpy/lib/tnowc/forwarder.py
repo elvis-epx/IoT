@@ -10,6 +10,7 @@ class Forwarder():
 
         self.pub = mqtt.pub(TNowPub(self))
         self._value = None
+        self.rssi = 1001
 
         if hasattr(machine, 'TEST_ENV'):
             Task(True, "eval", self.eval, 1 * SECONDS)
@@ -25,11 +26,11 @@ class Forwarder():
                 return
             os.unlink("tnowcsend.sim")
 
-        packet = "stat/TNowP/Value\n%d" % int(random.random() * 1000)
+        packet = "stat/TNowP/YourRSSI\n%d" % self.rssi
         self.netnow.send_backdata(packet.encode())
 
-    def recv_data(self, mac, data):
-        print("Forwarder.recv_data")
+    def recv_data(self, mac, rssi, data):
+        print("Forwarder.recv_data RSSI %d" % rssi)
         try:
             data = data.decode()
         except UnicodeError:
@@ -40,6 +41,9 @@ class Forwarder():
         if len(data) != 2:
             print("recv_data: split error")
             return
+
+        self.rssi = rssi
+        print(mac, rssi, data[0], data[1])
 
         if data[0] == "stat/TNow/Value":
             self._value = data[1]

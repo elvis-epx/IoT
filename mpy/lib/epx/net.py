@@ -30,6 +30,8 @@ class Net:
         if 'password' not in self.cfg.data:
             self.cfg.data['password'] = None
 
+        if self.cfg.data['ssid'] == '(none)':
+            return
         # Delay startup to after the watchdog is active (10s)
         startup_time = hasattr(machine, 'TEST_ENV') and 1 or 12
         self.sm.schedule_trans("start", startup_time * SECONDS)

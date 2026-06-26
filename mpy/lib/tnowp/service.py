@@ -6,6 +6,7 @@ class Service():
         self.cfg = cfg
         self.netnow = netnow
         self.netnow.register_recv_data(self)
+        self.rssi = 1001
         if hasattr(machine, 'TEST_ENV'):
             Task(True, "eval", self.eval, 1 * SECONDS)
         else: # pragma: no cover
@@ -24,8 +25,9 @@ class Service():
                 return
             os.unlink("tnowpsend.sim")
 
-        packet = "stat/TNow/Value\n%d" % int(random.random() * 1000)
+        packet = "stat/TNow/YourRSSI\n%d" % self.rssi
         self.netnow.send_data(packet.encode(), confirm_mode=cmode)
 
-    def recv_data(self, tid, msg):
-        print("Received back data", msg)
+    def recv_data(self, tid, rssi, msg):
+        self.rssi = rssi
+        print("Received back data RSSI %d" % rssi, msg)

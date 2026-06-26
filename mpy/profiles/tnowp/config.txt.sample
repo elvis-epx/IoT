@@ -1,3 +1,4 @@
 espnowpsk <ESP-NOW pre-shared key>
 espnowgroup <ESP-NOW group of the manager>
+espnowchannel <n>
 watchdog <0|1>

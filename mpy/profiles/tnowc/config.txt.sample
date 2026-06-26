@@ -1,5 +1,5 @@
-ssid (wired)
-mqttbroker <address or DNS name>
+ssid (wired) or (none)
+mqttbroker <address or DNS name> (optional)
 mqttname TNowC
 watchdog <0|1>
 
