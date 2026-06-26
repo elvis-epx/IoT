@@ -114,7 +114,7 @@ class NetNowPeripheral:
         self.sm.onetime_task("recv", lambda _: self.handle_recv_packet(mac, rssi, msg, my_timestamp), 0)
     
     def handle_recv_packet(self, mac, rssi, msg, my_timestamp):
-        print("netnow.handle_recv_packet")
+        print("netnow.handle_recv_packet RSSI %d" % rssi)
 
         if not check_hmac(self.psk, msg):
             print("...bad hmac")
