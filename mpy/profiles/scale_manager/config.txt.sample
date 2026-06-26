@@ -1,9 +1,8 @@
-ssid <SSID>
-password <password or None>
-channel <optional fixed Wi-Fi channel to be used by ESP-NOW>
+ssid (wired)
 mqttbroker <address or DNS name>
 mqttname LPScale
 watchdog <0|1>
 
 espnowgroup <ESP-NOW group with 1 manager and n sensors>
 espnowpsk <ESP-NOW pre-shared key>
+espnowchannel <ESP-NOW channel>

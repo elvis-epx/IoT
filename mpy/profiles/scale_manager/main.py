@@ -15,7 +15,7 @@ config.data['flavor'] = 'scale_manager'
 nvram = NVRAM("scale_manager")
 watchdog = Watchdog(config)
 net = Net(config)
-netnow = NetNowCentral(config, nvram, net)
+netnow = NetNowCentral(config, nvram, watchdog)
 mqtt = MQTT(config, net, watchdog)
 mqtt_ota_start(mqtt, config)
 forwarder = Forwarder(config, netnow, mqtt)

@@ -34,4 +34,4 @@ mosquitto_pub -h $MQTT_SERVER -t "cmnd/${DEV}/OTA" -m reboot
 sleep 1
 
 echo "Waiting for MQTT messages..."
-mosquitto_sub -h $MQTT_SERVER -t "stat/${DEV}/#" -W 120 -C 10 -v
+mosquitto_sub -h $MQTT_SERVER -t "stat/${DEV}/#" -W 120 -C 5 -v

@@ -3,9 +3,6 @@
 . testsuite/defs.sh
 
 runme
-sleep 15
-
-wifi GOT_IP
 
 ./entool bla ble 0 rx 60 ts
 sleep 1

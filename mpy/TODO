@@ -7,12 +7,5 @@
     - Use WT32-ETH01 (with wired LAN) as gateway
         (resolves problems with AP channel, see next item)
         - Add LAN chip configuration in config.txt
-    - fixing channel in central device does not work
-           (it follows the AP it connects to which may NOT be the nearest one)
-    - OTA update vs ESP-NOW vs gateway?
-        - Pass through gateway x bring up Wi-Fi for OTA
-    - increase test coverage
-        - espnow mock
-            - use socketpair() to satisfy poll()
-            - exchange packets using files
-        - create separate tool to send/receive packets as files
+    - try long range modes
+    - play with RSSI

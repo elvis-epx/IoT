@@ -210,14 +210,14 @@ set it to 80Mhz which allows the ESP32 to run cooler and we don't see the need o
 
 Given the peculiarities of the ESP-NOW protocol, we implement a simple but minimally secure application
 protocol that can be found in lib/epx/netnow.py, and is currently used by the scale profiles 
-(scale\_sensor and scale\_manager).
+(scale\_sensor and scale\_manager) and a simple test profile pair (tnowp and tnowc).
 
-The NetNowPeripheral class is for peripheral devices that only use ESP-NOW, not the regular Wi-Fi.
+The NetNowPeripheral class is for peripheral devices.
 They communicate only with their paired manager/forwarder, and generally take the initiative of
 communication. These devices may sleep to save power.
 
-The NetNowCentral class is for central devices that use both ESP-NOW and regular Wi-Fi, and can forward
-data between the two realms. These devices do not sleep.
+The NetNowCentral class is for central devices, that will forward data to MQTT, using serial or
+wired LAN (not via Wi-Fi). These devices do not sleep.
 
 In ESP-NOW, you need to register a peer to sent data to it, and the number of registered peers
 is limited. On the other hand, you can receive from anyone, as long as you don't use the ESP-NOW 
@@ -227,16 +227,26 @@ Given this quirk, in our implementation the peripheral device registers the cent
 and sends packets directly to it, while the central device only sends broadcast packets (even when
 targeting a particular peripheral). This elides the peer count limit.
 
+### ESP-NOW x Wi-Fi
+
+In theory, NetNowCentral could do regular Wi-Fi and ESP-NOW at the same time, but the central device
+should be in a fixed and deliberately chosen channel.
+
+If Wi-Fi needs to connect to another channel (because the access point is in a different channel),
+communication will be spotty or won't work
+at all.
+
+So we stipulate that, when ESP-NOW is in use, Wi-Fi should not be used.
+
 ### Wi-Fi channels
 
-Since the ESP-NOW network does not have an access point, the peers must agree somehow on which
-Wi-Fi channel to use.
+Since the ESP-NOW network does not have an access point, the peers must agree somehow on a channel.
 
-In our implementation, the ESP-NOW of the central device passively uses the channel set by regular
-Wi-Fi. It follows the channel configured at the access point.
+The channel used by the central device must be manually configured using `espnowchannel`
+parameter.
 
-The peripheral device stores the channel in NVRAM when it pairs with a central device. In unpaired state,
-it keeps changing channels to find the central.
+The peripheral device detects the channel upon pairing with a central device, and stores it in
+NVRAM. In unpaired state, it keeps changing channels until it can find the central device.
 
 ### Group and password
 

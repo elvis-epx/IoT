@@ -5,4 +5,5 @@ mqttname TNowC
 
 espnowpsk bla
 espnowgroup ble
+espnowchannel 1
 watchdog 0

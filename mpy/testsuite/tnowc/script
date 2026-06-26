@@ -6,9 +6,6 @@
 ./entool bla ble 0 tx pairreq
 
 runme
-sleep 15
-
-wifi GOT_IP
 
 ./entool bla ble 0 rx 60 ts
 sleep 1
@@ -35,14 +32,9 @@ sleep 1
 touch ${TEST_FOLDER}/tnowcsend.sim
 ./entool bla ble 0 rx 5 ts backdata 1
 
-wifi UNDEF_ERROR
-sleep 3
-advance 60000
-sleep 3
-./entool flush
-wifi GOT_IP
-sleep 5
+# probably needs to be removed
 ./entool bla ble 0 rx 60 ts
+
 ./entool bla ble 0 tx pairreq
 ./entool bla ble 0 rx 2 ts
 ./entool bla ble 0 tx pairreq

@@ -5,11 +5,11 @@ from epx.loop import MINUTES, SECONDS, MILISSECONDS, StateMachine, Shortcronomet
 from epx.netnow import *
 
 class NetNowCentral:
-    def __init__(self, cfg, nvram, net):
+    def __init__(self, cfg, nvram, watchdog):
         self.cfg = cfg
         self.nvram = nvram
-        self.net = net
-        self.impl = espnow.ESPNow()
+        self.implnet = None
+        self.impl = None
         self.data_recv_observers = []
 
         self.group = group_hash(self.cfg.data['espnowgroup'].encode())
@@ -17,30 +17,26 @@ class NetNowCentral:
 
         sm = self.sm = StateMachine("netnowc")
 
-        sm.add_state("idle", self.on_idle)
-        sm.add_state("active", self.on_active)
-        sm.add_state("inactive", self.on_inactive)
+        sm.add_state("start", self.on_start)
+        sm.add_transition("initial", "start")
 
-        sm.add_transition("initial", "idle")
-        sm.add_transition("idle", "active")
-        sm.add_transition("active", "inactive")
-        sm.add_transition("inactive", "idle")
+        startup_time = hasattr(machine, 'TEST_ENV') and 5 or (watchdog.grace_time() + 1)
+        self.sm.schedule_trans("start", startup_time * SECONDS)
 
+    def on_start(self):
         self.timestamp_base = gen_initial_timestamp()
         self.timestamp_delta = Shortcronometer()
 
-        self.sm.schedule_trans_now("idle")
+        self.implnet = network.WLAN(network.STA_IF)
+        self.implnet.active(False)
+        self.implnet.active(True)
+        self.implnet.config(channel=int(self.cfg.data['espnowchannel']))
 
-    def is_active(self):
-        return self.sm.state == 'active'
+        self.impl = espnow.ESPNow()
+        self.impl.active(True)
 
-    def on_idle(self):
-        self.net.observe("netnow", "connected", lambda: self.sm.schedule_trans_now("active"))
-
-    def on_active(self):
         self.tid_history = {}
         self.pairreq_cts = True
-        self.impl.active(True)
         try:
             # must remove before re-adding
             self.impl.del_peer(broadcast_mac)
@@ -56,12 +52,6 @@ class NetNowCentral:
                 lambda _: self.broadcast_timestamp(timestamp_subtype_default), \
                 25 * SECONDS, 10 * SECONDS)
         self.timestamp_task.advance()
-        self.net.observe("netnow", "connlost", lambda: self.sm.schedule_trans_now("inactive"))
-
-    def on_inactive(self):
-        self.clean_rx_buffer()
-        self.impl.active(False)
-        self.sm.schedule_trans_now("idle")
 
     def current_timestamp(self, unique=False):
         self.timestamp_base += int(self.timestamp_delta.elapsed())
@@ -202,8 +192,6 @@ class NetNowCentral:
         self.timestamp_task.restart()
 
     def send_backdata(self, msg):
-        if not self.is_active():
-            return
         self.sm.onetime_task("netnowc_conf", \
                 lambda _: self.broadcast_timestamp(timestamp_subtype_backdata, None, msg), \
                 0 * SECONDS)
