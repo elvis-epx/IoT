@@ -3,9 +3,3 @@
         - e.g. sensors and actuators
         - Log these exceptions
 - MQTT with TLS
-- ESP-NOW
-    - Use WT32-ETH01 (with wired LAN) as gateway
-        (resolves problems with AP channel, see next item)
-        - Add LAN chip configuration in config.txt
-    - try long range modes
-    - play with RSSI
