@@ -30,9 +30,10 @@ class NetNowCentral:
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
         self.implnet.active(True)
-        self.implnet.config(channel=int(self.cfg.data['espnowchannel']))
+        self.implnet.config(channel=int(self.cfg.data['espnowchannel']), protocol=network.WLAN.PROTOCOL_LR)
 
         self.impl = espnow.ESPNow()
+        self.impl.config(rate=espnow.RATE_LORA_250K)
         self.impl.active(True)
 
         self.tid_history = {}

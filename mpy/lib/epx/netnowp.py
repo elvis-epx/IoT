@@ -51,8 +51,10 @@ class NetNowPeripheral:
         self.implnet = network.WLAN(network.STA_IF)
         self.implnet.active(False)
         self.implnet.active(True)
+        self.implnet.config(protocol=network.WLAN.PROTOCOL_LR)
 
         self.impl = espnow.ESPNow()
+        self.impl.config(rate=espnow.RATE_LORA_250K)
         self.impl.active(True)
 
         try:
@@ -89,7 +91,7 @@ class NetNowPeripheral:
         self.manager = mac_s2b(manager)
         self.channel = self.nvram.get_int('channel')
         self.impl.add_peer(self.manager)
-        self.implnet.config(channel=self.channel)
+        self.implnet.config(channel=self.channel, protocol=network.WLAN.PROTOCOL_LR)
         self.recv_tasks()
         print("netnow: paired w/", manager, "channel", self.channel)
         self.wakeup_task = self.sm.recurring_task("netnowp_wakeup", self.send_wakeup, 5 * SECONDS)
@@ -98,7 +100,7 @@ class NetNowPeripheral:
     def scan_channel(self, _):
         # increment channel and keep it in the range 1..13
         self.channel = self.channel % 13 + 1
-        self.implnet.config(channel=self.channel)
+        self.implnet.config(channel=self.channel, protocol=network.WLAN.PROTOCOL_LR)
         print("netnow: now scanning channel",  self.channel)
 
     def recv(self, _):
