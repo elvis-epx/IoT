@@ -3,12 +3,26 @@ import network, machine, esp32
 from epx.loop import Task, SECONDS, MINUTES, StateMachine, reboot, Shortcronometer
 from epx import loop
 
+def wired():
+    return network.LAN(mdc=machine.Pin(23), mdio=machine.Pin(18),
+                       power=machine.Pin(0), phy_addr=1,
+                       phy_type=network.PHY_GENERIC, ref_clk=machine.Pin(17),
+                       ref_clk_mode=machine.Pin.OUT)
+
+def wired2():
+    return network.LAN(mdc=machine.Pin(23), mdio=machine.Pin(18),
+                  phy_type=network.PHY_LAN8720, phy_addr=1,
+                  power=machine.Pin(16))
+
+wired_ssids = {"(wired)": wired, "(wired2)": wired2}
+
 class Net:
     def __init__(self, cfg):
         self.cfg = cfg
         self.nvram = esp32.NVS("netstats")
         self.impl = None
         self.wired = False
+        self.wired_driver = None
 
         sm = self.sm = StateMachine("net")
         
@@ -26,7 +40,8 @@ class Net:
         sm.add_transition("connecting", "connlost")
         sm.add_transition("connlost", "idle")
 
-        self.wired = self.cfg.data['ssid'] == '(wired)'
+        self.wired_driver = wired_ssids.get(self.cfg.data['ssid'], None)
+        self.wired = self.wired_driver is not None
         if 'password' not in self.cfg.data:
             self.cfg.data['password'] = None
 
@@ -61,10 +76,7 @@ class Net:
 
     def on_start(self):
         if self.wired:
-            # TODO configurable support other ethernet boards
-            board = network.PHY_GENERIC
-            self.impl = network.LAN(mdc=machine.Pin(23), mdio=machine.Pin(18), power=machine.Pin(0), phy_addr=1,
-                        phy_type=board, ref_clk=machine.Pin(17), ref_clk_mode=machine.Pin.OUT)
+            self.impl = self.wired_driver()
         else:
             self.impl = network.WLAN(network.STA_IF)
 
